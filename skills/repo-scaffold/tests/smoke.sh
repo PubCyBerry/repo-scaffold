@@ -76,7 +76,11 @@ fi
 # 검사 뒤 목적지가 생겨도 기존 파일을 덮어쓰지 않는다.
 new_repo publish-race
 mkdir -p "$REPO/scripts" "$TMP_ROOT/race-bin"
-ln -s "$SMOKE" "$TMP_ROOT/race-bin/sed"
+# 이 파일 자신을 sed 래퍼로 쓴다. 심링크가 아니라 복사본에 실행 권한을 직접 준다.
+# 심링크는 Windows 에서 만들어지지 않고, 리눅스에서는 원본의 커밋된 실행 권한에
+# 의존해서 두 환경의 결과가 갈린다.
+cp "$SMOKE" "$TMP_ROOT/race-bin/sed"
+chmod +x "$TMP_ROOT/race-bin/sed"
 REAL_SED="$(command -v sed)" \
 RACE_READY="$TMP_ROOT/race-ready" RACE_GO="$TMP_ROOT/race-go" \
 REPO_SCAFFOLD_SED_WRAPPER=1 PATH="$TMP_ROOT/race-bin:$PATH" \
