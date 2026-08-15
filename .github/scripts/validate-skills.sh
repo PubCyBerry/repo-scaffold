@@ -190,6 +190,34 @@ for dir in "${skill_dirs[@]}"; do
   [ "$failures" -eq "$before" ] && echo "  ✓ ok"
 done
 
+# ── Catalog-only: every skills/ dir must be registered or excepted.
+# Skipped in a source repo, which has no components.d/. This mirrors
+# prune-orphans.sh, but reports instead of deleting — a PR should fail
+# here rather than have the sync silently remove the directory later.
+if [ -d components.d ]; then
+  echo "── catalog registration"
+  registered=$(mktemp)
+  trap 'rm -f "$registered"' EXIT
+  shopt -s nullglob
+  for f in components.d/*.yml; do
+    yq -r '.skills[]?.catalog_dir // ""' "$f" | grep -v '^$' >> "$registered" || true
+  done
+  shopt -u nullglob
+  if [ -f catalog-exceptions.yml ]; then
+    yq -r '.exceptions[]?.dir // ""' catalog-exceptions.yml | grep -v '^$' >> "$registered" || true
+  fi
+
+  unregistered=0
+  for dir in "${skill_dirs[@]}"; do
+    name=$(basename "${dir%/}")
+    grep -qxF "$name" "$registered" || {
+      fail "skills/$name has no components.d registration and no catalog-exceptions.yml entry"
+      unregistered=1
+    }
+  done
+  [ "$unregistered" -eq 0 ] && echo "  ✓ ok"
+fi
+
 echo
 if [ "$failures" -gt 0 ]; then
   echo "FAIL — $failures problem(s) across $checked skill(s)"
