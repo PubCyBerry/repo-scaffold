@@ -1,0 +1,24 @@
+# https://editorconfig.org
+# .gitattributes 가 커밋 시점을 잡고, 이 파일이 편집 시점을 잡는다. 둘 다 있어야 왕복이 안정된다.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{md,mdx}]
+# 마크다운은 줄 끝 공백 두 개가 줄바꿈이라 자르지 않는다.
+trim_trailing_whitespace = false
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+
+[Makefile]
+indent_style = tab

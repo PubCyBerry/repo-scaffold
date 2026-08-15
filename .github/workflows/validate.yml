@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: MIT
+#
+# Gate every PR on the skill contract: frontmatter shape, required
+# artifacts (skill-card.md, eval task set with a negative case), and the
+# skill's own smoke tests. A skill that fails here would be dropped by
+# the catalog sync anyway — this catches it one repo earlier, where the
+# author can still see why.
+
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure yq and jq
+        run: |
+          set -euo pipefail
+          command -v jq >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq jq; }
+          if ! command -v yq >/dev/null; then
+            sudo curl -fsSL -o /usr/local/bin/yq \
+              https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+            sudo chmod +x /usr/local/bin/yq
+          fi
+          yq --version
+          jq --version
+
+      - name: Validate skill contract
+        run: bash .github/scripts/validate-skills.sh
+
+      - name: Run skill smoke tests
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          found=0
+          for script in skills/*/tests/*.sh; do
+            found=1
+            echo "── $script"
+            bash "$script"
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "No smoke tests found — skipping."
+          fi

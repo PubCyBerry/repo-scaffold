@@ -1,0 +1,37 @@
+# 자격 증명. 절대 커밋하지 않는다. 규칙은 SECURITY.md
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+!**/keys/*.pub
+
+# 파이썬 로컬 환경. pre-commit 을 여기 설치한다
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# 노드
+node_modules/
+.npm/
+
+# 빌드 산출물
+dist/
+build/
+target/
+out/
+*.log
+
+# 에디터, OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+*.swp
+
+# 에이전트 로컬 설정. 공유 설정은 .claude/settings.json 에 둔다
+.claude/settings.local.json

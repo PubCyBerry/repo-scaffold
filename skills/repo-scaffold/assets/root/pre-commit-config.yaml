@@ -1,0 +1,52 @@
+# pre-commit 설정. https://pre-commit.com
+#
+# 설치 절차는 README.md 의 "pre-commit 훅" 절에 있다.
+# 수동 실행: .venv/Scripts/pre-commit run --all-files
+# 건너뛰기:  git commit --no-verify
+#
+# 외부 저장소를 받지 않는다. 전부 repo: local 이라 폐쇄망에서 clone 실패로 막히지 않는다.
+# URL 검사는 시간이 걸려 훅에서 뺐다. tests/check-docs.sh 를 직접 돌린다.
+
+repos:
+  - repo: local
+    hooks:
+      - id: doc-index
+        name: AGENTS.md 문서 인덱스 갱신
+        entry: bash scripts/gen-doc-index.sh --stage
+        language: system
+        files: \.(md|mdx)$
+        pass_filenames: false
+        description: >
+          저장소의 .md/.mdx 목록을 디렉터리별로 묶어 AGENTS.md 마커 사이에 넣는다.
+          내용이 바뀌면 AGENTS.md 를 스테이징하고 실패로 끝낸다. 커밋을 다시 실행한다.
+
+      - id: doc-rules
+        name: 문서 규약 검증
+        entry: bash tests/check-docs.sh --no-net
+        language: system
+        files: \.(md|mdx)$
+        pass_filenames: false
+        description: >
+          front matter 필수 property, type 과 위치 일치, status, 경로 표기, 링크 대상을 확인한다.
+          docs/ 밖 문서를 고쳐도 링크 대상이 깨질 수 있으므로 모든 마크다운 변경에 돈다.
+
+      - id: env-sync
+        name: .env 키 동기화 검증
+        entry: bash tests/check-env.sh
+        language: system
+        always_run: true
+        pass_filenames: false
+        description: >
+          *.env.example 과 같은 디렉터리 .env 의 키 집합이 같은지, .env.example 의 비밀 키가
+          비어 있는지 확인한다. .env 는 gitignore 대상이라 변경을 훅이 볼 수 없으므로
+          files 로 거르지 않고 매 커밋 돈다. .env 가 없으면 SKIP 이다.
+
+      - id: secret-scan
+        name: 자격 증명 스캔
+        entry: bash tests/check-secrets.sh
+        language: system
+        always_run: true
+        pass_filenames: false
+        description: >
+          staged 내용에서 토큰, 키, 사설키 블록 패턴을 찾는다. 값은 출력하지 않고
+          파일명과 줄 번호만 보고한다. 오탐이면 그 줄에 secret-scan: allow 주석을 붙인다.
