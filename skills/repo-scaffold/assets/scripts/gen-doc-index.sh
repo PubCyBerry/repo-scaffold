@@ -31,8 +31,11 @@ case "${1:-}" in
     --check) MODE="check" ;;
     --print) MODE="print" ;;
     --stage) MODE="stage" ;;
-    "")      ;;
-    *)       echo "알 수 없는 옵션: $1" >&2; exit 2 ;;
+    "") ;;
+    *)
+        echo "알 수 없는 옵션: $1" >&2
+        exit 2
+        ;;
 esac
 
 # --- 1. 대상 수집 -------------------------------------------------------------
@@ -79,7 +82,10 @@ done < <(
 )
 
 # --- 3. 직렬화 ----------------------------------------------------------------
-INDEX="$(printf '%s' "${parts[0]}"; printf '|%s' "${parts[@]:1}")"
+INDEX="$(
+    printf '%s' "${parts[0]}"
+    printf '|%s' "${parts[@]:1}"
+)"
 
 if [ "$MODE" = "print" ]; then
     printf '%s\n' "$INDEX"

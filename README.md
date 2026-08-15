@@ -12,7 +12,7 @@
 | --- | --- |
 | 무엇이 어디 있는지 한 번에 안다 | `AGENTS.md` 의 자동 생성 문서 인덱스 |
 | 열어보기 전에 열지 말지 판단한다 | front matter 의 `title`, `summary`, `read_when` |
-| 규약이 시간이 지나도 안 썩는다 | pre-commit 훅이 커밋마다 검증 |
+| 규약이 시간이 지나도 안 썩는다 | prek 훅이 커밋마다 검증 |
 
 이 저장소는 **`repo-scaffold` 스킬의 소스 저장소**다.
 설치용 카탈로그는 [pubcyberry/skills](https://github.com/pubcyberry/skills) 이고,
@@ -43,10 +43,12 @@ npx skills add pubcyberry/repo-scaffold
 │       ├── evals/evals.json  # 발동 정확도 태스크셋 (positive/negative)
 │       ├── assets/           # 대상 저장소에 복사되는 템플릿과 스크립트
 │       ├── references/       # 활성화 후 온디맨드로 읽는 상세 문서
-│       └── tests/smoke.sh    # 멱등성·dry-run 스모크 테스트
+│       └── tests/smoke.sh    # 멱등성, 심링크 거부, 스캐폴딩 결과 자가 검증
+├── .pre-commit-config.yaml   # prek 훅. shellcheck, shfmt, actionlint, zizmor
+├── .editorconfig             # 편집기와 shfmt 의 형식 기준
 └── .github/
     ├── scripts/validate-skills.sh   # 필수 산출물 + frontmatter 검증
-    └── workflows/validate.yml       # PR 마다 검증 + 스모크 테스트
+    └── workflows/validate.yml       # PR 마다 lint, audit, 검증, 스모크 테스트
 ```
 
 `skills/` 를 저장소 루트에 두는 것은
@@ -69,10 +71,20 @@ CI 가 위 필수 항목을 검사한다. 누락되면 카탈로그 동기화 �
 
 ```bash
 bash .github/scripts/validate-skills.sh     # frontmatter + 필수 산출물
-bash skills/repo-scaffold/tests/smoke.sh    # 스캐폴딩 동작
+bash skills/repo-scaffold/tests/smoke.sh    # 스캐폴딩 동작 + 결과물 자가 검증
+prek run --all-files                        # shellcheck, shfmt, actionlint, zizmor
 ```
 
-의존: `bash`, `git`, `yq`, `jq`.
+의존: `bash`, `git`, `yq`, `jq`. 훅과 린트는 아래를 추가로 요구한다.
+
+```bash
+uv tool install prek
+for t in shellcheck-py shfmt-py actionlint-py zizmor; do uv tool install "$t"; done
+prek install
+```
+
+`shfmt` 의 형식 기준은 `.editorconfig` 다. 명령줄에 형식 플래그를 주면 `.editorconfig` 가 무시되므로
+훅에서도 CI 에서도 플래그 없이 부른다.
 
 ## 기여
 

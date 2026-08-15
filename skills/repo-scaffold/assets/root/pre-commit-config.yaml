@@ -1,11 +1,14 @@
-# pre-commit 설정. https://pre-commit.com
+# pre-commit 설정. 실행기는 prek 다. https://prek.j178.dev
 #
-# 설치 절차는 README.md 의 "pre-commit 훅" 절에 있다.
-# 수동 실행: .venv/Scripts/pre-commit run --all-files
+# 설치 절차는 README.md 의 "커밋 훅" 절에 있다.
+# 수동 실행: prek run --all-files
 # 건너뛰기:  git commit --no-verify
 #
 # 외부 저장소를 받지 않는다. 전부 repo: local 이라 폐쇄망에서 clone 실패로 막히지 않는다.
 # URL 검사는 시간이 걸려 훅에서 뺐다. tests/check-docs.sh 를 직접 돌린다.
+#
+# shellcheck, shfmt, actionlint, zizmor 는 로컬에 없으면 SKIP 이고 CI 에서 FAIL 이다.
+# 커밋을 막으면 --no-verify 가 습관이 되므로 로컬에서는 막지 않는다.
 
 repos:
   - repo: local
@@ -29,6 +32,26 @@ repos:
         description: >
           front matter 필수 property, type 과 위치 일치, status, 경로 표기, 링크 대상을 확인한다.
           docs/ 밖 문서를 고쳐도 링크 대상이 깨질 수 있으므로 모든 마크다운 변경에 돈다.
+
+      - id: shell-lint
+        name: 셸 스크립트 검사
+        entry: bash tests/check-shell.sh
+        language: system
+        files: \.(sh|bash)$
+        pass_filenames: false
+        description: >
+          shellcheck 로 정적 분석하고 shfmt 로 형식을 본다. 형식 기준은 .editorconfig 다.
+          shfmt 에 형식 플래그를 주면 .editorconfig 가 무시되므로 주지 않는다.
+
+      - id: workflow-lint
+        name: GitHub Actions 워크플로 검사
+        entry: bash tests/check-workflows.sh
+        language: system
+        files: ^\.github/workflows/.*\.(yml|yaml)$
+        pass_filenames: false
+        description: >
+          actionlint 로 문법과 step 안 셸을 보고, zizmor 로 자격 증명 잔류, 주입,
+          미고정 action 을 감사한다. 토큰이 없으면 zizmor 는 --offline 으로 돈다.
 
       - id: env-sync
         name: .env 키 동기화 검증

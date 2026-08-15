@@ -5,11 +5,11 @@
       "id": "repo-scaffold.explicit-positive.v1",
       "prompt": "Use the repo-scaffold skill on /work/my-api. It is an existing git repository with a few markdown files already in docs/.",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent loads the skill, fixes --target/--name/--desc first, runs assets/scaffold.sh with --dry-run to show the PLAN/SKIP split, then applies it and runs the three check scripts.",
+      "expected_output": "The agent loads the skill, fixes --target/--name/--desc first, runs assets/scaffold.sh with --dry-run to show the PLAN/SKIP split, then applies it and runs the five check scripts.",
       "assertions": [
         "The repo-scaffold skill is selected and its SKILL.md drives the answer.",
         "A --dry-run is proposed before the applying run.",
-        "The verification step runs tests/check-docs.sh, tests/check-env.sh and tests/check-secrets.sh.",
+        "The verification step runs tests/check-docs.sh, tests/check-shell.sh, tests/check-workflows.sh, tests/check-env.sh and tests/check-secrets.sh.",
         "Every flag named exists in assets/scaffold.sh (no invented flags)."
       ]
     },

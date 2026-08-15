@@ -3,9 +3,15 @@
   "permissions": {
     "allow": [
       "Bash(bash tests/check-docs.sh:*)",
+      "Bash(bash tests/check-shell.sh:*)",
+      "Bash(bash tests/check-workflows.sh:*)",
       "Bash(bash tests/check-env.sh:*)",
       "Bash(bash tests/check-secrets.sh:*)",
       "Bash(bash scripts/gen-doc-index.sh:*)",
+      "Bash(prek run:*)",
+      "Bash(rg:*)",
+      "Bash(fd:*)",
+      "Bash(ast-grep:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",

@@ -1,0 +1,50 @@
+# pre-commit 설정. 실행기는 prek 다. https://prek.j178.dev
+#
+# 설치:  uv tool install prek && prek install
+# 수동:  prek run --all-files
+#
+# 이 저장소는 스킬 원본이라 훅이 부르는 도구를 전제로 둔다. 설치는 CONTRIBUTING.md 에 있다.
+# 스캐폴딩 결과물의 훅은 도구가 없으면 SKIP 이다. 그쪽은 assets/root/pre-commit-config.yaml 에 있다.
+#
+# 스모크 테스트는 여기 넣지 않는다. 매 커밋 돌리기엔 무겁고 CI 가 같은 것을 돌린다.
+
+repos:
+  - repo: local
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck --format=gcc
+        language: system
+        types: [shell]
+        description: 셸 스크립트 정적 분석. 지적은 전부 고친다
+
+      - id: shfmt
+        name: shfmt
+        entry: shfmt -d
+        language: system
+        types: [shell]
+        description: >
+          셸 스크립트 형식. 형식 플래그를 주지 않는다. 하나라도 주면 shfmt 가
+          .editorconfig 를 통째로 무시해서 훅과 CI 의 기준이 갈린다.
+
+      - id: actionlint
+        name: actionlint
+        entry: actionlint -no-color
+        language: system
+        files: ^\.github/workflows/.*\.(yml|yaml)$
+        description: 워크플로 문법, 표현식, step 안 셸 검사
+
+      - id: zizmor
+        name: zizmor
+        entry: zizmor --no-progress --persona=regular
+        language: system
+        files: ^\.github/workflows/.*\.(yml|yaml)$
+        description: 워크플로 보안 감사. 자격 증명 잔류, 주입, 미고정 action
+
+      - id: skill-contract
+        name: 스킬 계약 검증
+        entry: bash .github/scripts/validate-skills.sh
+        language: system
+        files: ^skills/
+        pass_filenames: false
+        description: frontmatter 필수 필드, skill-card.md, negative 케이스를 포함한 eval 태스크셋 확인

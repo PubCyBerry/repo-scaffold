@@ -14,21 +14,21 @@ related:
 
 # {{IDX_TITLE}}
 
-## 목적
+## Purpose
 
 {{CAT_PURPOSE}}
 
-## 범위
+## Scope
 
-[{{DOCS_DIR}}/{{CAT_SLUG}}/]({{DOCS_DIR}}/{{CAT_SLUG}}/index.md) 하위 전체.
+Everything under [{{DOCS_DIR}}/{{CAT_SLUG}}/]({{DOCS_DIR}}/{{CAT_SLUG}}/index.md).
 
-## 문서 목록
+## Documents
 
-| 문서 | 내용 |
+| Document | Contents |
 | --- | --- |
 
-문서를 추가하면 이 표에 한 줄 넣는다.
+Add one row here when a document is added.
 
-## 관련 문서
+## Related documents
 
-- [문서 인덱스](docs/index.md)
+- [Document index](docs/index.md)

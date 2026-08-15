@@ -3,36 +3,36 @@ id: {{IDX_ID}}
 title: {{IDX_TITLE}}
 type: index
 status: active
-summary: {{PRODUCT_DIR}} 제품 종속 자료 진입점
+summary: Entry point for {{PRODUCT_DIR}} product-specific material
 scope:
   - {{DOCS_DIR}}/**
 read_when:
-  - {{PRODUCT_DIR}} 기반 컴포넌트를 다룰 때
-  - 제품 종속 규칙과 공통 규칙을 구분해야 할 때
+  - Working on a {{PRODUCT_DIR}} based component
+  - Separating product-specific rules from shared ones
 related:
   - index-docs
 ---
 
 # {{IDX_TITLE}}
 
-## 목적
+## Purpose
 
-{{PRODUCT_DIR}} 에 종속되는 규칙, 절차, 참고 자료를 모은다.
-다른 스택의 컴포넌트에는 적용하지 않는다.
+Collect the rules, procedures, and reference material tied to {{PRODUCT_DIR}}. None of it applies to components on a different stack.
 
-## 범위
+## Scope
 
-[{{DOCS_DIR}}/]({{DOCS_DIR}}/index.md) 하위 전체.
-스택과 무관하게 적용되는 규칙은 여기가 아니라 [docs/standards/](docs/standards/index.md) 에 둔다.
+Everything under [{{DOCS_DIR}}/]({{DOCS_DIR}}/index.md).
 
-## 문서 목록
+Rules that apply regardless of stack belong in [docs/standards/](docs/standards/index.md) instead.
 
-| 디렉터리 | 성격 |
+## Documents
+
+| Directory | Nature |
 | --- | --- |
-| [standards/]({{DOCS_DIR}}/standards/index.md) | 제품 종속 작업 규칙 |
-| [guides/]({{DOCS_DIR}}/guides/index.md) | 제품 관련 절차 |
-| [references/]({{DOCS_DIR}}/references/index.md) | 제품 명세, 설치, 외부 자료 |
+| [standards/]({{DOCS_DIR}}/standards/index.md) | Product-specific rules |
+| [guides/]({{DOCS_DIR}}/guides/index.md) | Product-specific procedures |
+| [references/]({{DOCS_DIR}}/references/index.md) | Product specifications, installation, external material |
 
-## 관련 문서
+## Related documents
 
-- [문서 인덱스](docs/index.md)
+- [Document index](docs/index.md)

@@ -22,15 +22,24 @@
 
 set -uo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# cd 뒤에는 상대 경로인 BASH_SOURCE 가 안 풀린다. --help 가 자기 파일을 읽으므로 먼저 절대 경로로 잡는다.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELF="$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT" || exit 1
 
 MODE="staged"
 case "${1:-}" in
-    --all)     MODE="all" ;;
-    -h|--help) sed -n '2,26p' "${BASH_SOURCE[0]}"; exit 0 ;;
-    "")        ;;
-    *)         echo "알 수 없는 옵션: $1" >&2; exit 2 ;;
+    --all) MODE="all" ;;
+    -h | --help)
+        sed -n '2,/^$/p' "$SELF"
+        exit 0
+        ;;
+    "") ;;
+    *)
+        echo "알 수 없는 옵션: $1" >&2
+        exit 2
+        ;;
 esac
 
 # 패턴 이름|정규식. 이름만 보고에 쓴다.
@@ -78,14 +87,14 @@ BODY="$TMP_DIR/body"
 
 for f in "${FILES[@]}"; do
     case "$f" in
-        *.example|*.sample|*.lock|*.min.js|*.map) continue ;;
+        *.example | *.sample | *.lock | *.min.js | *.map) continue ;;
     esac
 
     if [ "$MODE" = "staged" ]; then
-        git show ":$f" > "$BODY" 2>/dev/null || continue
+        git show ":$f" > "$BODY" 2> /dev/null || continue
     else
         [ -f "$f" ] || continue
-        cp "$f" "$BODY" 2>/dev/null || continue
+        cp "$f" "$BODY" 2> /dev/null || continue
     fi
 
     scan_count=$((scan_count + 1))
@@ -95,7 +104,7 @@ for f in "${FILES[@]}"; do
         regex="${entry#*|}"
 
         # -I 로 바이너리를 건너뛴다. 줄 번호만 남기고 매칭된 내용은 버린다.
-        lines="$(grep -InE "$regex" "$BODY" 2>/dev/null \
+        lines="$(grep -InE "$regex" "$BODY" 2> /dev/null \
             | grep -v 'secret-scan: allow' \
             | cut -d: -f1 | tr '\n' ',' | sed 's/,$//')"
 
@@ -106,7 +115,7 @@ done
 echo "검사 파일: ${scan_count}개"
 
 if [ "$fail_count" -gt 0 ]; then
-    cat >&2 <<'EOF'
+    cat >&2 << 'EOF'
 
 자격 증명으로 보이는 값이 커밋 대상에 있다. 값은 출력하지 않았다.
 

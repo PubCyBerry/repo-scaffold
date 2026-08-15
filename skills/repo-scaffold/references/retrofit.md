@@ -24,8 +24,10 @@ bash "$SKILL_DIR/assets/scaffold.sh" --target /path/to/repo --dry-run
 | `.gitattributes` | `* text=auto eol=lf` 와 `*.sh text eol=lf` 가 있는가 |
 | `.gitignore` | `.env` 가 있는가. 없으면 이미 커밋됐는지부터 확인한다 |
 | `.pre-commit-config.yaml` | 기존 훅과 `repos: - repo: local` 블록을 합친다. 훅 id 가 겹치면 안 된다 |
+| `.editorconfig` | `[*.{sh,bash}]` 절이 있는가. 없으면 `shfmt` 가 탭 들여쓰기를 기본값으로 잡아 기존 스크립트를 전부 지적한다 |
 | `.env.example` | 실제 `.env` 와 키 집합이 같은가. `check-env.sh` 로 확인한다 |
 | `docs/` | 디렉터리명이 `standards`, `guides`, `references`, `generated` 와 다르면 `check-docs.sh` 의 `expected_type` 이 빈 값을 돌려주고 type 검사를 건너뛴다 |
+| `docs/standards/` | 같은 주제를 다루는 기존 규약이 있으면 새 문서를 넣지 않는다. 규칙이 두 벌이 되는 것이 없는 것보다 나쁘다 |
 
 ### AGENTS.md 에 마커가 없을 때
 
@@ -80,14 +82,38 @@ git status          # 줄바꿈만 바뀐 파일이 잔뜩 뜬다. 별도 커밋
 문서가 많아 한 번에 못 고치면 `status: draft` 로 두고 넘기지 않는다.
 `status` 는 문서의 유효성이지 정리 상태가 아니다. 고칠 때까지 FAIL 을 남겨두는 편이 낫다.
 
+## check-shell.sh FAIL 대처
+
+기존 스크립트가 있는 저장소면 첫 실행에서 거의 전부 걸린다. 정상이다.
+
+| 메시지 | 조치 |
+| --- | --- |
+| `형식 불일치` | `shfmt -w` 로 한 번에 고치고 **형식 변경만 따로 커밋한다.** 기능 변경과 섞으면 diff 가 전부 공백으로 덮인다 |
+| `지적 있음` (shellcheck) | 지적을 고친다. 진짜 예외면 그 줄 위에 `# shellcheck disable=SCxxxx  # 사유` 를 붙인다. 사유 없는 disable 은 다시 리뷰 대상이다 |
+| `미설치` 인데 SKIP | 로컬에서는 막지 않는다. CI 에서 FAIL 이므로 머지 전에는 반드시 설치해서 돌린다 |
+
+`shfmt` 결과가 예상과 다르면 `.editorconfig` 부터 본다. `[*.{sh,bash}]` 절이 없으면 탭이 기본값이다.
+명령줄에 형식 플래그를 주면 `.editorconfig` 가 무시되므로 어디서도 주지 않는다.
+
+## check-workflows.sh FAIL 대처
+
+| 메시지 | 조치 |
+| --- | --- |
+| `unpinned-uses` (zizmor) | `uses:` 를 40자 커밋 SHA 로 고정하고 뒤에 버전 주석을 단다. SHA 는 그 자리에서 조회한다 |
+| `artipacked` (zizmor) | checkout step 에 `persist-credentials: false` 를 넣는다. 그 토큰으로 push 하는 step 이 뒤에 있을 때만 예외다 |
+| `excessive-permissions` (zizmor) | 워크플로 맨 위에 `permissions:` 를 선언하고 `contents: read` 에서 시작한다 |
+| `template-injection` (zizmor) | `run:` 안에 `${{ }}` 를 직접 넣지 않는다. `env:` 로 넘기고 변수로 참조한다 |
+| actionlint 지적 | 표현식과 step 안 셸 문제다. `shellcheck` 가 설치돼 있으면 actionlint 가 그것까지 본다 |
+
 ## 훅 설치 충돌
 
 | 증상 | 원인과 조치 |
 | --- | --- |
-| `Cowardly refusing to install hooks with core.hooksPath set` | 전역 `core.hooksPath` 가 걸려 있다. `GIT_CONFIG_GLOBAL=/dev/null` 를 앞에 붙여 설치한다. 전역 설정은 바뀌지 않는다 |
-| 기존 `.git/hooks/pre-commit` 이 있다 | pre-commit 이 `.legacy` 로 백업하고 이어서 호출한다. 백업 파일이 생겼는지 확인한다 |
-| 훅이 아예 안 돈다 | 클론마다 설치가 필요하다. `.venv/Scripts/pre-commit install` 을 했는지 확인한다 |
-| 훅이 매번 통째로 실패한다 | `pre-commit run --all-files` 로 원인을 먼저 본다. 커밋을 막은 채로 방치하면 `--no-verify` 가 습관이 된다 |
+| 설치가 `core.hooksPath` 때문에 거부된다 | 전역 `core.hooksPath` 가 걸려 있다. `GIT_CONFIG_GLOBAL=/dev/null prek install` 로 설치한다. 전역 설정은 바뀌지 않는다 |
+| 기존 `.git/hooks/pre-commit` 이 있다 | `.legacy` 로 백업되고 이어서 호출된다. 백업 파일이 생겼는지 확인한다 |
+| 훅이 아예 안 돈다 | 클론마다 설치가 필요하다. `prek install` 을 했는지 확인한다 |
+| 훅이 매번 통째로 실패한다 | `prek run --all-files` 로 원인을 먼저 본다. 커밋을 막은 채로 방치하면 `--no-verify` 가 습관이 된다 |
+| 이미 pre-commit 을 쓰고 있다 | 설정 파일이 같아 실행기만 바꾸면 된다. `pre-commit uninstall` 후 `prek install` 한다. 둘 다 설치하면 훅이 두 번 돈다 |
 
 ## 자격 증명이 이미 커밋돼 있을 때
 

@@ -6,7 +6,7 @@
 *.key
 !**/keys/*.pub
 
-# 파이썬 로컬 환경. pre-commit 을 여기 설치한다
+# 파이썬 로컬 환경
 .venv/
 __pycache__/
 *.py[cod]

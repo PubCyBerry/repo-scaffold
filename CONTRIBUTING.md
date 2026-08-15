@@ -11,16 +11,32 @@
 
 ## 변경 절차
 
-1. 브랜치를 판다.
-2. `skills/repo-scaffold/` 아래를 고친다.
-3. 아래 두 검증을 통과시킨다.
+0. 훅과 린트 도구를 설치한다. 클론마다 한 번이다.
 
    ```bash
+   uv tool install prek
+   for t in shellcheck-py shfmt-py actionlint-py zizmor; do uv tool install "$t"; done
+   prek install
+   ```
+
+1. 브랜치를 판다.
+2. `skills/repo-scaffold/` 아래를 고친다.
+3. 아래 세 검증을 통과시킨다.
+
+   ```bash
+   prek run --all-files                        # shellcheck, shfmt, actionlint, zizmor
    bash .github/scripts/validate-skills.sh
    bash skills/repo-scaffold/tests/smoke.sh
    ```
 
 4. PR 을 연다. CI 가 같은 검증을 다시 돌린다.
+
+`assets/` 아래 셸 스크립트도 이 저장소의 `.editorconfig` 로 형식을 맞춘다.
+스캐폴딩된 저장소가 받는 `.editorconfig` 와 같은 내용이라, 여기서 통과하면 거기서도 통과한다.
+
+`assets/` 의 템플릿을 고쳤으면 스모크 테스트가 스캐폴딩 결과에 대해
+`check-docs.sh`, `check-shell.sh`, `check-workflows.sh`, `check-env.sh`, `check-secrets.sh` 를 돌린다.
+템플릿만 고치고 검증 스크립트를 안 고치면 거기서 잡힌다.
 
 ## `SKILL.md` 를 고칠 때
 

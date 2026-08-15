@@ -5,6 +5,13 @@
 # skill's own smoke tests. A skill that fails here would be dropped by
 # the catalog sync anyway — this catches it one repo earlier, where the
 # author can still see why.
+#
+# The lint and audit steps run the same tools the skill installs into a
+# scaffolded repository: shellcheck, shfmt, actionlint, zizmor. Versions
+# are pinned so a new upstream release cannot turn a green PR red. The
+# tools are installed before the smoke tests because a scaffolded
+# repository's own check-shell.sh treats a missing tool as a failure
+# whenever CI is set.
 
 name: Validate
 
@@ -21,24 +28,69 @@ concurrency:
   group: validate-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  YQ_VERSION: v4.53.3
+  SHELLCHECK_VERSION: 0.11.0.1
+  SHFMT_VERSION: 4.0.0
+  ACTIONLINT_VERSION: 1.7.12.24
+  ZIZMOR_VERSION: 1.29.0
+
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Ensure yq and jq
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Install yq
         run: |
           set -euo pipefail
-          command -v jq >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq jq; }
-          if ! command -v yq >/dev/null; then
-            sudo curl -fsSL -o /usr/local/bin/yq \
-              https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-            sudo chmod +x /usr/local/bin/yq
-          fi
+          sudo curl -fsSL -o /usr/local/bin/yq \
+            "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          sudo chmod +x /usr/local/bin/yq
           yq --version
           jq --version
+
+      - name: Install lint tools
+        run: |
+          set -euo pipefail
+          uv tool install "shellcheck-py==${SHELLCHECK_VERSION}"
+          uv tool install "shfmt-py==${SHFMT_VERSION}"
+          uv tool install "actionlint-py==${ACTIONLINT_VERSION}"
+          uv tool install "zizmor==${ZIZMOR_VERSION}"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: shellcheck
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git ls-files '*.sh')
+          shellcheck --format=gcc "${files[@]}"
+
+      - name: shfmt
+        run: |
+          set -euo pipefail
+          # 형식 플래그를 주지 않는다. 주면 shfmt 가 .editorconfig 를 무시한다.
+          mapfile -t files < <(git ls-files '*.sh')
+          shfmt -d "${files[@]}"
+
+      - name: actionlint
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git ls-files '.github/workflows/*.yml' '.github/workflows/*.yaml')
+          actionlint -no-color "${files[@]}"
+
+      - name: zizmor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(git ls-files '.github/workflows/*.yml' '.github/workflows/*.yaml')
+          zizmor --no-progress --persona=regular "${files[@]}"
 
       - name: Validate skill contract
         run: bash .github/scripts/validate-skills.sh

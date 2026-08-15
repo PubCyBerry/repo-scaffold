@@ -16,7 +16,8 @@
 #   --name NAME       저장소 이름. 기본값은 --target 의 basename
 #   --desc TEXT       한 줄 설명. README 와 AGENTS.md 에 들어간다
 #   --product DIR     제품 종속 문서 디렉터리명. 예: --product nexus 면 docs/nexus/ 생성
-#   --lang ko|en      문서 언어. 검증 스크립트의 summary 문체 검사에만 영향. 기본 ko
+#   --lang en|ko      문서 언어. 검증 스크립트의 summary 문체 검사에만 영향. 기본 en.
+#                     docs/ 를 영어로 쓰는 것이 규약이므로 ko 는 규약을 벗어날 때만 쓴다
 #   --init            대상이 git 저장소가 아니면 git init 한다
 #   --dry-run         쓰지 않고 계획만 출력한다
 #
@@ -30,7 +31,7 @@ TARGET=""
 NAME=""
 DESC=""
 PRODUCT=""
-LANG_CODE="ko"
+LANG_CODE="en"
 DO_INIT=0
 DRY_RUN=0
 
@@ -40,39 +41,85 @@ require_option_value() {
         return 1
     fi
     case "$2" in
-        --*|-h) echo "FAIL: $1 값이 없다" >&2; return 1 ;;
+        --* | -h)
+            echo "FAIL: $1 값이 없다" >&2
+            return 1
+            ;;
     esac
 }
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --target|--name|--desc|--product|--lang)
-            require_option_value "$@" || exit 2 ;;
+        --target | --name | --desc | --product | --lang)
+            require_option_value "$@" || exit 2
+            ;;
     esac
     case "$1" in
-        --target)  TARGET="$2"; shift 2 ;;
-        --name)    NAME="$2"; shift 2 ;;
-        --desc)    DESC="$2"; shift 2 ;;
-        --product) PRODUCT="$2"; shift 2 ;;
-        --lang)    LANG_CODE="$2"; shift 2 ;;
-        --init)    DO_INIT=1; shift ;;
-        --dry-run) DRY_RUN=1; shift ;;
-        -h|--help) sed -n '2,32p' "${BASH_SOURCE[0]}"; exit 0 ;;
-        *)         echo "알 수 없는 옵션: $1" >&2; exit 2 ;;
+        --target)
+            TARGET="$2"
+            shift 2
+            ;;
+        --name)
+            NAME="$2"
+            shift 2
+            ;;
+        --desc)
+            DESC="$2"
+            shift 2
+            ;;
+        --product)
+            PRODUCT="$2"
+            shift 2
+            ;;
+        --lang)
+            LANG_CODE="$2"
+            shift 2
+            ;;
+        --init)
+            DO_INIT=1
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        -h | --help)
+            sed -n '2,/^$/p' "${BASH_SOURCE[0]}"
+            exit 0
+            ;;
+        *)
+            echo "알 수 없는 옵션: $1" >&2
+            exit 2
+            ;;
     esac
 done
 
-[ -n "$TARGET" ] || { echo "FAIL: --target 이 없다" >&2; exit 2; }
-[ ! -L "$TARGET" ] || { echo "FAIL: 대상 경로가 심링크다: $TARGET" >&2; exit 2; }
-[ -d "$TARGET" ] || { echo "FAIL: 대상 디렉터리가 없다: $TARGET" >&2; exit 2; }
+[ -n "$TARGET" ] || {
+    echo "FAIL: --target 이 없다" >&2
+    exit 2
+}
+[ ! -L "$TARGET" ] || {
+    echo "FAIL: 대상 경로가 심링크다: $TARGET" >&2
+    exit 2
+}
+[ -d "$TARGET" ] || {
+    echo "FAIL: 대상 디렉터리가 없다: $TARGET" >&2
+    exit 2
+}
 
 case "$LANG_CODE" in
-    ko|en) ;;
-    *) echo "FAIL: --lang 은 ko 또는 en 이다: $LANG_CODE" >&2; exit 2 ;;
+    ko | en) ;;
+    *)
+        echo "FAIL: --lang 은 ko 또는 en 이다: $LANG_CODE" >&2
+        exit 2
+        ;;
 esac
 
 case "$PRODUCT" in
-    */*|.*) echo "FAIL: --product 는 디렉터리명 하나다: $PRODUCT" >&2; exit 2 ;;
+    */* | .*)
+        echo "FAIL: --product 는 디렉터리명 하나다: $PRODUCT" >&2
+        exit 2
+        ;;
 esac
 
 TARGET="$(cd "$TARGET" && pwd)"
@@ -81,22 +128,25 @@ TARGET="$(cd "$TARGET" && pwd)"
 
 for value in "$NAME" "$DESC" "$PRODUCT"; do
     case "$value" in
-        *$'\r'*|*$'\n'*)
+        *$'\r'* | *$'\n'*)
             echo "FAIL: 이름, 설명, 제품 디렉터리는 한 줄이어야 한다" >&2
-            exit 2 ;;
+            exit 2
+            ;;
     esac
 done
 case "$NAME" in
-    *"'"*) echo "FAIL: 저장소 이름에 작은따옴표를 쓸 수 없다" >&2; exit 2 ;;
+    *"'"*)
+        echo "FAIL: 저장소 이름에 작은따옴표를 쓸 수 없다" >&2
+        exit 2
+        ;;
 esac
 
-# summary 문체 검사는 한국어 종결어미 기준이라 한국어 문서에만 건다.
-SUMMARY_STYLE="none"
-[ "$LANG_CODE" = "ko" ] && SUMMARY_STYLE="ko"
+# summary 는 개조식이다. 검사 규칙이 언어마다 달라 문서 언어를 그대로 넘긴다.
+SUMMARY_STYLE="$LANG_CODE"
 
 # --- git 저장소 확인 ----------------------------------------------------------
 
-if ! git -C "$TARGET" rev-parse --git-dir >/dev/null 2>&1; then
+if ! git -C "$TARGET" rev-parse --git-dir > /dev/null 2>&1; then
     if [ "$DO_INIT" -eq 1 ]; then
         if [ "$DRY_RUN" -eq 1 ]; then
             echo "PLAN git init $TARGET"
@@ -123,9 +173,9 @@ GENERATED_AGENTS=0
 report() {
     # $1: 판정, $2: 대상, $3: 사유
     case "$1" in
-        ADD|PLAN) add_count=$((add_count + 1)) ;;
-        SKIP)     skip_count=$((skip_count + 1)) ;;
-        FAIL)     fail_count=$((fail_count + 1)) ;;
+        ADD | PLAN) add_count=$((add_count + 1)) ;;
+        SKIP) skip_count=$((skip_count + 1)) ;;
+        FAIL) fail_count=$((fail_count + 1)) ;;
     esac
     printf '%-4s %-44s %s\n' "$1" "$2" "${3:-}"
 }
@@ -144,10 +194,20 @@ symlink_component() {
     done
 }
 
+# 목적지 확장자로 권한을 정한다. 셸 스크립트만 실행 권한을 준다.
+# set_mode TMP DEST_REL
+set_mode() {
+    case "$2" in
+        *.sh) chmod 755 "$1" ;;
+        *) chmod 644 "$1" ;;
+    esac
+}
+
 # render SRC DEST [KEY=VALUE ...]
 # 전역 플레이스홀더에 호출별 추가 쌍을 얹어 치환한다.
 render() {
-    local src="$ASSET_DIR/$1" dest_rel="$2"; shift 2
+    local src="$ASSET_DIR/$1" dest_rel="$2"
+    shift 2
     local dest="$TARGET/$dest_rel"
     local parent tmp=""
 
@@ -173,13 +233,16 @@ render() {
 
     # sed replacement 메타문자는 escape 하고 줄바꿈은 옵션 검증에서 거른다.
     local args=("REPO_NAME=$NAME" "REPO_DESC=$DESC" "PRODUCT_DIR=$PRODUCT"
-                "SUMMARY_STYLE=$SUMMARY_STYLE" "DOC_LANG=$LANG_CODE" "$@")
+        "SUMMARY_STYLE=$SUMMARY_STYLE" "DOC_LANG=$LANG_CODE" "$@")
     local script="" pair key value escaped
     for pair in "${args[@]}"; do
         key="${pair%%=*}"
         value="${pair#*=}"
         case "$value" in
-            *$'\r'*|*$'\n'*) report FAIL "$dest_rel" "치환값은 한 줄이어야 한다: $key"; return ;;
+            *$'\r'* | *$'\n'*)
+                report FAIL "$dest_rel" "치환값은 한 줄이어야 한다: $key"
+                return
+                ;;
         esac
         escaped="$(printf '%s' "$value" | sed 's/[\\&|]/\\&/g')"
         script="${script}s|{{$key}}|$escaped|g;"
@@ -200,19 +263,18 @@ render() {
         return
     }
 
-    if ! sed "$script" "$src" > "$tmp" \
-        || ! { case "$dest_rel" in *.sh) chmod 755 "$tmp" ;; *) chmod 644 "$tmp" ;; esac; }; then
+    if ! sed "$script" "$src" > "$tmp" || ! set_mode "$tmp" "$dest_rel"; then
         rm -f "$tmp"
         report FAIL "$dest_rel" "쓰기 실패"
         return
     fi
 
-    if ln "$tmp" "$dest" 2>/dev/null; then
+    if ln "$tmp" "$dest" 2> /dev/null; then
         rm -f "$tmp"
         GENERATED_PATHS[${#GENERATED_PATHS[@]}]="$dest_rel"
         case "$dest_rel" in
             scripts/gen-doc-index.sh) GENERATED_INDEX=1 ;;
-            AGENTS.md)                GENERATED_AGENTS=1 ;;
+            AGENTS.md) GENERATED_AGENTS=1 ;;
         esac
         report ADD "$dest_rel"
     elif [ -e "$dest" ] || [ -L "$dest" ]; then
@@ -232,28 +294,33 @@ render_category() {
 
     case "$cat" in
         standards)
-            title="표준"
-            summary="지켜야 하는 작업 규칙 목록"
-            read_when="코드나 문서를 쓰기 전"
-            purpose="어겼을 때 리뷰 지적 대상이 되는 규칙을 모은다." ;;
+            title="Standards"
+            summary="Rules that must be followed"
+            read_when="Before writing code or documents"
+            purpose="Collect the rules whose violation is a review finding."
+            ;;
         guides)
-            title="가이드"
-            summary="따라 하면 결과가 나오는 절차 목록"
-            read_when="절차를 따라 실행할 때"
-            purpose="순서대로 실행하면 같은 결과가 나오는 절차를 모은다." ;;
+            title="Guides"
+            summary="Procedures that produce a result when followed"
+            read_when="When following a procedure"
+            purpose="Collect procedures that produce the same result every time they are run in order."
+            ;;
         references)
-            title="레퍼런스"
-            summary="조회용 사실과 외부 자료 목록"
-            read_when="값이나 위치를 조회할 때"
-            purpose="절차가 아니라 조회 대상인 사실을 모은다. 인프라 주소, 계정 체계, 외부 명세가 해당한다." ;;
+            title="References"
+            summary="Facts to look up and external material"
+            read_when="When looking up a value or a location"
+            purpose="Collect facts that are looked up rather than followed. Infrastructure addresses, account schemes, and external specifications belong here."
+            ;;
         generated)
-            title="생성 문서"
-            summary="코드나 스키마에서 생성한 문서 목록"
-            read_when="현재 구현 상태를 확인할 때"
-            purpose="코드나 스키마에서 생성한다. 손으로 고치지 않고 다시 생성한다." ;;
+            title="Generated"
+            summary="Documents produced from code or a schema"
+            read_when="When checking the current implementation state"
+            purpose="Produced from code or a schema. Regenerated rather than edited by hand."
+            ;;
         *)
             report FAIL "$docs_dir/$cat/index.md" "알 수 없는 카테고리: $cat"
-            return ;;
+            return
+            ;;
     esac
 
     render docs/category-index.md "$docs_dir/$cat/index.md" \
@@ -276,31 +343,40 @@ echo
 
 echo "[1/3] 검증 스크립트와 훅"
 render scripts/gen-doc-index.sh scripts/gen-doc-index.sh
-render tests/check-docs.sh      tests/check-docs.sh
-render tests/check-env.sh       tests/check-env.sh
-render tests/check-secrets.sh   tests/check-secrets.sh
+render tests/check-docs.sh tests/check-docs.sh
+render tests/check-shell.sh tests/check-shell.sh
+render tests/check-workflows.sh tests/check-workflows.sh
+render tests/check-env.sh tests/check-env.sh
+render tests/check-secrets.sh tests/check-secrets.sh
 render root/pre-commit-config.yaml .pre-commit-config.yaml
 
 echo
 echo "[2/3] 저장소 루트 파일"
-render root/gitattributes   .gitattributes
-render root/editorconfig    .editorconfig
-render root/gitignore       .gitignore
-render root/env.example     .env.example
-render root/AGENTS.md       AGENTS.md
-render root/CLAUDE.md       CLAUDE.md
-render root/README.md       README.md
-render root/SECURITY.md     SECURITY.md
+render root/gitattributes .gitattributes
+render root/editorconfig .editorconfig
+render root/gitignore .gitignore
+render root/env.example .env.example
+render root/AGENTS.md AGENTS.md
+render root/CLAUDE.md CLAUDE.md
+render root/README.md README.md
+render root/SECURITY.md SECURITY.md
 render claude/settings.json .claude/settings.json
 
 echo
 echo "[3/3] 문서 체계"
-render docs/index.md           docs/index.md
+render docs/index.md docs/index.md
 render docs/standards-index.md docs/standards/index.md
-render docs/documentation.md   docs/standards/documentation.md
-render_category guides     docs "index-" ""
+render docs/documentation.md docs/standards/documentation.md
+render docs/writing-style.md docs/standards/writing-style.md
+render docs/code-quality.md docs/standards/code-quality.md
+render docs/testing.md docs/standards/testing.md
+render docs/code-review.md docs/standards/code-review.md
+render docs/commit-convention.md docs/standards/commit-convention.md
+render docs/shell.md docs/standards/shell.md
+render docs/github-actions.md docs/standards/github-actions.md
+render_category guides docs "index-" ""
 render_category references docs "index-" ""
-render_category generated  docs "index-" ""
+render_category generated docs "index-" ""
 
 if [ -n "$PRODUCT" ]; then
     render docs/product-index.md "docs/$PRODUCT/index.md" \
@@ -326,7 +402,7 @@ if [ "$GENERATED_INDEX" -eq 1 ] && [ "$GENERATED_AGENTS" -eq 1 ]; then
     echo
     echo "문서 인덱스 생성"
     # git ls-files 는 인덱스를 읽는다. 새 파일이 아직 추적 전이면 인덱스가 비므로 먼저 등록한다.
-    if git -C "$TARGET" add -N -- "${GENERATED_PATHS[@]}" >/dev/null 2>&1; then
+    if git -C "$TARGET" add -N -- "${GENERATED_PATHS[@]}" > /dev/null 2>&1; then
         (cd "$TARGET" && bash scripts/gen-doc-index.sh) \
             || report FAIL "AGENTS.md" "인덱스 생성 실패"
     else
@@ -334,15 +410,19 @@ if [ "$GENERATED_INDEX" -eq 1 ] && [ "$GENERATED_AGENTS" -eq 1 ]; then
     fi
 fi
 
-cat <<EOF
+cat << EOF
 
 다음 절차:
 
   cd $TARGET
-  uv venv && uv pip install --python .venv pre-commit
-  .venv/Scripts/pre-commit install      # 리눅스, macOS 는 .venv/bin/pre-commit
+  uv tool install prek                  # 훅 실행기. 또는 brew install prek
+  prek install                          # 클론마다 한 번
+
+  # shell-lint, workflow-lint 훅이 부르는 도구. 없으면 로컬 SKIP, CI FAIL
+  for t in shellcheck-py shfmt-py actionlint-py zizmor; do uv tool install "\$t"; done
 
   bash tests/check-docs.sh --no-net     # 문서 규약 확인
+  bash tests/check-shell.sh             # shellcheck, shfmt
   git add -A && git commit              # 훅이 인덱스를 갱신하고 한 번 실패시킨다. 그대로 다시 커밋한다
 
 SKIP 된 파일은 이미 있어서 건드리지 않았다. 내용을 합칠지는 사람이 판단한다.

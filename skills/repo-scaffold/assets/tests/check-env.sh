@@ -28,9 +28,18 @@ STRICT=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --strict)  STRICT=1; shift ;;
-        -h|--help) sed -n '2,20p' "${BASH_SOURCE[0]}"; exit 0 ;;
-        *)         echo "알 수 없는 옵션: $1" >&2; exit 2 ;;
+        --strict)
+            STRICT=1
+            shift
+            ;;
+        -h | --help)
+            sed -n '2,/^$/p' "${BASH_SOURCE[0]}"
+            exit 0
+            ;;
+        *)
+            echo "알 수 없는 옵션: $1" >&2
+            exit 2
+            ;;
     esac
 done
 
@@ -113,7 +122,7 @@ for ex in "${EXAMPLES[@]}"; do
         continue
     fi
 
-    keys_of "$REPO_ROOT/$ex"       | sort -u > "$TMP_DIR/example.keys"
+    keys_of "$REPO_ROOT/$ex" | sort -u > "$TMP_DIR/example.keys"
     keys_of "$REPO_ROOT/$env_file" | sort -u > "$TMP_DIR/env.keys"
 
     missing="$(comm -23 "$TMP_DIR/example.keys" "$TMP_DIR/env.keys" | tr '\n' ' ')"

@@ -26,30 +26,44 @@ CHECK_NET=1
 TIMEOUT=10
 
 # 백틱으로 써도 되는 경로. 저장소에 실재하지만 링크 대상으로 부적절한 것들.
-BACKTICK_ALLOW=".env .git .gitignore"
+# index.md 가 없는 디렉터리는 링크 대상이 될 수 없으므로 여기 둔다.
+BACKTICK_ALLOW=".env .git .gitignore .github .github/workflows"
 BACKTICK_PATTERN="\`[^\`]\\+\`"
 
 REQUIRED_KEYS="id title type status summary scope read_when"
 TYPE_ENUM="index standard guide reference generated"
 
-# summary 문체 검사. ko 면 개조식 강제, none 이면 검사하지 않는다.
+# summary 문체 검사. 문서 언어에 따라 규칙이 다르다. none 이면 검사하지 않는다.
 SUMMARY_STYLE="{{SUMMARY_STYLE}}"
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --no-net)  CHECK_NET=0; shift ;;
+        --no-net)
+            CHECK_NET=0
+            shift
+            ;;
         --timeout)
             if [ "$#" -lt 2 ]; then
                 echo "FAIL: --timeout 값이 없다" >&2
                 exit 2
             fi
             case "$2" in
-                ''|*[!0-9]*) echo "FAIL: --timeout 은 0 이상의 정수다: $2" >&2; exit 2 ;;
+                '' | *[!0-9]*)
+                    echo "FAIL: --timeout 은 0 이상의 정수다: $2" >&2
+                    exit 2
+                    ;;
             esac
             TIMEOUT="$2"
-            shift 2 ;;
-        -h|--help) sed -n '2,21p' "${BASH_SOURCE[0]}"; exit 0 ;;
-        *)         echo "알 수 없는 옵션: $1" >&2; exit 2 ;;
+            shift 2
+            ;;
+        -h | --help)
+            sed -n '2,/^$/p' "${BASH_SOURCE[0]}"
+            exit 0
+            ;;
+        *)
+            echo "알 수 없는 옵션: $1" >&2
+            exit 2
+            ;;
     esac
 done
 
@@ -117,36 +131,48 @@ fm_list() {
 expected_type() {
     local rel="$1" parent
     case "$rel" in
-        */index.md|index.md) echo "index"; return ;;
+        */index.md | index.md)
+            echo "index"
+            return
+            ;;
     esac
     parent="$(basename "$(dirname "$rel")")"
     case "$parent" in
-        standards)  echo "standard" ;;
-        guides)     echo "guide" ;;
+        standards) echo "standard" ;;
+        guides) echo "guide" ;;
         references) echo "reference" ;;
-        generated)  echo "generated" ;;
-        *)          echo "" ;;
+        generated) echo "generated" ;;
+        *) echo "" ;;
     esac
 }
 
 status_allowed() {
     case "$1" in
-        index)      [ "$2" = "active" ] ;;
-        standard)   [[ "$2" =~ ^(draft|active|deprecated)$ ]] ;;
-        guide)      [[ "$2" =~ ^(draft|active|outdated)$ ]] ;;
-        reference)  [[ "$2" =~ ^(active|outdated|archived)$ ]] ;;
-        generated)  [[ "$2" =~ ^(current|stale)$ ]] ;;
-        *)          return 1 ;;
+        index) [ "$2" = "active" ] ;;
+        standard) [[ "$2" =~ ^(draft|active|deprecated)$ ]] ;;
+        guide) [[ "$2" =~ ^(draft|active|outdated)$ ]] ;;
+        reference) [[ "$2" =~ ^(active|outdated|archived)$ ]] ;;
+        generated) [[ "$2" =~ ^(current|stale)$ ]] ;;
+        *) return 1 ;;
     esac
 }
 
-# 개조식 판정. 서술형 종결어미나 마침표로 끝나면 위반.
+# 개조식 판정. 명사나 명사구로 끝나야 한다.
+# ko 는 서술형 종결어미와 마침표, en 은 마침표를 위반으로 본다.
 summary_style_ok() {
-    [ "$SUMMARY_STYLE" = "ko" ] || return 0
-    case "$1" in
-        *.|*다|*요|*음\ 함) return 1 ;;
-        *) return 0 ;;
+    case "$SUMMARY_STYLE" in
+        ko)
+            case "$1" in
+                *. | *다 | *요 | *음\ 함) return 1 ;;
+            esac
+            ;;
+        en)
+            case "$1" in
+                *.) return 1 ;;
+            esac
+            ;;
     esac
+    return 0
 }
 
 echo "대상 문서: ${#DOC_FILES[@]}개"
@@ -190,7 +216,10 @@ REF_LIST="$TMP_DIR/refs"
 
         case " $TYPE_ENUM " in
             *" $doc_type "*) ;;
-            *) report FAIL "$rel" "type '$doc_type' 는 enum 밖 ($TYPE_ENUM)"; continue ;;
+            *)
+                report FAIL "$rel" "type '$doc_type' 는 enum 밖 ($TYPE_ENUM)"
+                continue
+                ;;
         esac
 
         want="$(expected_type "$rel")"
@@ -264,7 +293,7 @@ awk '/^[[:space:]]*```/ { fence = !fence; next } !fence' "${DOC_FILES[@]}" \
             *" $token "*) continue ;;
         esac
         # gitignore 대상은 다른 저장소이거나 산출물이다. 링크 대상이 아니다.
-        if git -C "$REPO_ROOT" check-ignore -q "$token" 2>/dev/null; then
+        if git -C "$REPO_ROOT" check-ignore -q "$token" 2> /dev/null; then
             report PASS "$token" "(다른 저장소 또는 무시 대상)"
         elif [ -e "$REPO_ROOT/$token" ]; then
             report FAIL "$token" "저장소 안 경로는 링크로 쓴다"
@@ -284,15 +313,16 @@ echo "[3/4] 링크 대상 (저장소 루트 기준)"
     for f in "${DOC_FILES[@]}"; do
         rel="$(rel_path "$f")"
         awk '/^[[:space:]]*```/ { fence = !fence; next } !fence' "$f" \
-            | grep -o '](\([^)h][^)]*\))' 2>/dev/null \
+            | grep -o '](\([^)h][^)]*\))' 2> /dev/null \
             | sed 's/^](//; s/)$//; s/#.*$//' \
             | grep -v '^$' \
             | sort -u \
             | while IFS= read -r target; do
                 case "$target" in
-                    /*|./*|../*)
+                    /* | ./* | ../*)
                         report FAIL "$rel -> $target" "저장소 루트 기준 경로로 쓴다"
-                        continue ;;
+                        continue
+                        ;;
                 esac
                 if [ -e "$REPO_ROOT/$target" ]; then
                     report PASS "$rel -> $target"
@@ -312,15 +342,15 @@ check_url() {
     local url="$1" code
     code="$(curl -sS -o /dev/null -w '%{http_code}' \
         --location --max-redirs 5 --connect-timeout "$TIMEOUT" --max-time $((TIMEOUT * 3)) \
-        --retry 1 --user-agent 'doc-check' "$url" 2>/dev/null)"
+        --retry 1 --user-agent 'doc-check' "$url" 2> /dev/null)"
 
     case "$code" in
-        2*)        report PASS "$url" "HTTP $code" ;;
-        401|403)   report PASS "$url" "HTTP $code (인증 필요, 페이지는 존재)" ;;
-        3*)        report PASS "$url" "HTTP $code (리다이렉트)" ;;
-        404|410)   report FAIL "$url" "HTTP $code" ;;
-        000|"")    report SKIP "$url" "응답 없음 (사내망 접근 또는 네트워크 확인 필요)" ;;
-        *)         report FAIL "$url" "HTTP $code" ;;
+        2*) report PASS "$url" "HTTP $code" ;;
+        401 | 403) report PASS "$url" "HTTP $code (인증 필요, 페이지는 존재)" ;;
+        3*) report PASS "$url" "HTTP $code (리다이렉트)" ;;
+        404 | 410) report FAIL "$url" "HTTP $code" ;;
+        000 | "") report SKIP "$url" "응답 없음 (사내망 접근 또는 네트워크 확인 필요)" ;;
+        *) report FAIL "$url" "HTTP $code" ;;
     esac
 }
 

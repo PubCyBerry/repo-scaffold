@@ -1,34 +1,47 @@
 ---
 id: index-standards
-title: 표준
+title: Standards
 type: index
 status: active
-summary: 지켜야 하는 작업 규칙 목록
+summary: Rules that must be followed, by area
 scope:
   - docs/standards/**
 read_when:
-  - 코드나 문서를 쓰기 전
-  - 리뷰에서 근거가 필요할 때
+  - Before writing code or documents
+  - When a review needs a rule to cite
 related:
   - index-docs
 ---
 
-# 표준
+# Standards
 
-## 목적
+## Purpose
 
-이 저장소에서 어겼을 때 리뷰 지적 대상이 되는 규칙을 모은다.
+Collect the rules whose violation is a review finding in this repository.
 
-## 범위
+## Scope
 
-컴포넌트나 언어와 무관하게 적용된다. 특정 제품에만 적용되는 규칙은 해당 도메인 디렉터리로 분리한다.
+Applies regardless of component or language. Rules that apply to a single product go into that domain directory instead.
 
-## 문서 목록
+## Reading order
 
-| 문서 | 내용 |
+1. Open the document whose `scope` covers the file you are about to touch.
+2. [Writing Style](docs/standards/writing-style.md) applies to everything written, including reports and commit messages. Read it once and keep it.
+3. Open the rest on demand. Do not load all of them up front.
+
+## Documents
+
+| Document | Contents |
 | --- | --- |
-| [문서 작성](docs/standards/documentation.md) | 파일명, 경로 표기, front matter, 문서 구조 |
+| [Documentation](docs/standards/documentation.md) | File naming, path notation, front matter, document structure |
+| [Writing Style](docs/standards/writing-style.md) | Language, tone, notation, for every written artifact |
+| [Code Quality](docs/standards/code-quality.md) | Size and complexity limits, zero warnings, comments, error handling |
+| [Testing](docs/standards/testing.md) | Behavior over implementation, edge coverage, mocking boundaries |
+| [Code Review](docs/standards/code-review.md) | Review order, finding format, options and recommendation |
+| [Commit Convention](docs/standards/commit-convention.md) | Pre-commit gate, message format, branch policy, pull requests |
+| [Shell](docs/standards/shell.md) | Strict mode, shellcheck and shfmt gates |
+| [GitHub Actions](docs/standards/github-actions.md) | SHA pinning, least privilege, actionlint and zizmor gates |
 
-## 관련 문서
+## Related documents
 
-- [문서 인덱스](docs/index.md)
+- [Document index](docs/index.md)
