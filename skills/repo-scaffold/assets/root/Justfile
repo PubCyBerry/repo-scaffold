@@ -67,9 +67,8 @@ lint-shell:
 # lint-python:
 #     bash tests/check-python.sh --only lint
 
-# PR3: YAML 형식과 스키마
-# lint-yaml:
-#     bash tests/check-yaml.sh
+lint-yaml:
+    bash tests/check-yaml.sh
 
 # PR2: 타입 검사
 # type:
