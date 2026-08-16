@@ -14,6 +14,7 @@ read_when:
   - Choosing between an em dash, a colon, and a comma
 sources:
   - tests/check-prose.sh
+  - tests/check-commit-msg.sh
   - .vale.ini
   - styles
 related:
@@ -125,6 +126,12 @@ expressible as a regular expression, so it is not attempted. `그중` and `그 �
 `안 된다`, `한번` and `한 번` are each correct in some contexts and wrong in others.
 
 Code spans and code blocks are skipped. Commands and tool output are reproduced verbatim.
+
+A commit message is inside the scope above and outside Vale's reach, because Vale reads
+Markdown. The Notation table is applied to the commit subject instead by
+[tests/check-commit-msg.sh](../../tests/check-commit-msg.sh) at the `commit-msg` stage, from the
+same five entries. The commit body is left to review; the reason is in
+[Commit convention](commit-convention.md).
 
 Everything else in this document is a policy for people. It is not enforced by a tool and is
 still binding.

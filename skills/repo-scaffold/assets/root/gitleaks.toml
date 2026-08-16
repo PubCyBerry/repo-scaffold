@@ -1,0 +1,39 @@
+# 자격 증명 스캔 규칙. 검사기는 gitleaks 다. https://github.com/gitleaks/gitleaks
+#
+# 검사:  just security      gitleaks 가 PATH 에 있을 때만 추가로 돈다
+#
+# gitleaks 는 CI 전용 도구다. tools.txt 에 없고 uv 로 깔리지 않는다. PyPI 밖 도구이고
+# 권위 있는 답을 내려면 전체 이력을 훑어야 해서 개발자 머신에 요구하지 않는다.
+#
+# 로컬에서 커밋을 막는 것은 의존성 없는 tests/check-secrets.sh 다. 둘은 대체가 아니라 층이다.
+#   check-secrets.sh  staged 내용, 패턴 10종, git 과 grep 만 쓴다. 매 커밋 돈다
+#   gitleaks          전체 이력, 규칙 수백 종, 엔트로피 판정. CI 가 돌린다
+#
+# 이 파일을 저장소에 두는 것은 CI 와 어쩌다 깔려 있는 개발자 머신이 같은 규칙을 쓰게
+# 하기 위해서다.
+#
+# 오탐 한 줄을 넘기려면 그 줄 끝에 #gitleaks:allow 주석을 붙인다.
+# tests/check-secrets.sh 의 주석은 secret-scan: allow 로 서로 다르다. 두 검사기를 다
+# 넘기려면 둘 다 붙인다. 넘기기 전에 값을 폐기했는지 먼저 확인한다. 규약은 SECURITY.md 다.
+
+title = "repository secret scan"
+
+[extend]
+# 내장 규칙 전체를 상속한다. 규칙을 여기서 다시 쓰지 않는다.
+# 상속을 끄면 갱신되는 것은 gitleaks 쪽인데 우리 파일은 그대로 남아 조용히 낡는다.
+useDefault = true
+
+[[allowlists]]
+description = "커밋되는 예시 파일과 기계가 만든 잠금 파일. tests/check-secrets.sh 의 예외와 같은 목록이다"
+paths = [
+    # 값이 아니라 키 이름만 들어 있다
+    '''\.example$''',
+    '''\.sample$''',
+    # 기계가 만든다. 손으로 고치지 않으므로 여기서 잡아도 고칠 곳이 없다
+    '''\.lock$''',
+    '''(^|/)package-lock\.json$''',
+    '''(^|/)pnpm-lock\.yaml$''',
+    # 번들 산출물. 원본은 따로 있다
+    '''\.min\.js$''',
+    '''\.map$''',
+]

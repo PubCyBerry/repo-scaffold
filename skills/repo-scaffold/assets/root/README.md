@@ -17,12 +17,14 @@
 ├── tests/
 │   ├── check-docs.sh      문서 규약, 링크, 경로 검증
 │   ├── check-docs-metadata.sh  front matter 스키마, 문서 그래프, 수명주기
+│   ├── check-links-external.sh 외부 URL. 네트워크를 탄다
 │   ├── check-markdown.sh  마크다운 구조와 형식
 │   ├── check-prose.sh     산문, 용어, 문자 규칙
 │   ├── check-shell.sh     셸 스크립트 shellcheck, shfmt 검사
 │   ├── check-yaml.sh      YAML yamllint, 워크플로 스키마 검사
 │   ├── check-workflows.sh 워크플로 actionlint, zizmor 검사
 │   ├── check-hooks.sh     훅 설정 규약 검증
+│   ├── check-commit-msg.sh 커밋 메시지 규약 검증
 │   ├── check-env.sh       .env 와 .env.example 키 동기화 검증
 │   ├── check-secrets.sh   커밋 대상 자격 증명 스캔
 │   └── unit/              문서 검사기 단위 테스트와 fixture
@@ -37,12 +39,16 @@
 │   └── docs_graph.py      문서 그래프. id, 참조, 대체 관계, 고아 문서
 ├── Justfile                 명령 인터페이스. `just verify` 가 Definition of Done
 ├── tools.txt                개발 도구와 버전의 단일 출처
+├── package.json  package-lock.json  commitlint 하나. Node 는 도구 의존성이다
+├── commitlint.config.mjs    커밋 메시지 형식 규칙
 ├── .pre-commit-config.yaml  커밋과 푸시 직전 검증
 ├── .rumdl.toml              마크다운 구조와 형식 규칙
 ├── .vale.ini                산문과 용어 규칙
 ├── .editorconfig            편집기와 shfmt 의 형식 기준
 ├── .shellcheckrc            shellcheck 의 source 해석 설정
 ├── .yamllint.yaml           yamllint 의 형식 기준
+├── .gitleaks.toml           자격 증명 스캔 규칙. 도구는 CI 전용
+├── lychee.toml              외부 URL 검사 규칙. 도구는 CI 전용
 ├── .env.example  →  .env  자격 증명 키 목록
 ├── AGENTS.md              에이전트 작업 규칙
 ├── CLAUDE.md              AGENTS.md 를 가리키는 포인터
@@ -81,6 +87,7 @@ cat docs/index.md           # 문서 진입점
 | `just prose` | 산문, 용어, 문자 규칙 |
 | `just docs` | 문서 규약, 인덱스 최신 여부, front matter 계약과 수명주기 |
 | `just links-internal` | 저장소 안 링크와 문서 그래프 |
+| `just links-external` | 외부 URL. 네트워크를 탄다. `just verify` 에 없다 |
 | `just security` | 자격 증명 스캔과 `.env` 키 검증 |
 | `just check` | 훅 전체를 손으로 실행 |
 
@@ -144,10 +151,24 @@ PEP-723 인라인 메타데이터를 갖고 `uv run --script` 로 돌아서 `pyp
 push 를 막는다. 시간이 흘러 낡은 것은 경고만 하고 막지 않는다. `last_reviewed` 는 사람이
 문서를 다시 읽었을 때만 손으로 올린다.
 
-외부 URL 검사는 시간이 걸려 훅에서 제외했다. 링크를 새로 넣었으면 직접 돌린다.
+커밋 메시지 형식은 `commitlint` 이 본다. 규칙은 `commitlint.config.mjs` 이고 사람이 읽는 원본은
+[docs/standards/commit-convention.md](docs/standards/commit-convention.md) 다.
+버전은 `package.json` 과 `package-lock.json` 에 있고 `just bootstrap` 이 `npm ci` 로 깐다.
+Node 는 도구 의존성이지 소스 언어가 아니므로 언어 감지와 무관하게 항상 배치한다.
+훅은 `node_modules/.bin/commitlint` 을 직접 부른다. `npx` 는 훅 안에서 네트워크를 타므로 쓰지 않는다.
+`node_modules` 가 없으면 형식 검사만 SKIP 되고 제목 표기 검사는 그대로 돈다.
+
+`gitleaks`, `lychee`, `osv-scanner` 는 **CI 전용 도구**라 `tools.txt` 에 없다.
+PyPI 밖 도구이고 네트워크나 전체 이력이 필요해서 개발자 머신에 요구하지 않는다.
+설정 파일(`.gitleaks.toml`, `lychee.toml`)은 저장소에 두어 CI 와 어쩌다 깔려 있는
+개발자 머신이 같은 규칙을 쓰게 한다. `just security` 는 의존성 없는 스캔을 항상 돌리고
+`gitleaks` 가 PATH 에 있을 때만 한 층 더 얹는다. 없어도 실패로 치지 않는다.
+
+외부 URL 검사는 시간이 걸려 훅과 `just verify` 에서 뺐다. 링크를 새로 넣었으면 직접 돌린다.
 
 ```bash
-bash tests/check-docs.sh                     # URL 포함 전체
+just links-external                          # lychee. 없으면 SKIP, CI 에서는 FAIL
+bash tests/check-docs.sh                     # URL 포함 전체. curl 만 쓰는 대체 수단
 bash tests/check-docs-metadata.sh            # front matter 계약, 그래프, 수명주기
 bash tests/check-secrets.sh --all            # 추적 파일 전체 스캔
 ```

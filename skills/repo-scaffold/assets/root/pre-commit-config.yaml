@@ -189,13 +189,16 @@ repos:
           파일명과 줄 번호만 보고한다. 오탐이면 그 줄에 secret-scan: allow 주석을 붙인다.
 
       # --- commit-msg: 커밋 메시지 --------------------------------------------
-      # PR6: Conventional Commits 검증
-      # - id: commitlint
-      #   name: 커밋 메시지 규약 검증
-      #   entry: node_modules/.bin/commitlint --edit
-      #   language: system
-      #   stages: [commit-msg]
-      #   groups: [commit]
+      - id: commitlint
+        name: 커밋 메시지 규약 검증
+        entry: bash tests/check-commit-msg.sh
+        language: system
+        stages: [commit-msg]
+        groups: [commit]
+        description: >
+          Conventional Commits 형식과 제목의 금지 문자를 본다. 형식은 commitlint 가 보고
+          node_modules 가 없으면 그 단계만 로컬 SKIP, CI FAIL 이다. 표기 검사는 도구를
+          쓰지 않으므로 node_modules 가 없어도 돈다. 메시지 파일 경로는 훅이 넘긴다.
 
       # --- pre-push: 저장소 전체를 봐야 하는 검사 -----------------------------
       # 부분 검사가 틀린 답을 내는 것들이다. 느려서 미룬 것이 아니다.

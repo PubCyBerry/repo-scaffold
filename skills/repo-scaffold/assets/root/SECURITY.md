@@ -71,6 +71,18 @@ bash tests/check-secrets.sh    # staged 자격 증명 스캔. pre-commit 이 자
 bash tests/check-env.sh        # .env 와 .env.example 키 동기화
 ```
 
+스캔은 두 층이다. 아래층은 의존성이 없어 항상 돌고, 위층은 도구가 있을 때만 돈다.
+
+| 층 | 검사기 | 대상 | 언제 |
+| --- | --- | --- | --- |
+| 아래 | `tests/check-secrets.sh` 의 패턴 스캔 | staged 내용, 패턴 10종 | 매 커밋 |
+| 위 | `gitleaks` | 규칙 수백 종, 엔트로피 판정 | CI. 로컬은 깔려 있을 때만 |
+
+`gitleaks` 는 CI 전용 도구라 `tools.txt` 에 없고, 없다고 커밋을 막지 않는다.
+규칙은 `.gitleaks.toml` 에 있고 CI 와 로컬이 같은 파일을 쓴다.
+오탐 한 줄을 넘기려면 그 줄 끝에 `secret-scan: allow` 와 `#gitleaks:allow` 를 붙인다.
+넘기기 전에 값을 폐기했는지 먼저 확인한다. 넘기는 것은 값이 자격 증명이 아닐 때만이다.
+
 ## 유출 대응
 
 토큰이 커밋, 로그, 문서, 채팅 어디로든 나갔으면 순서대로 처리한다.

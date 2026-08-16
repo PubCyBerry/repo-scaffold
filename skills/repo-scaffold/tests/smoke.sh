@@ -160,6 +160,8 @@ run_self_check check-workflows.sh
 run_self_check check-hooks.sh
 run_self_check check-env.sh
 run_self_check check-secrets.sh
+# 커밋 중이 아니면 검사할 메시지가 없다. SKIP 으로 통과해야 한다.
+run_self_check check-commit-msg.sh
 # 파이썬이 없는 저장소에서도 SKIP 으로 통과해야 한다. FAIL 이면 훅이 매 커밋 막는다.
 run_self_check check-python.sh
 run_self_check run-tests.sh
@@ -181,6 +183,58 @@ grep -q '저장소 루트 기준으로 쓰였다' "$TMP_ROOT/root-relative.log" 
     || fail "루트 기준 링크를 그 이유로 지적하지 않음"
 cp "$TMP_ROOT/shell.md.orig" "$REPO/docs/standards/shell.md"
 run_self_check check-docs.sh --only links
+
+# 커밋 메시지 표기 검사는 도구를 쓰지 않는다. node_modules 가 없어도 실제 결함을 잡아야 한다.
+printf '%s\n' 'feat(docs): 셸·YAML 설정 정리' > "$TMP_ROOT/msg.bad"
+if (cd "$REPO" && bash tests/check-commit-msg.sh "$TMP_ROOT/msg.bad" --only notation) \
+    > "$TMP_ROOT/commit-msg-notation.log" 2>&1; then
+    cat "$TMP_ROOT/commit-msg-notation.log"
+    fail "제목의 금지 문자를 FAIL 로 잡지 못함"
+fi
+grep -q '^FAIL interpunct' "$TMP_ROOT/commit-msg-notation.log" \
+    || fail "금지 문자를 그 이유로 지적하지 않음"
+
+printf '%s\n' 'feat(docs): 셸과 YAML 설정 정리' > "$TMP_ROOT/msg.good"
+run_self_check check-commit-msg.sh "$TMP_ROOT/msg.good" --only notation
+
+# fixup! 제목은 원문을 그대로 옮긴 것이다. 여기서 막으면 git rebase --autosquash 가 깨진다.
+printf '%s\n' 'fixup! feat(docs): 셸·YAML 설정 정리' > "$TMP_ROOT/msg.fixup"
+run_self_check check-commit-msg.sh "$TMP_ROOT/msg.fixup" --only notation
+
+# 도구가 없을 때의 판정. 로컬은 SKIP 으로 넘기고 CI 는 FAIL 로 막는다.
+# 도구가 실제로 깔린 환경에서는 그 판정이 나오지 않으므로 건너뛴다.
+expect_missing_tool_verdict() {
+    # $1: 도구가 있으면 1 없으면 0, $2: 도구 이름, $3: 로그 라벨, $4...: 스크립트와 인자
+    local present="$1" tool="$2" label="$3"
+    shift 3
+    if [ "$present" -eq 1 ]; then
+        echo "SKIP $tool 이 설치돼 있어 미설치 판정 검사를 건너뜀"
+        return
+    fi
+    if ! (cd "$REPO" && CI=false bash "$@") > "$TMP_ROOT/$label-local.log" 2>&1; then
+        cat "$TMP_ROOT/$label-local.log"
+        fail "$tool 미설치를 로컬에서 SKIP 으로 넘기지 못함"
+    fi
+    if (cd "$REPO" && CI=true bash "$@") > "$TMP_ROOT/$label-ci.log" 2>&1; then
+        cat "$TMP_ROOT/$label-ci.log"
+        fail "$tool 미설치를 CI 에서 FAIL 로 올리지 못함"
+    fi
+}
+
+lychee_present=0
+if command -v lychee > /dev/null 2>&1; then
+    lychee_present=1
+fi
+expect_missing_tool_verdict "$lychee_present" lychee links-external \
+    tests/check-links-external.sh
+
+# commitlint 는 PATH 가 아니라 node_modules 를 본다. 스캐폴딩은 그것을 만들지 않는다.
+commitlint_present=0
+if [ -x "$REPO/node_modules/.bin/commitlint" ]; then
+    commitlint_present=1
+fi
+expect_missing_tool_verdict "$commitlint_present" commitlint commit-msg \
+    tests/check-commit-msg.sh "$TMP_ROOT/msg.good" --only conventional
 
 # Justfile 은 스캐폴딩 치환 키를 하나도 갖지 않는다. 남으면 just 가 파싱 단계에서 죽는다.
 if grep -nE '\{\{[A-Z][A-Z0-9_]*\}\}' "$REPO/Justfile" > "$TMP_ROOT/justfile-placeholders.log" 2>&1; then
@@ -206,7 +260,7 @@ if [ -n "$JUST_BIN" ]; then
         fail "렌더된 Justfile 을 just 가 파싱하지 못함"
     fi
     summary=" $(tr '\n' ' ' < "$TMP_ROOT/just-summary.log") "
-    for recipe in bootstrap doctor fmt fix lint lint-python type markdown prose docs links-internal hooks security test test-unit verify check; do
+    for recipe in bootstrap doctor fmt fix lint lint-python type markdown prose docs links-internal links-external hooks security test test-unit verify check; do
         case "$summary" in
             *" $recipe "*) ;;
             *) fail "just --summary 에 $recipe 레시피가 없음" ;;
@@ -229,6 +283,7 @@ fi
 for script in tests/check-docs.sh tests/check-docs-metadata.sh tests/check-markdown.sh \
     tests/check-prose.sh tests/check-shell.sh tests/check-workflows.sh \
     tests/check-hooks.sh tests/check-env.sh tests/check-secrets.sh \
+    tests/check-commit-msg.sh tests/check-links-external.sh \
     tests/check-python.sh tests/run-tests.sh \
     scripts/run-all.sh scripts/bootstrap.sh scripts/doctor.sh scripts/fmt.sh scripts/fix.sh; do
     log="$TMP_ROOT/help-$(basename "$script").log"

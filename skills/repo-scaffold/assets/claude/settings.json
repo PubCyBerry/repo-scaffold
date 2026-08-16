@@ -11,6 +11,8 @@
       "Bash(bash tests/check-yaml.sh:*)",
       "Bash(bash tests/check-workflows.sh:*)",
       "Bash(bash tests/check-hooks.sh:*)",
+      "Bash(bash tests/check-commit-msg.sh:*)",
+      "Bash(bash tests/check-links-external.sh:*)",
       "Bash(bash tests/check-env.sh:*)",
       "Bash(bash tests/check-secrets.sh:*)",
       "Bash(bash scripts/gen-doc-index.sh:*)",
