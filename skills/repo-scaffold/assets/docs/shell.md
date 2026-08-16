@@ -37,7 +37,10 @@ Every script starts with strict mode.
 set -euo pipefail
 ```
 
-One exception: a script whose job is to run every check and aggregate the results uses `set -uo pipefail` and inspects exit codes explicitly. `-e` would abort on the first failing check and hide the rest. [check-docs.sh](../../tests/check-docs.sh) and its siblings work this way. Any script taking this exception says so in its header comment.
+One exception: a script whose job is to run every check and aggregate the results uses
+`set -uo pipefail` and inspects exit codes explicitly. `-e` would abort on the first failing
+check and hide the rest. [check-docs.sh](../../tests/check-docs.sh) and its siblings work
+this way. Any script taking this exception says so in its header comment.
 
 ### Static analysis and formatting
 
@@ -46,11 +49,17 @@ One exception: a script whose job is to run every check and aggregate the result
 | `shellcheck` | Static analysis | `shellcheck script.sh` |
 | `shfmt` | Formatting | `shfmt -d script.sh` |
 
-Both run over every tracked script through [tests/check-shell.sh](../../tests/check-shell.sh), which the `shell-lint` hook invokes before each commit and CI runs on every push.
+Both run over every tracked script through
+[tests/check-shell.sh](../../tests/check-shell.sh), which the `shell-lint` hook invokes
+before each commit and CI runs on every push.
 
-`shfmt` reads its formatting options from `.editorconfig`. Passing formatting flags on the command line makes it ignore `.editorconfig` entirely, so no formatting flags are passed anywhere: not in the hook, not in CI, not by hand. `.editorconfig` is the single source of truth.
+`shfmt` reads its formatting options from `.editorconfig`. Passing formatting flags on the
+command line makes it ignore `.editorconfig` entirely, so no formatting flags are passed
+anywhere: not in the hook, not in CI, not by hand. `.editorconfig` is the single source of
+truth.
 
-Warnings are fixed, not suppressed, per [Code quality](code-quality.md). When a `shellcheck` finding genuinely does not apply, add a targeted directive on the line above with the reason.
+Warnings are fixed, not suppressed, per [Code quality](code-quality.md). When a `shellcheck`
+finding genuinely does not apply, add a targeted directive on the line above with the reason.
 
 ```bash
 # shellcheck disable=SC2016  # single quotes are intentional, awk reads the literal

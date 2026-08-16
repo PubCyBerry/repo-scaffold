@@ -390,7 +390,7 @@ render_category() {
             title="References"
             summary="Facts to look up and external material"
             read_when="When looking up a value or a location"
-            purpose="Collect facts that are looked up rather than followed. Infrastructure addresses, account schemes, and external specifications belong here."
+            purpose="Collect facts that are looked up rather than followed: addresses, account schemes, specifications."
             ;;
         generated)
             title="Generated"
@@ -534,6 +534,8 @@ render scripts/doctor.sh scripts/doctor.sh
 render scripts/fmt.sh scripts/fmt.sh
 render scripts/fix.sh scripts/fix.sh
 render tests/check-docs.sh tests/check-docs.sh
+render tests/check-markdown.sh tests/check-markdown.sh
+render tests/check-prose.sh tests/check-prose.sh
 render tests/check-shell.sh tests/check-shell.sh
 render tests/check-workflows.sh tests/check-workflows.sh
 render tests/check-hooks.sh tests/check-hooks.sh
@@ -548,12 +550,32 @@ render_mergeable root/tools.txt tools.txt
 render_mergeable root/gitattributes .gitattributes
 render_mergeable root/editorconfig .editorconfig
 render_mergeable root/gitignore .gitignore
+render_mergeable root/rumdl.toml .rumdl.toml
+render_mergeable root/vale.ini .vale.ini
 render root/env.example .env.example
 render root/AGENTS.md AGENTS.md
 render root/CLAUDE.md CLAUDE.md
 render root/README.md README.md
 render root/SECURITY.md SECURITY.md
 render_mergeable claude/settings.json .claude/settings.json
+
+echo
+echo "      산문 규칙 (Vale)"
+# Project 는 문자 규칙이라 언어와 무관하고, English 와 Korean 은 문서 언어별로 갈린다.
+# 어느 파일에 어느 스타일을 거는지는 .vale.ini 가 정한다.
+render styles/Project/Punctuation.yml styles/Project/Punctuation.yml
+render styles/Project/ByteCounts.yml styles/Project/ByteCounts.yml
+render styles/English/Tone.yml styles/English/Tone.yml
+render styles/English/Hedges.yml styles/English/Hedges.yml
+render styles/English/Dates.yml styles/English/Dates.yml
+render styles/Korean/Terminology.yml styles/Korean/Terminology.yml
+render styles/Korean/ForeignWords.yml styles/Korean/ForeignWords.yml
+render styles/Korean/ProductNames.yml styles/Korean/ProductNames.yml
+render styles/Korean/Punctuation.yml styles/Korean/Punctuation.yml
+render styles/Korean/SpacingPatterns.yml styles/Korean/SpacingPatterns.yml
+render styles/Korean/RedundantExpressions.yml styles/Korean/RedundantExpressions.yml
+render styles/Korean/SentenceEndings.yml styles/Korean/SentenceEndings.yml
+render styles/Korean/Tone.yml styles/Korean/Tone.yml
 
 echo
 echo "[3/3] 문서 체계"

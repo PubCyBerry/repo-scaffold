@@ -12,6 +12,11 @@
 # tools are installed before the smoke tests because a scaffolded
 # repository's own check-shell.sh treats a missing tool as a failure
 # whenever CI is set.
+#
+# rumdl and vale are installed for the same reason: the smoke tests run a
+# scaffolded repository's check-markdown.sh and check-prose.sh, and both
+# treat a missing tool as a failure under CI. vale ships as a wrapper that
+# downloads its real binary on first run, so this step needs network.
 
 name: Validate
 
@@ -34,6 +39,8 @@ env:
   SHFMT_VERSION: 4.0.0
   ACTIONLINT_VERSION: 1.7.12.24
   ZIZMOR_VERSION: 1.29.0
+  RUMDL_VERSION: 0.2.55
+  VALE_VERSION: 3.13.0.0
 
 jobs:
   validate:
@@ -63,6 +70,8 @@ jobs:
           uv tool install "shfmt-py==${SHFMT_VERSION}"
           uv tool install "actionlint-py==${ACTIONLINT_VERSION}"
           uv tool install "zizmor==${ZIZMOR_VERSION}"
+          uv tool install "rumdl==${RUMDL_VERSION}"
+          uv tool install "vale==${VALE_VERSION}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: shellcheck

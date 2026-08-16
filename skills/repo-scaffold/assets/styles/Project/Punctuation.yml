@@ -1,0 +1,14 @@
+# docs/standards/writing-style.md 의 Notation 표를 그대로 옮긴 것이다.
+# raw 정규식이라 한국어와 영어 어느 쪽에서도 같게 동작한다.
+# 코드 스팬과 코드 블록은 .vale.ini 의 IgnoredScopes, SkippedScopes 가 뺀다.
+# 명령줄 옵션 접두사(--no-cache)는 앞뒤 공백을 요구해서 걸리지 않는다.
+#
+# raw 목록은 Vale 이 그대로 이어 붙인다. 항목 사이에 | 를 넣어주지 않는다.
+# 여러 줄로 나눠 쓰면 '·—–' 같은 하나의 패턴이 되어 아무것도 잡지 못한다. 실측으로 확인했다.
+# 그래서 대안은 항상 한 줄 안에 묶는다.
+extends: existence
+message: "문장 안에 '%s' 를 쓰지 않는다. 대체 표기는 Writing Style 에 있다"
+level: error
+link: docs/standards/writing-style.md
+raw:
+  - '(·|—|–|\s--\s|〃)'

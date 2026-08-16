@@ -3,12 +3,16 @@
 #
 # 대상:
 #   1. shfmt   추적 중인 *.sh, *.bash
+#   2. rumdl   추적 중인 *.md
 #
 # shfmt 에 형식 플래그를 주지 않는다. 플래그를 하나라도 주면 shfmt 가 .editorconfig 를
 # 통째로 무시해서 훅, CI, 손으로 돌릴 때 기준이 갈린다. -w 는 형식이 아니라 모드
 # 플래그라 .editorconfig 를 무시하지 않는다. 형식 기준은 .editorconfig 하나다.
 #
-# 검사만 하려면 bash tests/check-shell.sh 를 쓴다. 그쪽은 파일을 바꾸지 않는다.
+# rumdl fmt 는 위반이 있어도 0 으로 끝난다. 고쳤는지는 종료 코드가 아니라 diff 로 본다.
+#
+# 검사만 하려면 bash tests/check-shell.sh 와 bash tests/check-markdown.sh 를 쓴다.
+# 그쪽은 파일을 바꾸지 않는다.
 #
 # 도구가 없으면 로컬에서는 SKIP, CI(환경변수 CI=true)에서는 FAIL 이다.
 #
@@ -70,7 +74,7 @@ require_tool() {
     return 1
 }
 
-echo "[1/1] shfmt"
+echo "[1/2] shfmt"
 
 SHELL_FILES=()
 while IFS= read -r f; do
@@ -86,6 +90,28 @@ elif require_tool shfmt "uv tool install shfmt-py"; then
     else
         printf '%s\n' "$out"
         report FAIL shfmt "형식 적용 실패"
+    fi
+fi
+
+echo
+echo "[2/2] rumdl"
+
+DOC_FILES=()
+while IFS= read -r f; do
+    DOC_FILES[${#DOC_FILES[@]}]="$f"
+done < <(git ls-files -- '*.md' | sort)
+
+if [ "${#DOC_FILES[@]}" -eq 0 ]; then
+    report SKIP rumdl "추적 중인 마크다운 문서가 없다"
+elif [ ! -f ".rumdl.toml" ]; then
+    report SKIP rumdl ".rumdl.toml 이 없다. 규칙 설정이 저장소에 있어야 한다"
+elif require_tool rumdl "uv tool install rumdl"; then
+    # rumdl fmt 는 고칠 것이 있든 없든 0 으로 끝난다. 종료 코드로 판정하지 않는다.
+    if out="$(rumdl fmt . 2>&1)"; then
+        report PASS rumdl "${#DOC_FILES[@]}개 문서 정리"
+    else
+        printf '%s\n' "$out"
+        report FAIL rumdl "형식 적용 실패"
     fi
 fi
 

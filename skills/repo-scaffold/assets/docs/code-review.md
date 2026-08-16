@@ -24,7 +24,8 @@ Make review findings concrete enough to act on without a follow-up conversation.
 
 ## Scope
 
-Every review of a diff, branch, or pull request in this repository, whether performed by a person or an agent.
+Every review of a diff, branch, or pull request in this repository, whether performed by a
+person or an agent.
 
 ## Rules
 
@@ -42,10 +43,11 @@ Reviewing a stale base produces findings for code that is already gone.
 
 Evaluate in this order and stop escalating once a level fails badly enough to require rework:
 
-1. **Architecture** — is this the right shape? A correct implementation of the wrong design is still wrong
-2. **Code quality** — limits, naming, error handling, per [Code quality](code-quality.md)
-3. **Tests** — do they test behavior, and do they cover the error paths, per [Testing](testing.md)
-4. **Performance** — only after the first three hold
+1. **Architecture**: is this the right shape? A correct implementation of the wrong design is
+   still wrong
+2. **Code quality**: limits, naming, error handling, per [Code quality](code-quality.md)
+3. **Tests**: do they test behavior, and do they cover the error paths, per [Testing](testing.md)
+4. **Performance**: only after the first three hold
 
 Reporting a variable name before reporting a broken abstraction wastes the author's attention.
 

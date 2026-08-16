@@ -69,23 +69,29 @@ repos:
       #   pass_filenames: false
       #   groups: [docs, config]
 
-      # PR4: 마크다운 구조와 형식
-      # - id: markdown
-      #   name: 마크다운 검사
-      #   entry: bash tests/check-markdown.sh
-      #   language: system
-      #   files: \.(md|mdx)$
-      #   pass_filenames: false
-      #   groups: [docs]
+      - id: markdown
+        name: 마크다운 검사
+        entry: bash tests/check-markdown.sh
+        language: system
+        files: \.(md|mdx)$
+        pass_filenames: false
+        groups: [docs]
+        description: >
+          rumdl 로 구조와 형식을 본다. 규칙은 .rumdl.toml 이다. 파일을 바꾸지 않는다.
+          바뀐 파일만 넘기지 않고 저장소 전체를 본다. cross-file 앵커 검사가 색인을
+          필요로 해서, 파일 하나만 넘기면 조용히 미검사가 된다.
 
-      # PR4: 산문, 용어, 문자 규칙
-      # - id: prose
-      #   name: 산문 검사
-      #   entry: bash tests/check-prose.sh
-      #   language: system
-      #   files: \.(md|mdx)$
-      #   pass_filenames: false
-      #   groups: [docs]
+      - id: prose
+        name: 산문 검사
+        entry: bash tests/check-prose.sh
+        language: system
+        files: \.(md|mdx)$
+        pass_filenames: false
+        groups: [docs]
+        description: >
+          Vale 로 산문, 용어, 문자 규칙을 본다. 규칙은 .vale.ini 와 styles/ 다.
+          error 만 실패로 친다. warning 은 보고만 한다. Vale 은 첫 실행에 네트워크가
+          필요하므로 없으면 로컬 SKIP, CI FAIL 이다.
 
       # PR2: 파이썬 형식과 정적 분석
       # - id: python-format

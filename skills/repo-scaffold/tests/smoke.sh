@@ -152,6 +152,8 @@ run_self_check check-docs.sh --no-net
 run_self_check check-docs.sh --only frontmatter,paths
 run_self_check check-docs.sh --only links
 run_self_check check-docs.sh --only graph
+run_self_check check-markdown.sh
+run_self_check check-prose.sh
 run_self_check check-shell.sh
 run_self_check check-workflows.sh
 run_self_check check-hooks.sh
@@ -200,7 +202,8 @@ if [ -n "$JUST_BIN" ]; then
         fail "렌더된 Justfile 을 just 가 파싱하지 못함"
     fi
     summary=" $(tr '\n' ' ' < "$TMP_ROOT/just-summary.log") "
-    for recipe in bootstrap doctor fmt fix lint docs links-internal hooks security verify check; do
+    for recipe in bootstrap doctor fmt fix lint markdown prose docs links-internal hooks \
+        security verify check; do
         case "$summary" in
             *" $recipe "*) ;;
             *) fail "just --summary 에 $recipe 레시피가 없음" ;;
@@ -220,7 +223,8 @@ fi
 
 # --help 은 헤더 주석만 낸다. 저장소 루트가 아닌 곳에서 상대 경로로 불러도 자기 파일을 찾아야 한다.
 # 스크립트가 REPO_ROOT 로 cd 한 뒤 상대 BASH_SOURCE 를 읽으면 여기서 걸린다.
-for script in tests/check-docs.sh tests/check-shell.sh tests/check-workflows.sh \
+for script in tests/check-docs.sh tests/check-markdown.sh tests/check-prose.sh \
+    tests/check-shell.sh tests/check-workflows.sh \
     tests/check-hooks.sh tests/check-env.sh tests/check-secrets.sh \
     scripts/run-all.sh scripts/bootstrap.sh scripts/doctor.sh scripts/fmt.sh scripts/fix.sh; do
     log="$TMP_ROOT/help-$(basename "$script").log"

@@ -21,11 +21,13 @@ related:
 
 ## Purpose
 
-Set the limits that decide when code is too large, too complex, or too quiet about failure. These are hard limits, not targets: crossing one is a review finding, not a discussion.
+Set the limits that decide when code is too large, too complex, or too quiet about failure.
+These are hard limits, not targets: crossing one is a review finding, not a discussion.
 
 ## Scope
 
-All source code in this repository, in every language. Language-specific rules live in their own standard, such as [Shell](shell.md).
+All source code in this repository, in every language. Language-specific rules live in their
+own standard, such as [Shell](shell.md).
 
 ## Rules
 
@@ -43,13 +45,17 @@ A function that exceeds a limit is split, not annotated with an exemption.
 
 Fix every warning from every tool: linters, type checkers, compilers, and test runners.
 
-When a warning genuinely cannot be fixed, add an inline ignore with a comment giving the reason. A bare ignore directive with no justification is a review finding.
+When a warning genuinely cannot be fixed, add an inline ignore with a comment giving the
+reason. A bare ignore directive with no justification is a review finding.
 
-Clean output is the baseline, not the goal. Warnings that are left alone train everyone to stop reading the output.
+Clean output is the baseline, not the goal. Warnings that are left alone train everyone to
+stop reading the output.
 
 ### Comments
 
-Code is self-documenting. If a comment is needed to explain **what** the code does, refactor the code instead. A comment explains **why**: the constraint, the tradeoff, or the non-obvious reason.
+Code is self-documenting. If a comment is needed to explain **what** the code does, refactor
+the code instead. A comment explains **why**: the constraint, the tradeoff, or the
+non-obvious reason.
 
 No commented-out code. Delete it. Version control already keeps it.
 
@@ -61,11 +67,13 @@ Comment prose follows [Writing Style](writing-style.md).
 - Never swallow an exception silently
 - Include context: which operation, which input, and the suggested fix
 
-An error message is read by whoever has to act on it. Naming the failing operation and the offending input is what makes it actionable.
+An error message is read by whoever has to act on it. Naming the failing operation and the
+offending input is what makes it actionable.
 
 ### Dependencies
 
-When adding a dependency, a CI action, or a tool version, look up the current stable version. Never write one from memory unless the version was given to you.
+When adding a dependency, a CI action, or a tool version, look up the current stable version.
+Never write one from memory unless the version was given to you.
 
 ## Checklist
 

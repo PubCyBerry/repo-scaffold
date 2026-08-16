@@ -64,7 +64,9 @@ fd --extension py --exec-batch wc -l               # 파일 목록
 
 ## 작업 전 확인
 
-    just verify
+```bash
+just verify
+```
 
 통과하지 않으면 작업이 끝난 것이 아니다. 무엇이 도는지는 [Justfile](Justfile) 에 있다.
 명령을 외우지 않는다. `just` 를 인자 없이 치면 목록이 나온다.

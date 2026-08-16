@@ -1,0 +1,8 @@
+# 파일 크기는 MB, GB, GiB 로 쓴다. 원시 바이트 수는 읽는 사람이 다시 나눠야 한다.
+# 네 자리 이상만 본다. '8 bytes' 같은 자료구조 크기 서술은 파일 크기가 아니다.
+extends: existence
+message: "파일 크기는 MB, GB, GiB 로 쓴다: '%s'"
+level: error
+link: docs/standards/writing-style.md
+raw:
+  - '\d{4,} ?(bytes|byte|바이트)'

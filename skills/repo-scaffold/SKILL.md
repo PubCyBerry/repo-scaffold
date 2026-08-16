@@ -106,17 +106,20 @@ bash "$SKILL_DIR/assets/scaffold.sh" \
 ```bash
 cd /path/to/repo
 bash tests/check-docs.sh --no-net    # 문서 규약. FAIL 0 이어야 한다
+bash tests/check-markdown.sh         # rumdl. 마크다운 구조와 형식
+bash tests/check-prose.sh            # Vale. 산문, 용어, 문자 규칙
 bash tests/check-shell.sh            # shellcheck, shfmt
 bash tests/check-workflows.sh        # actionlint, zizmor
 bash tests/check-env.sh              # .env 키 동기화
 bash tests/check-secrets.sh          # staged 자격 증명 스캔
 ```
 
-FAIL 이 나오면 그 자리에서 고친다. 스캐폴딩 직후 FAIL 은 대부분 기존 문서의 front matter 누락이다.
-[references/retrofit.md](references/retrofit.md) 에 증상별 조치가 있다.
+FAIL 이 나오면 그 자리에서 고친다. 스캐폴딩 직후 FAIL 은 대부분 기존 문서의 front matter 누락이거나
+옛 규약대로 저장소 루트 기준으로 쓰인 링크다.
+[references/retrofit.md](references/retrofit.md) 에 증상별 조치와 링크 일괄 변환 절차가 있다.
 
-`check-shell.sh` 와 `check-workflows.sh` 는 도구가 없으면 SKIP 이다. 조용히 통과한 것이 아니다.
-환경변수 `CI=true` 이면 같은 상황이 FAIL 이다.
+`check-markdown.sh`, `check-prose.sh`, `check-shell.sh`, `check-workflows.sh` 는 도구가 없으면
+SKIP 이다. 조용히 통과한 것이 아니다. 환경변수 `CI=true` 이면 같은 상황이 FAIL 이다.
 
 ## 5. 손으로 마무리할 것
 

@@ -1,0 +1,17 @@
+# docs/standards/writing-style.md 의 Tone 절에 적힌 아홉 낱말이다. 목록을 늘리지 않는다.
+# 규칙은 발명하지 않고 문서에 이미 적힌 것만 기계화한다.
+extends: existence
+message: "마케팅 형용사를 쓰지 않는다: '%s'"
+level: error
+ignorecase: true
+link: docs/standards/writing-style.md
+tokens:
+  - critical
+  - crucial
+  - essential
+  - significant
+  - comprehensive
+  - robust
+  - elegant
+  - seamless
+  - powerful

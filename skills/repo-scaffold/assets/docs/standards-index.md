@@ -21,12 +21,14 @@ Collect the rules whose violation is a review finding in this repository.
 
 ## Scope
 
-Applies regardless of component or language. Rules that apply to a single product go into that domain directory instead.
+Applies regardless of component or language. Rules that apply to a single product go into
+that domain directory instead.
 
 ## Reading order
 
 1. Open the document whose `scope` covers the file you are about to touch.
-2. [Writing Style](writing-style.md) applies to everything written, including reports and commit messages. Read it once and keep it.
+2. [Writing Style](writing-style.md) applies to everything written, including reports and
+   commit messages. Read it once and keep it.
 3. Open the rest on demand. Do not load all of them up front.
 
 ## Documents
