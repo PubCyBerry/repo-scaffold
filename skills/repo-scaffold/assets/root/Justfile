@@ -63,16 +63,15 @@ lint:
 lint-shell:
     bash tests/check-shell.sh
 
-# PR2: 파이썬 정적 분석
-# lint-python:
-#     bash tests/check-python.sh --only lint
+lint-python:
+    bash tests/check-python.sh --only lint
 
 lint-yaml:
     bash tests/check-yaml.sh
 
-# PR2: 타입 검사
-# type:
-#     bash tests/check-python.sh --only type
+# 타입 검사. 저장소 전체를 봐야 답이 나오므로 pre-push 다.
+type:
+    bash tests/check-python.sh --only type
 
 # 마크다운 구조와 형식.
 markdown:
@@ -122,18 +121,18 @@ secret-scan:
 env-sync:
     bash tests/check-env.sh
 
-# PR2: 테스트
-# test:
-#     bash tests/run-tests.sh
-#
-# test-unit:
-#     bash tests/run-tests.sh --only unit
-#
-# test-integration:
-#     bash tests/run-tests.sh --only integration
-#
-# test-e2e:
-#     bash tests/run-tests.sh --only e2e
+# 테스트 전체. 갈래마다 디렉터리 하나다.
+test:
+    bash tests/run-tests.sh
+
+test-unit:
+    bash tests/run-tests.sh --only unit
+
+test-integration:
+    bash tests/run-tests.sh --only integration
+
+test-e2e:
+    bash tests/run-tests.sh --only e2e
 
 # --- 묶음 --------------------------------------------------------------------
 

@@ -335,15 +335,16 @@ render_mergeable() {
     render "$@"
 }
 
-# 언어별 도구 설정. 감지 결과가 yes 일 때만 배치한다.
+# 언어별 파일. 감지 결과가 yes 일 때만 배치한다.
 # 스크립트와 Justfile 과 훅 설정에는 쓰지 않는다. 그것들은 언어와 무관하게 항상 깐다.
-# render_lang LANG SRC DEST [KEY=VALUE ...]
-# shellcheck disable=SC2329  # 확장 지점. 호출자는 언어별 설정 템플릿이 들어올 때 생긴다
+# render_lang LANG RENDERER SRC DEST [KEY=VALUE ...]
+#   RENDERER 는 render 또는 render_mergeable 이다. 손으로 합칠 내용이 있는 설정 파일만
+#   render_mergeable 이고, 빈 자리표시자처럼 합칠 것이 없으면 render 다.
 render_lang() {
-    local lang="$1" dest_rel="$3"
-    shift
+    local lang="$1" renderer="$2" dest_rel="$4"
+    shift 2
     case "$(lang_verdict "$lang")" in
-        yes) render_mergeable "$@" ;;
+        yes) "$renderer" "$@" ;;
         unknown)
             report OMIT "$dest_rel" "$lang 사용 여부를 판단할 근거가 없다. --with $lang 으로 강제한다"
             ;;
@@ -526,7 +527,7 @@ echo "감지:  $verdict_line"
 [ "$DRY_RUN" -eq 1 ] && echo "모드:   dry-run. 아무것도 쓰지 않는다"
 echo
 
-echo "[1/3] 검증 스크립트와 훅"
+echo "[1/4] 검증 스크립트와 훅"
 render scripts/gen-doc-index.sh scripts/gen-doc-index.sh
 render scripts/run-all.sh scripts/run-all.sh
 render scripts/bootstrap.sh scripts/bootstrap.sh
@@ -542,10 +543,12 @@ render tests/check-workflows.sh tests/check-workflows.sh
 render tests/check-hooks.sh tests/check-hooks.sh
 render tests/check-env.sh tests/check-env.sh
 render tests/check-secrets.sh tests/check-secrets.sh
+render tests/check-python.sh tests/check-python.sh
+render tests/run-tests.sh tests/run-tests.sh
 render_mergeable root/pre-commit-config.yaml .pre-commit-config.yaml
 
 echo
-echo "[2/3] 저장소 루트 파일"
+echo "[2/4] 저장소 루트 파일"
 render_mergeable root/Justfile Justfile
 render_mergeable root/tools.txt tools.txt
 render_mergeable root/gitattributes .gitattributes
@@ -581,7 +584,7 @@ render styles/Korean/SentenceEndings.yml styles/Korean/SentenceEndings.yml
 render styles/Korean/Tone.yml styles/Korean/Tone.yml
 
 echo
-echo "[3/3] 문서 체계"
+echo "[3/4] 문서 체계"
 render docs/index.md docs/index.md
 render docs/standards-index.md docs/standards/index.md
 render docs/documentation.md docs/standards/documentation.md
@@ -591,6 +594,7 @@ render docs/testing.md docs/standards/testing.md
 render docs/code-review.md docs/standards/code-review.md
 render docs/commit-convention.md docs/standards/commit-convention.md
 render docs/shell.md docs/standards/shell.md
+render docs/python.md docs/standards/python.md
 render docs/github-actions.md docs/standards/github-actions.md
 render_category guides docs "index-" ""
 render_category references docs "index-" ""
@@ -603,6 +607,17 @@ if [ -n "$PRODUCT" ]; then
         render_category "$cat" "docs/$PRODUCT" "index-$PRODUCT-" "$PRODUCT "
     done
 fi
+
+echo
+echo "[4/4] 언어별 설정"
+# 도구 설정만 감지로 거른다. tests/check-python.sh 와 tests/run-tests.sh 는 위에서
+# 이미 무조건 깔았다. 스크립트까지 거르면 "파이썬 없음" 이 깨끗한 SKIP 대신
+# 매 커밋 No such file 훅 에러가 된다.
+render_lang python render_mergeable lang/python/pyproject.toml pyproject.toml
+for suite in unit integration e2e; do
+    # 빈 디렉터리는 git 이 추적하지 않는다. 갈래 자리를 보여주려면 파일이 하나 있어야 한다.
+    render_lang python render "lang/python/gitkeep" "tests/$suite/.gitkeep"
+done
 
 # --- 마무리 ------------------------------------------------------------------
 

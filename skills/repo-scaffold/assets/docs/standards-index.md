@@ -42,6 +42,7 @@ that domain directory instead.
 | [Code Review](code-review.md) | Review order, finding format, options and recommendation |
 | [Commit Convention](commit-convention.md) | Pre-commit gate, message format, branch policy, pull requests |
 | [Shell](shell.md) | Strict mode, shellcheck and shfmt gates |
+| [Python](python.md) | Ruff and mypy settings derived from code quality, test layout |
 | [GitHub Actions](github-actions.md) | SHA pinning, least privilege, actionlint and zizmor gates |
 
 ## Related documents
