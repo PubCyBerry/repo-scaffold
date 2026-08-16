@@ -25,7 +25,7 @@ Set the limits that decide when code is too large, too complex, or too quiet abo
 
 ## Scope
 
-All source code in this repository, in every language. Language-specific rules live in their own standard, such as [Shell](docs/standards/shell.md).
+All source code in this repository, in every language. Language-specific rules live in their own standard, such as [Shell](shell.md).
 
 ## Rules
 
@@ -53,7 +53,7 @@ Code is self-documenting. If a comment is needed to explain **what** the code do
 
 No commented-out code. Delete it. Version control already keeps it.
 
-Comment prose follows [Writing Style](docs/standards/writing-style.md).
+Comment prose follows [Writing Style](writing-style.md).
 
 ### Error handling
 
@@ -80,7 +80,7 @@ When adding a dependency, a CI action, or a tool version, look up the current st
 
 ## Related documents
 
-- [Testing](docs/standards/testing.md)
-- [Code review](docs/standards/code-review.md)
-- [Shell](docs/standards/shell.md)
-- [Writing Style](docs/standards/writing-style.md)
+- [Testing](testing.md)
+- [Code review](code-review.md)
+- [Shell](shell.md)
+- [Writing Style](writing-style.md)

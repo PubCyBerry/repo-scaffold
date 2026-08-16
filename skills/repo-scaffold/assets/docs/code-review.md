@@ -43,8 +43,8 @@ Reviewing a stale base produces findings for code that is already gone.
 Evaluate in this order and stop escalating once a level fails badly enough to require rework:
 
 1. **Architecture** — is this the right shape? A correct implementation of the wrong design is still wrong
-2. **Code quality** — limits, naming, error handling, per [Code quality](docs/standards/code-quality.md)
-3. **Tests** — do they test behavior, and do they cover the error paths, per [Testing](docs/standards/testing.md)
+2. **Code quality** — limits, naming, error handling, per [Code quality](code-quality.md)
+3. **Tests** — do they test behavior, and do they cover the error paths, per [Testing](testing.md)
 4. **Performance** — only after the first three hold
 
 Reporting a variable name before reporting a broken abstraction wastes the author's attention.
@@ -66,7 +66,7 @@ A finding with no location is not a finding. A recommendation with no tradeoff i
 - Style preferences with no rule behind them. If it matters, write it into a standard first
 - Restating a finding that another comment already covers
 
-Review prose follows [Writing Style](docs/standards/writing-style.md): plain, factual, no praise padding.
+Review prose follows [Writing Style](writing-style.md): plain, factual, no praise padding.
 
 ## Checklist
 
@@ -78,7 +78,7 @@ Review prose follows [Writing Style](docs/standards/writing-style.md): plain, fa
 
 ## Related documents
 
-- [Code quality](docs/standards/code-quality.md)
-- [Testing](docs/standards/testing.md)
-- [Commit convention](docs/standards/commit-convention.md)
-- [Writing Style](docs/standards/writing-style.md)
+- [Code quality](code-quality.md)
+- [Testing](testing.md)
+- [Commit convention](commit-convention.md)
+- [Writing Style](writing-style.md)

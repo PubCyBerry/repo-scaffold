@@ -35,7 +35,7 @@ Every commit, branch, and pull request in this repository.
 2. Run the tests relevant to the change, not the full suite
 3. Run the linters and the type checker, and fix everything before committing
 
-Hooks run the repository's own checks; see [README.md](README.md) for what each hook covers.
+Hooks run the repository's own checks; see [README.md](../../README.md) for what each hook covers.
 
 ### Commit messages
 
@@ -49,7 +49,7 @@ Write a body only when the reason is not obvious from the diff. The body explain
 
 - Never push directly to the default branch. Use a feature branch and a pull request
 - Never amend or rebase a commit that is already pushed to a shared branch
-- Never commit secrets, API keys, or credentials. Use `.env` (ignored by `.gitignore`) and environment variables. Rules are in [SECURITY.md](SECURITY.md)
+- Never commit secrets, API keys, or credentials. Use `.env` (ignored by `.gitignore`) and environment variables. Rules are in [SECURITY.md](../../SECURITY.md)
 
 ### Hooks
 
@@ -80,7 +80,7 @@ Two agents in one directory overwrite each other's edits and stage each other's 
 
 Describe what the code does now. Not discarded approaches, not prior iterations, not alternatives that were considered. Only what is in the diff.
 
-Language is plain and factual, per [Writing Style](docs/standards/writing-style.md).
+Language is plain and factual, per [Writing Style](writing-style.md).
 
 ## Checklist
 
@@ -93,6 +93,6 @@ Language is plain and factual, per [Writing Style](docs/standards/writing-style.
 
 ## Related documents
 
-- [Code review](docs/standards/code-review.md)
-- [Writing Style](docs/standards/writing-style.md)
-- [Security](SECURITY.md)
+- [Code review](code-review.md)
+- [Writing Style](writing-style.md)
+- [Security](../../SECURITY.md)

@@ -20,7 +20,7 @@ related:
 
 ## Scope
 
-Everything under [{{DOCS_DIR}}/{{CAT_SLUG}}/]({{DOCS_DIR}}/{{CAT_SLUG}}/index.md).
+Everything under [{{DOCS_DIR}}/{{CAT_SLUG}}/](index.md).
 
 ## Documents
 
@@ -31,4 +31,4 @@ Add one row here when a document is added.
 
 ## Related documents
 
-- [Document index](docs/index.md)
+- [Document index]({{DOCS_INDEX}})

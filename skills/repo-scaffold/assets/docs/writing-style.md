@@ -24,13 +24,13 @@ related:
 
 Prose written in this repository reads as one voice regardless of who or what produced it.
 
-This document covers language, tone, and notation. Document metadata and file layout are in [Documentation](docs/standards/documentation.md).
+This document covers language, tone, and notation. Document metadata and file layout are in [Documentation](documentation.md).
 
 ## Scope
 
-Every written artifact, not only files under [docs/](docs/index.md):
+Every written artifact, not only files under [docs/](../index.md):
 
-- Documents under [docs/](docs/index.md) and the repository root files
+- Documents under [docs/](../index.md) and the repository root files
 - Code comments and docstrings
 - Commit messages and pull request descriptions
 - Reports, analyses, and summaries produced by an agent, including chat answers
@@ -39,10 +39,10 @@ Code and command output are reproduced verbatim and are never rewritten to match
 
 ## Language
 
-- **Everything under [docs/](docs/index.md) is written in English.** No exceptions.
+- **Everything under [docs/](../index.md) is written in English.** No exceptions.
 - Technical terms, identifiers, commands, and paths keep their original form. They are not translated.
 - In front matter, keys are English. Fixed-vocabulary values (`id`, `type`, `status`) are English. Free-text values follow the language of the document.
-- Repository root files, code comments, and commit messages follow the team's working language. The English rule covers [docs/](docs/index.md) only.
+- Repository root files, code comments, and commit messages follow the team's working language. The English rule covers [docs/](../index.md) only.
 
 ## Tone
 
@@ -83,7 +83,7 @@ Dates are absolute: `2026-01-01`. Never "last week", "recently", or "currently".
 
 ## Checklist
 
-- Is every document under [docs/](docs/index.md) written in English?
+- Is every document under [docs/](../index.md) written in English?
 - Are headings and labels noun phrases rather than sentences?
 - Does any sentence contain an em dash, an en dash, a double hyphen, or an interpunct?
 - Are there marketing adjectives or superlatives that carry no information?
@@ -91,6 +91,6 @@ Dates are absolute: `2026-01-01`. Never "last week", "recently", or "currently".
 
 ## Related documents
 
-- [Documentation](docs/standards/documentation.md)
-- [Commit convention](docs/standards/commit-convention.md)
-- [Code review](docs/standards/code-review.md)
+- [Documentation](documentation.md)
+- [Commit convention](commit-convention.md)
+- [Code review](code-review.md)

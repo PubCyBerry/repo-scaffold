@@ -75,12 +75,69 @@ git status          # 줄바꿈만 바뀐 파일이 잔뜩 뜬다. 별도 커밋
 | `H1 이 title 과 다름` | 본문 첫 `# ` 제목과 front matter `title` 을 같게 맞춘다 |
 | `id 중복` | 문서를 복사해 만들면 자주 난다. `<type>-<slug>` 로 새 id 를 준다 |
 | `그런 id 가 없음` | `related` 와 `supersedes` 는 파일 경로가 아니라 `id` 로 적는다 |
-| `저장소 안 경로는 링크로 쓴다` | 백틱을 마크다운 링크로 바꾼다. 링크 대상은 저장소 루트 기준 |
-| `저장소 루트 기준 경로로 쓴다` | `../` 나 `./` 로 시작하는 링크를 루트 기준으로 고친다 |
+| `저장소 안 경로는 링크로 쓴다` | 백틱을 마크다운 링크로 바꾼다. 링크 대상은 그 문서 기준 상대 경로 |
+| `저장소 루트 기준으로 쓰였다` | 옛 규약으로 쓰인 링크다. 아래 링크 규약 전환 절차를 따른다 |
+| `절대 경로는 쓰지 않는다` | `/` 로 시작하는 링크를 문서 기준 상대 경로로 고친다 |
+| `저장소 밖으로 나간다` | `../` 가 저장소 루트를 넘어간다. 오타이거나 잘못 옮긴 문서다 |
 | `대상 없음` | 파일이 옮겨졌거나 오타다. 실제 경로를 확인한다 |
 
 문서가 많아 한 번에 못 고치면 `status: draft` 로 두고 넘기지 않는다.
 `status` 는 문서의 유효성이지 정리 상태가 아니다. 고칠 때까지 FAIL 을 남겨두는 편이 낫다.
+
+## 링크 규약 전환
+
+이 스킬의 예전 판은 in-repo 링크를 **저장소 루트 기준**으로 썼다. 지금은 **문서 기준 상대 경로**다.
+예전 판으로 스캐폴딩한 저장소는 링크가 전부 걸린다.
+
+바꾸는 이유는 마크다운 검사기의 cross-file 앵커 검사다. 검사기는 링크 대상을 링크가 있는 문서의
+디렉터리 기준으로만 해석하고, 설정으로 바꿀 수 없으며, 못 찾으면 **조용히 건너뛴다**.
+루트 기준을 유지하면 루트 문서 밖에서는 앵커 검사가 영원히 0% 다.
+대가는 문서를 옮길 때 링크를 같이 고쳐야 하는 것이다.
+
+전환은 기계적이다. 판정 기준이 "링크 대상이 저장소 루트에서 실제로 존재하는가" 하나뿐이라
+외부 URL, 앵커 전용 링크, 절대 경로는 건드리지 않는다.
+
+```bash
+uv run --no-project --python 3.13 - <<'PY'
+import os, pathlib, re, subprocess
+
+root = pathlib.Path(subprocess.check_output(
+    ["git", "rev-parse", "--show-toplevel"], text=True).strip())
+link_re = re.compile(r"\]\(([^)\s]+?)(#[^)]*)?\)")
+skip_re = re.compile(r"^(https?:|mailto:|#|/|\.\.?/)")
+
+for name in subprocess.check_output(
+        ["git", "ls-files", "--", "*.md"], text=True).splitlines():
+    path = root / name
+    src = path.read_text(encoding="utf-8")
+
+    def sub(m):
+        target, frag = m.group(1), m.group(2) or ""
+        if skip_re.match(target) or not (root / target).exists():
+            return m.group(0)
+        rel = os.path.relpath(root / target, path.parent).replace(os.sep, "/")
+        return f"]({rel}{frag})"
+
+    out = link_re.sub(sub, src)
+    if out != src:
+        path.write_text(out, encoding="utf-8", newline="\n")
+        print(name)
+PY
+```
+
+돌린 뒤 확인한다. 링크 변환만 따로 커밋한다. 다른 변경과 섞으면 diff 를 읽을 수 없다.
+
+```bash
+bash tests/check-docs.sh --only links
+```
+
+남는 것은 셋뿐이다.
+
+| 남는 경우 | 조치 |
+| --- | --- |
+| 대상이 저장소에 없어 그대로 남은 링크 | 원래 깨진 링크다. 실제 경로를 찾아 고친다 |
+| 코드 블록 안 예시 링크 | 스크립트가 건드리지 않는다. 규약을 보여주는 예시면 손으로 고친다 |
+| 같은 템플릿이 여러 깊이에 깔리는 문서 | 하드코딩한 상대 경로가 한쪽에서만 맞는다. 치환 키로 뺀다 |
 
 ## check-shell.sh FAIL 대처
 

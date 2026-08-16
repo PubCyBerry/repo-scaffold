@@ -351,6 +351,22 @@ render_lang() {
     esac
 }
 
+# 문서 상대 링크를 쓰므로 같은 템플릿이 깊이가 다른 곳에 깔리면 상위 경로가 달라진다.
+# docs/guides/index.md 는 ../index.md 이고 docs/nexus/guides/index.md 는 ../../index.md 다.
+# docs_dir 의 경로 조각 수가 곧 올라가야 할 단계 수다.
+# docs_index_rel DOCS_DIR
+docs_index_rel() {
+    local rest="$1" up=""
+    while [ -n "$rest" ]; do
+        up="../$up"
+        case "$rest" in
+            */*) rest="${rest#*/}" ;;
+            *) rest="" ;;
+        esac
+    done
+    printf '%sindex.md\n' "$up"
+}
+
 # 카테고리 인덱스는 템플릿 하나를 메타만 갈아끼워 여러 번 쓴다.
 # render_category CAT DOCS_DIR ID_PREFIX TITLE_PREFIX
 render_category() {
@@ -390,6 +406,7 @@ render_category() {
 
     render docs/category-index.md "$docs_dir/$cat/index.md" \
         "DOCS_DIR=$docs_dir" \
+        "DOCS_INDEX=$(docs_index_rel "$docs_dir")" \
         "CAT_SLUG=$cat" \
         "IDX_ID=${id_prefix}${cat}" \
         "IDX_TITLE=${title_prefix}${title}" \

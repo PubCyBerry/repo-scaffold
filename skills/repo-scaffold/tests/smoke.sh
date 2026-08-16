@@ -162,6 +162,20 @@ run_self_check check-secrets.sh
 expect_failure "$TMP_ROOT/bad-phase.log" bash "$REPO/tests/check-docs.sh" --only nosuchphase
 expect_failure "$TMP_ROOT/missing-only.log" bash "$REPO/tests/check-docs.sh" --only
 
+# 링크는 문서 기준 상대 경로다. 저장소 루트 기준으로 쓴 링크는 이제 FAIL 이다.
+# 규약을 뒤집었으므로 뒤집힌 채로 남아 있는지 기계로 확인한다.
+# git 으로 되돌리지 않는다. 생성 파일은 add -N 상태라 checkout 하면 빈 파일이 된다.
+cp "$REPO/docs/standards/shell.md" "$TMP_ROOT/shell.md.orig"
+printf '\n- [root relative](docs/standards/testing.md)\n' >> "$REPO/docs/standards/shell.md"
+# 저장소 안에서 돌려야 한다. 밖에서 부르면 git 이 이 스킬 저장소를 루트로 잡는다.
+if (cd "$REPO" && bash tests/check-docs.sh --only links) > "$TMP_ROOT/root-relative.log" 2>&1; then
+    fail "루트 기준 링크를 FAIL 로 잡지 못함"
+fi
+grep -q '저장소 루트 기준으로 쓰였다' "$TMP_ROOT/root-relative.log" \
+    || fail "루트 기준 링크를 그 이유로 지적하지 않음"
+cp "$TMP_ROOT/shell.md.orig" "$REPO/docs/standards/shell.md"
+run_self_check check-docs.sh --only links
+
 # Justfile 은 스캐폴딩 치환 키를 하나도 갖지 않는다. 남으면 just 가 파싱 단계에서 죽는다.
 if grep -nE '\{\{[A-Z][A-Z0-9_]*\}\}' "$REPO/Justfile" > "$TMP_ROOT/justfile-placeholders.log" 2>&1; then
     cat "$TMP_ROOT/justfile-placeholders.log"

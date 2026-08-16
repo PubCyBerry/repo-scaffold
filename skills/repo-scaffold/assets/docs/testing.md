@@ -76,5 +76,5 @@ Before committing, run the tests relevant to the change, not the full suite. The
 
 ## Related documents
 
-- [Code quality](docs/standards/code-quality.md)
-- [Code review](docs/standards/code-review.md)
+- [Code quality](code-quality.md)
+- [Code review](code-review.md)
