@@ -1,4 +1,6 @@
-#!/usr/bin/env -S uv run --script
+# shebang 을 두지 않는다. 이 파일은 uv run --script 로만 불리고 실행 권한을 받지 않는다.
+# 권한 없는 파일에 shebang 이 있으면 ruff 가 EXE001 로 잡는다. 파일 권한이 없는
+# Windows 에서는 그 규칙이 조용히 넘어가서 리눅스 CI 에서만 드러난다.
 # /// script
 # requires-python = ">=3.11"
 # dependencies = []
