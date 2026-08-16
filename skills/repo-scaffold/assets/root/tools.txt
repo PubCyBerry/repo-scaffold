@@ -1,0 +1,26 @@
+# 이 저장소가 쓰는 개발 도구 매니페스트. scripts/bootstrap.sh 가 설치하고
+# scripts/doctor.sh 가 설치 상태를 대조한다.
+#
+# 열은 셋이다. 빈칸으로 구분한다.
+#
+#   1. 패키지==버전   설치 인자. uv tool install 은 인자를 하나만 받으므로 한 줄에 하나다
+#   2. 출처           uv = uv tool install. 그 밖은 사람이 직접 설치한다
+#   3. 실행 파일      패키지 이름에서 유도되지 않으므로 따로 적는다
+#
+# 버전 확인은 uv tool list 로 한다. 실행 파일의 --version 과 대조하면 안 된다.
+# shellcheck-py==0.11.0.1 이 까는 shellcheck 는 자기 버전을 0.11.0 이라고 답한다.
+#
+# 갱신은 Renovate 가 한다. 손으로 올리지 않는다.
+#
+# 네트워크와 전체 이력이 필요한 도구(gitleaks, osv-scanner, lychee)는 여기 없다.
+# CI 에서만 돌고 개발자 머신에 요구하지 않는다.
+
+rust-just==1.58.0         uv  just
+prek==0.4.13              uv  prek
+shellcheck-py==0.11.0.1   uv  shellcheck
+shfmt-py==4.0.0           uv  shfmt
+actionlint-py==1.7.12.24  uv  actionlint
+zizmor==1.29.0            uv  zizmor
+rumdl==0.2.55             uv  rumdl
+yamllint==1.38.0          uv  yamllint
+check-jsonschema==0.38.0  uv  check-jsonschema
