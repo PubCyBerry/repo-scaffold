@@ -1,37 +1,108 @@
 # pre-commit 설정. 실행기는 prek 다. https://prek.j178.dev
 #
-# 설치 절차는 README.md 의 "커밋 훅" 절에 있다.
-# 수동 실행: prek run --all-files
-# 건너뛰기:  git commit --no-verify
+# 설치:  just bootstrap       훅 세 종류를 한 번에 깐다
+# 수동:  just check           prek run --all-files
+# 빠름:  just check-fast      slow 그룹을 뺀다
+# 건너뛰기: git commit --no-verify
 #
 # 외부 저장소를 받지 않는다. 전부 repo: local 이라 폐쇄망에서 clone 실패로 막히지 않는다.
-# URL 검사는 시간이 걸려 훅에서 뺐다. tests/check-docs.sh 를 직접 돌린다.
 #
-# shellcheck, shfmt, actionlint, zizmor 는 로컬에 없으면 SKIP 이고 CI 에서 FAIL 이다.
-# 커밋을 막으면 --no-verify 가 습관이 되므로 로컬에서는 막지 않는다.
+# 훅은 tests/*.sh 와 scripts/*.sh 를 직접 부른다. Justfile 을 거치지 않는다.
+# 거치면 prek 가 just 를 부르고 just 가 다시 prek 를 부르는 순환이 된다.
+# tests/check-hooks.sh 가 그 규약과 아래 stage 선언을 기계로 검사한다.
+#
+# 도구가 없으면 스크립트가 로컬 SKIP, CI FAIL 로 처리한다.
+# 로컬에서 커밋을 막으면 --no-verify 가 습관이 되므로 막지 않고 CI 에서 잡는다.
+#
+# 아직 도입하지 않은 훅은 주석으로 남겼다. 도입할 때 주석만 벗긴다.
+
+# 이 줄이 없으면 prek install 이 pre-commit 만 깔고 commit-msg 와 pre-push 훅은
+# 한 번도 돌지 않는다. 가장 조용한 실패 지점이다.
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+
+# stages 를 적지 않은 훅은 pre-commit 에서만 돈다.
+# 이 줄이 없으면 모든 훅이 세 스테이지에서 전부 돈다.
+default_stages: [pre-commit]
 
 repos:
   - repo: local
     hooks:
+      # --- pre-commit: 파일 단위로 빠르게 끝나는 검사 ----------------------
       - id: doc-index
         name: AGENTS.md 문서 인덱스 갱신
         entry: bash scripts/gen-doc-index.sh --stage
         language: system
         files: \.(md|mdx)$
         pass_filenames: false
+        groups: [fast, docs]
         description: >
           저장소의 .md/.mdx 목록을 디렉터리별로 묶어 AGENTS.md 마커 사이에 넣는다.
           내용이 바뀌면 AGENTS.md 를 스테이징하고 실패로 끝낸다. 커밋을 다시 실행한다.
 
       - id: doc-rules
         name: 문서 규약 검증
-        entry: bash tests/check-docs.sh --no-net
+        entry: bash tests/check-docs.sh --only frontmatter,paths
         language: system
         files: \.(md|mdx)$
         pass_filenames: false
+        groups: [fast, docs]
         description: >
-          front matter 필수 property, type 과 위치 일치, status, 경로 표기, 링크 대상을 확인한다.
-          docs/ 밖 문서를 고쳐도 링크 대상이 깨질 수 있으므로 모든 마크다운 변경에 돈다.
+          front matter 필수 property, type 과 위치 일치, status, 백틱 경로 표기를 확인한다.
+
+      - id: doc-links
+        name: 문서 링크 대상 확인
+        entry: bash tests/check-docs.sh --only links
+        language: system
+        files: \.(md|mdx)$
+        pass_filenames: false
+        groups: [fast, docs]
+        description: >
+          마크다운 링크 대상이 실재하는지 확인한다. docs/ 밖 문서를 고쳐도 링크가
+          깨질 수 있으므로 모든 마크다운 변경에 돈다. 외부 URL 은 보지 않는다.
+
+      # PR5: front matter JSON Schema 검증
+      # - id: docs-metadata
+      #   name: front matter 스키마 검증
+      #   entry: bash tests/check-docs-metadata.sh
+      #   language: system
+      #   files: \.(md|mdx)$
+      #   pass_filenames: false
+      #   groups: [docs, config]
+
+      # PR4: 마크다운 구조와 형식
+      # - id: markdown
+      #   name: 마크다운 검사
+      #   entry: bash tests/check-markdown.sh
+      #   language: system
+      #   files: \.(md|mdx)$
+      #   pass_filenames: false
+      #   groups: [docs]
+
+      # PR4: 산문, 용어, 문자 규칙
+      # - id: prose
+      #   name: 산문 검사
+      #   entry: bash tests/check-prose.sh
+      #   language: system
+      #   files: \.(md|mdx)$
+      #   pass_filenames: false
+      #   groups: [docs]
+
+      # PR2: 파이썬 형식과 정적 분석
+      # - id: python-format
+      #   name: 파이썬 형식 검사
+      #   entry: bash tests/check-python.sh --only format
+      #   language: system
+      #   files: \.pyi?$
+      #   pass_filenames: false
+      #   groups: [code, python]
+      #
+      # - id: python-lint
+      #   name: 파이썬 정적 분석
+      #   entry: bash tests/check-python.sh --only lint
+      #   language: system
+      #   files: \.pyi?$
+      #   pass_filenames: false
+      #   groups: [code, python]
 
       - id: shell-lint
         name: 셸 스크립트 검사
@@ -39,9 +110,19 @@ repos:
         language: system
         files: \.(sh|bash)$
         pass_filenames: false
+        groups: [code, shell]
         description: >
           shellcheck 로 정적 분석하고 shfmt 로 형식을 본다. 형식 기준은 .editorconfig 다.
           shfmt 에 형식 플래그를 주면 .editorconfig 가 무시되므로 주지 않는다.
+
+      # PR3: YAML 형식과 스키마
+      # - id: yaml-lint
+      #   name: YAML 검사
+      #   entry: bash tests/check-yaml.sh
+      #   language: system
+      #   files: \.(yml|yaml)$
+      #   pass_filenames: false
+      #   groups: [config]
 
       - id: workflow-lint
         name: GitHub Actions 워크플로 검사
@@ -49,9 +130,21 @@ repos:
         language: system
         files: ^\.github/workflows/.*\.(yml|yaml)$
         pass_filenames: false
+        groups: [config, security]
         description: >
           actionlint 로 문법과 step 안 셸을 보고, zizmor 로 자격 증명 잔류, 주입,
           미고정 action 을 감사한다. 토큰이 없으면 zizmor 는 --offline 으로 돈다.
+
+      - id: hook-config
+        name: 훅 설정 규약 검증
+        entry: bash tests/check-hooks.sh
+        language: system
+        files: ^(\.pre-commit-config\.yaml|Justfile|(tests|scripts)/.*\.sh)$
+        pass_filenames: false
+        groups: [fast, config]
+        description: >
+          훅 entry 가 just 를 부르지 않는지, 쓰인 stage 가 default_install_hook_types
+          안에 있는지, entry 가 부르는 스크립트가 실재하는지 확인한다.
 
       - id: env-sync
         name: .env 키 동기화 검증
@@ -59,6 +152,7 @@ repos:
         language: system
         always_run: true
         pass_filenames: false
+        groups: [fast, security]
         description: >
           *.env.example 과 같은 디렉터리 .env 의 키 집합이 같은지, .env.example 의 비밀 키가
           비어 있는지 확인한다. .env 는 gitignore 대상이라 변경을 훅이 볼 수 없으므로
@@ -70,6 +164,59 @@ repos:
         language: system
         always_run: true
         pass_filenames: false
+        groups: [fast, security]
         description: >
           staged 내용에서 토큰, 키, 사설키 블록 패턴을 찾는다. 값은 출력하지 않고
           파일명과 줄 번호만 보고한다. 오탐이면 그 줄에 secret-scan: allow 주석을 붙인다.
+
+      # --- commit-msg: 커밋 메시지 --------------------------------------------
+      # PR6: Conventional Commits 검증
+      # - id: commitlint
+      #   name: 커밋 메시지 규약 검증
+      #   entry: node_modules/.bin/commitlint --edit
+      #   language: system
+      #   stages: [commit-msg]
+      #   groups: [commit]
+
+      # --- pre-push: 저장소 전체를 봐야 하는 검사 -----------------------------
+      # 부분 검사가 틀린 답을 내는 것들이다. 느려서 미룬 것이 아니다.
+      - id: docs-graph
+        name: 문서 그래프 검증
+        entry: bash tests/check-docs.sh --only graph
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-push]
+        groups: [docs, slow]
+        description: >
+          id 중복과 related, supersedes 대상이 실재하는지 본다. 문서 하나만 봐서는
+          알 수 없고 저장소 전체를 봐야 하므로 pre-push 다.
+
+      # PR2: 타입 검사와 단위 테스트
+      # - id: mypy
+      #   name: 타입 검사
+      #   entry: bash tests/check-python.sh --only type
+      #   language: system
+      #   always_run: true
+      #   pass_filenames: false
+      #   stages: [pre-push]
+      #   groups: [code, python, slow]
+      #
+      # - id: unit-test
+      #   name: 단위 테스트
+      #   entry: bash tests/run-tests.sh --only unit
+      #   language: system
+      #   always_run: true
+      #   pass_filenames: false
+      #   stages: [pre-push]
+      #   groups: [test, slow]
+
+      # PR5: 문서가 서술하는 코드가 바뀌었는지
+      # - id: source-drift
+      #   name: 문서 source drift 검사
+      #   entry: bash tests/check-docs-drift.sh
+      #   language: system
+      #   always_run: true
+      #   pass_filenames: false
+      #   stages: [pre-push]
+      #   groups: [docs, slow]
