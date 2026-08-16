@@ -1,23 +1,24 @@
 #!/usr/bin/env bash
-# 셸 스크립트 정적 분석과 형식 검사.
+# 형식을 맞춘다. 이 스크립트는 파일을 바꾼다.
 #
-# 대상: 추적 중인 *.sh, *.bash 전부
-#   1. shellcheck  정적 분석
-#   2. shfmt       형식
+# 대상:
+#   1. shfmt   추적 중인 *.sh, *.bash
 #
 # shfmt 에 형식 플래그를 주지 않는다. 플래그를 하나라도 주면 shfmt 가 .editorconfig 를
-# 통째로 무시해서 훅, CI, 손으로 돌릴 때 기준이 갈린다. 형식 기준은 .editorconfig 하나다.
+# 통째로 무시해서 훅, CI, 손으로 돌릴 때 기준이 갈린다. -w 는 형식이 아니라 모드
+# 플래그라 .editorconfig 를 무시하지 않는다. 형식 기준은 .editorconfig 하나다.
+#
+# 검사만 하려면 bash tests/check-shell.sh 를 쓴다. 그쪽은 파일을 바꾸지 않는다.
 #
 # 도구가 없으면 로컬에서는 SKIP, CI(환경변수 CI=true)에서는 FAIL 이다.
-# 로컬에서 커밋을 막으면 --no-verify 가 습관이 되므로 막지 않고, CI 에서 잡는다.
 #
-# 이 스크립트는 모든 검사를 돌려 결과를 모으므로 set -e 를 쓰지 않는다.
+# 이 스크립트는 모든 단계를 돌려 결과를 모으므로 set -e 를 쓰지 않는다.
 # 예외 근거는 docs/standards/shell.md 에 있다.
 #
 # 사용법:
-#   bash tests/check-shell.sh
+#   bash scripts/fmt.sh
 #
-# 종료 코드: FAIL 이 하나라도 있으면 1, 아니면 0
+# 종료 코드: FAIL 이 하나라도 있으면 1, 알 수 없는 옵션이면 2, 아니면 0
 
 set -uo pipefail
 
@@ -37,7 +38,6 @@ case "${1:-}" in
         ;;
 esac
 
-# 스크립트 위치가 아니라 git 이 루트를 정한다. tests/ 를 옮겨도 따라온다.
 REPO_ROOT="$(git rev-parse --show-toplevel 2> /dev/null)" || {
     echo "FAIL: git 저장소가 아니다" >&2
     exit 1
@@ -70,38 +70,22 @@ require_tool() {
     return 1
 }
 
-FILES=()
+echo "[1/1] shfmt"
+
+SHELL_FILES=()
 while IFS= read -r f; do
-    FILES[${#FILES[@]}]="$f"
+    SHELL_FILES[${#SHELL_FILES[@]}]="$f"
 done < <(git ls-files -- '*.sh' '*.bash' | sort)
 
-if [ "${#FILES[@]}" -eq 0 ]; then
-    echo "SKIP 추적 중인 셸 스크립트가 없다"
-    exit 0
-fi
-
-echo "대상 스크립트: ${#FILES[@]}개"
-
-echo
-echo "[1/2] shellcheck"
-if require_tool shellcheck "uv tool install shellcheck-py"; then
-    if out="$(shellcheck --format=gcc "${FILES[@]}" 2>&1)"; then
-        report PASS shellcheck "지적 없음"
+if [ "${#SHELL_FILES[@]}" -eq 0 ]; then
+    report SKIP shfmt "추적 중인 셸 스크립트가 없다"
+elif require_tool shfmt "uv tool install shfmt-py"; then
+    # -w 는 모드 플래그라 .editorconfig 를 무시하지 않는다. 형식 플래그를 주면 안 된다.
+    if out="$(shfmt -w "${SHELL_FILES[@]}" 2>&1)"; then
+        report PASS shfmt "${#SHELL_FILES[@]}개 정리"
     else
         printf '%s\n' "$out"
-        report FAIL shellcheck "지적을 전부 고친다. 예외는 사유 주석과 함께 disable 한다"
-    fi
-fi
-
-echo
-echo "[2/2] shfmt"
-if require_tool shfmt "uv tool install shfmt-py"; then
-    # -l 은 모드 플래그라 .editorconfig 를 무시하지 않는다. 형식 플래그를 주면 안 된다.
-    if out="$(shfmt -l "${FILES[@]}" 2>&1)" && [ -z "$out" ]; then
-        report PASS shfmt "형식 일치"
-    else
-        printf '%s\n' "$out"
-        report FAIL shfmt "형식 불일치. shfmt -w 로 고친다"
+        report FAIL shfmt "형식 적용 실패"
     fi
 fi
 
@@ -109,8 +93,6 @@ echo
 echo "결과: PASS $pass_count, FAIL $fail_count, SKIP $skip_count"
 
 if [ "$fail_count" -gt 0 ]; then
-    echo
-    echo "규약: docs/standards/shell.md" >&2
     exit 1
 fi
 exit 0

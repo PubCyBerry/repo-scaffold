@@ -19,7 +19,9 @@
 
 set -uo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# cd 뒤에는 상대 경로인 BASH_SOURCE 가 안 풀린다. --help 가 자기 파일을 읽으므로 먼저 절대 경로로 잡는다.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELF="$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")"
 
 # 값이 비어 있어야 하는 키. .env.example 은 커밋되므로 실값이 들어가면 유출이다.
 SECRET_KEY_PATTERN='(TOKEN|KEY|SECRET|PASSWORD|PASSWD|CREDENTIAL|APIKEY)'
@@ -33,7 +35,7 @@ while [ $# -gt 0 ]; do
             shift
             ;;
         -h | --help)
-            sed -n '2,/^$/p' "${BASH_SOURCE[0]}"
+            sed -n '2,/^$/p' "$SELF"
             exit 0
             ;;
         *)
@@ -42,6 +44,13 @@ while [ $# -gt 0 ]; do
             ;;
     esac
 done
+
+# 스크립트 위치가 아니라 git 이 루트를 정한다. tests/ 를 옮겨도 따라온다.
+REPO_ROOT="$(git rev-parse --show-toplevel 2> /dev/null)" || {
+    echo "FAIL: git 저장소가 아니다" >&2
+    exit 1
+}
+cd "$REPO_ROOT" || exit 1
 
 pass_count=0
 fail_count=0

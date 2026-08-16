@@ -64,8 +64,23 @@ fd --extension py --exec-batch wc -l               # 파일 목록
 
 ## 작업 전 확인
 
-- 커밋 전에 [tests/check-docs.sh](tests/check-docs.sh) 가 통과하는가
-- 셸 스크립트를 고쳤으면 [tests/check-shell.sh](tests/check-shell.sh) 가 통과하는가
-- 워크플로를 고쳤으면 [tests/check-workflows.sh](tests/check-workflows.sh) 가 통과하는가
-- 자격 증명을 코드나 문서에 리터럴로 넣지 않았는가. 규칙은 [SECURITY.md](SECURITY.md)
-- 문서를 추가했으면 해당 디렉터리 `index.md` 에 한 줄 넣었는가
+    just verify
+
+통과하지 않으면 작업이 끝난 것이 아니다. 무엇이 도는지는 [Justfile](Justfile) 에 있다.
+명령을 외우지 않는다. `just` 를 인자 없이 치면 목록이 나온다.
+
+| 명령 | 하는 일 |
+| --- | --- |
+| `just bootstrap` | 도구, 의존성, git 훅 설치. 클론마다 한 번 |
+| `just doctor` | 환경 진단. 무엇이 없고 무엇이 어긋났는지 |
+| `just verify` | Definition of Done. 검사 전체 |
+| `just fmt` / `just fix` | 형식 정리와 자동 수정. 파일을 바꾼다 |
+
+### Definition of Done
+
+1. 요청한 구현이 끝났다
+2. 관련 테스트를 추가하거나 갱신했다
+3. 동작, 인터페이스, 아키텍처, 개발 절차가 바뀌었으면 문서를 갱신했다
+4. 생성 산출물을 동기화했다
+5. `just verify` 가 통과한다
+6. 최종 diff 를 직접 확인했다
