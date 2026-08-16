@@ -23,8 +23,6 @@ set -uo pipefail
 # cd 뒤에는 상대 경로인 BASH_SOURCE 가 안 풀린다. --help 가 자기 파일을 읽으므로 먼저 절대 경로로 잡는다.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELF="$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$REPO_ROOT" || exit 1
 
 WORKFLOW_DIR=".github/workflows"
 
@@ -39,6 +37,13 @@ case "${1:-}" in
         exit 2
         ;;
 esac
+
+# 스크립트 위치가 아니라 git 이 루트를 정한다. tests/ 를 옮겨도 따라온다.
+REPO_ROOT="$(git rev-parse --show-toplevel 2> /dev/null)" || {
+    echo "FAIL: git 저장소가 아니다" >&2
+    exit 1
+}
+cd "$REPO_ROOT" || exit 1
 
 pass_count=0
 fail_count=0
