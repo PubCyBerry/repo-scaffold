@@ -1,28 +1,40 @@
 #!/usr/bin/env bash
 # docs/ 문서 규약 검증 스크립트.
 #
-# 검사 대상: docs/ 하위 모든 마크다운 문서
-#   1. front matter (필수 property, summary 문체, type enum, 위치와 type 일치,
-#      status, title 과 H1 일치, id 중복, related 대상)
-#   2. 백틱으로 감싼 로컬 경로의 링크 표기 위반
-#   3. 마크다운 링크 대상 존재 여부 (저장소 루트 기준 상대 경로)
-#   4. 마크다운 링크 [text](url) 와 자동 링크 <url> 의 HTTP 응답
+# 검사 단계. --only 로 고른다. 기본은 전부다.
+#   frontmatter  필수 property, summary 문체, type enum, 위치와 type 일치, status,
+#                title 과 H1 일치, generated 문서의 generated_from
+#   graph        id 중복, related 와 supersedes 대상. 저장소 전체를 봐야 답이 나온다
+#   paths        백틱으로 감싼 로컬 경로의 링크 표기 위반
+#   links        마크다운 링크 대상 존재 여부 (저장소 루트 기준 상대 경로)
+#   urls         마크다운 링크 [text](url) 와 자동 링크 <url> 의 HTTP 응답
 #
 # 규약: docs/standards/documentation.md
 #
 # 사용법:
-#   bash tests/check-docs.sh              # 전체 검사
-#   bash tests/check-docs.sh --no-net     # URL 검사 제외
-#   bash tests/check-docs.sh --timeout 5  # URL 응답 대기 시간 변경
+#   bash tests/check-docs.sh                     # 전체 검사
+#   bash tests/check-docs.sh --only links        # 한 단계만
+#   bash tests/check-docs.sh --only links,graph  # 여러 단계
+#   bash tests/check-docs.sh --no-net            # urls 만 뺀 나머지 전부
+#   bash tests/check-docs.sh --timeout 5         # URL 응답 대기 시간 변경
 #
-# 종료 코드: FAIL 이 하나라도 있으면 1, 아니면 0
+# --only 와 --no-net 은 둘 다 단계 목록을 정한다. 나중에 온 쪽이 이긴다.
+#
+# 이 스크립트는 모든 검사를 돌려 결과를 모으므로 set -e 를 쓰지 않는다.
+# 예외 근거는 docs/standards/shell.md 에 있다.
+#
+# 종료 코드: FAIL 이 하나라도 있으면 1, 알 수 없는 옵션이면 2, 아니면 0
 
 set -uo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DOCS_ROOT="$REPO_ROOT/docs"
+# cd 뒤에는 상대 경로인 BASH_SOURCE 가 안 풀린다. --help 가 자기 파일을 읽으므로 먼저 절대 경로로 잡는다.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELF="$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")"
 
-CHECK_NET=1
+ALL_PHASES="frontmatter graph paths links urls"
+NO_NET_PHASES="frontmatter graph paths links"
+
+PHASES="$ALL_PHASES"
 TIMEOUT=10
 
 # 백틱으로 써도 되는 경로. 저장소에 실재하지만 링크 대상으로 부적절한 것들.
@@ -36,10 +48,39 @@ TYPE_ENUM="index standard guide reference generated"
 # summary 문체 검사. 문서 언어에 따라 규칙이 다르다. none 이면 검사하지 않는다.
 SUMMARY_STYLE="{{SUMMARY_STYLE}}"
 
+# 쉼표로 이어진 단계 목록을 정규 순서로 되돌린다. 모르는 이름이면 실패한다.
+select_phases() {
+    local raw="$1" name selected=""
+    for name in ${raw//,/ }; do
+        case " $ALL_PHASES " in
+            *" $name "*) ;;
+            *)
+                echo "FAIL: 그런 검사 단계가 없다: $name" >&2
+                echo "      쓸 수 있는 단계: $ALL_PHASES" >&2
+                return 1
+                ;;
+        esac
+    done
+    for name in $ALL_PHASES; do
+        case " ${raw//,/ } " in
+            *" $name "*) selected="$selected $name" ;;
+        esac
+    done
+    PHASES="${selected# }"
+}
+
 while [ $# -gt 0 ]; do
     case "$1" in
+        --only)
+            if [ "$#" -lt 2 ]; then
+                echo "FAIL: --only 값이 없다" >&2
+                exit 2
+            fi
+            select_phases "$2" || exit 2
+            shift 2
+            ;;
         --no-net)
-            CHECK_NET=0
+            PHASES="$NO_NET_PHASES"
             shift
             ;;
         --timeout)
@@ -57,7 +98,7 @@ while [ $# -gt 0 ]; do
             shift 2
             ;;
         -h | --help)
-            sed -n '2,/^$/p' "${BASH_SOURCE[0]}"
+            sed -n '2,/^$/p' "$SELF"
             exit 0
             ;;
         *)
@@ -67,19 +108,54 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-pass_count=0
-fail_count=0
-skip_count=0
+REPO_ROOT="$(git rev-parse --show-toplevel 2> /dev/null)" || {
+    echo "FAIL: git 저장소가 아니다" >&2
+    exit 1
+}
+cd "$REPO_ROOT" || exit 1
+DOCS_ROOT="$REPO_ROOT/docs"
+
+phase_on() {
+    case " $PHASES " in
+        *" $1 "*) return 0 ;;
+    esac
+    return 1
+}
+
+total_pass=0
+total_fail=0
+total_skip=0
 
 report() {
     # $1: 판정, $2: 대상, $3: 사유
-    case "$1" in
-        PASS) pass_count=$((pass_count + 1)) ;;
-        FAIL) fail_count=$((fail_count + 1)) ;;
-        SKIP) skip_count=$((skip_count + 1)) ;;
-    esac
     printf '%-4s %-64s %s\n' "$1" "$2" "${3:-}"
 }
+
+# 단계 출력은 파이프라인 안에서 만들어져 카운터가 서브셸에 갇힌다. 파일로 받아 세다.
+tally() {
+    # $1: 단계 출력 파일
+    local p f s
+    p="$(grep -c '^PASS' "$1" 2> /dev/null)" || true
+    f="$(grep -c '^FAIL' "$1" 2> /dev/null)" || true
+    s="$(grep -c '^SKIP' "$1" 2> /dev/null)" || true
+    total_pass=$((total_pass + ${p:-0}))
+    total_fail=$((total_fail + ${f:-0}))
+    total_skip=$((total_skip + ${s:-0}))
+}
+
+phase_total="$(printf '%s\n' "$PHASES" | wc -w | tr -d ' ')"
+phase_index=0
+
+banner() {
+    phase_index=$((phase_index + 1))
+    echo
+    echo "[$phase_index/$phase_total] $1"
+}
+
+if [ "$phase_total" -eq 0 ]; then
+    echo "FAIL: 돌릴 검사 단계가 없다" >&2
+    exit 2
+fi
 
 if [ ! -d "$DOCS_ROOT" ]; then
     echo "FAIL: $DOCS_ROOT 가 없다" >&2
@@ -176,165 +252,179 @@ summary_style_ok() {
 }
 
 echo "대상 문서: ${#DOC_FILES[@]}개"
-echo
-echo "[1/4] front matter"
 
 ID_LIST="$TMP_DIR/ids"
 REF_LIST="$TMP_DIR/refs"
 : > "$ID_LIST"
 : > "$REF_LIST"
 
-{
-    for f in "${DOC_FILES[@]}"; do
-        rel="$(rel_path "$f")"
-        fm="$(front_matter "$f")"
+# graph 단계는 frontmatter 가 모은 id 와 참조를 쓴다. 둘 중 하나만 골라도 수집은 돈다.
+if phase_on frontmatter || phase_on graph; then
+    {
+        for f in "${DOC_FILES[@]}"; do
+            rel="$(rel_path "$f")"
+            fm="$(front_matter "$f")"
 
-        if [ -z "$fm" ]; then
-            report FAIL "$rel" "front matter 없음"
-            continue
-        fi
-
-        missing=""
-        for k in $REQUIRED_KEYS; do
-            fm_has_key "$k" "$fm" || missing="$missing $k"
-        done
-        if [ -n "$missing" ]; then
-            report FAIL "$rel" "필수 property 누락:$missing"
-            continue
-        fi
-
-        doc_id="$(fm_value id "$fm")"
-        doc_type="$(fm_value type "$fm")"
-        doc_status="$(fm_value status "$fm")"
-        doc_title="$(fm_value title "$fm")"
-        doc_summary="$(fm_value summary "$fm")"
-
-        printf '%s\t%s\n' "$doc_id" "$rel" >> "$ID_LIST"
-        for r in $(fm_list related "$fm") $(fm_list supersedes "$fm"); do
-            printf '%s\t%s\n' "$r" "$rel" >> "$REF_LIST"
-        done
-
-        case " $TYPE_ENUM " in
-            *" $doc_type "*) ;;
-            *)
-                report FAIL "$rel" "type '$doc_type' 는 enum 밖 ($TYPE_ENUM)"
+            if [ -z "$fm" ]; then
+                report FAIL "$rel" "front matter 없음"
                 continue
-                ;;
-        esac
+            fi
 
-        want="$(expected_type "$rel")"
-        if [ -n "$want" ] && [ "$want" != "$doc_type" ]; then
-            report FAIL "$rel" "위치 기준 type 은 '$want' 인데 '$doc_type'"
-            continue
-        fi
+            missing=""
+            for k in $REQUIRED_KEYS; do
+                fm_has_key "$k" "$fm" || missing="$missing $k"
+            done
+            if [ -n "$missing" ]; then
+                report FAIL "$rel" "필수 property 누락:$missing"
+                continue
+            fi
 
-        if ! status_allowed "$doc_type" "$doc_status"; then
-            report FAIL "$rel" "status '$doc_status' 는 type '$doc_type' 에 허용되지 않음"
-            continue
-        fi
+            doc_id="$(fm_value id "$fm")"
+            doc_type="$(fm_value type "$fm")"
+            doc_status="$(fm_value status "$fm")"
+            doc_title="$(fm_value title "$fm")"
+            doc_summary="$(fm_value summary "$fm")"
 
-        if ! summary_style_ok "$doc_summary"; then
-            report FAIL "$rel" "summary 가 개조식이 아니다: '$doc_summary'"
-            continue
-        fi
+            printf '%s\t%s\n' "$doc_id" "$rel" >> "$ID_LIST"
+            for r in $(fm_list related "$fm") $(fm_list supersedes "$fm"); do
+                printf '%s\t%s\n' "$r" "$rel" >> "$REF_LIST"
+            done
 
-        h1="$(grep -m1 '^# ' "$f" | sed 's/^# //')"
-        if [ "$h1" != "$doc_title" ]; then
-            report FAIL "$rel" "H1 '$h1' 이 title '$doc_title' 과 다름"
-            continue
-        fi
+            case " $TYPE_ENUM " in
+                *" $doc_type "*) ;;
+                *)
+                    report FAIL "$rel" "type '$doc_type' 는 enum 밖 ($TYPE_ENUM)"
+                    continue
+                    ;;
+            esac
 
-        if [ "$doc_type" = "generated" ] && ! fm_has_key generated_from "$fm"; then
-            report FAIL "$rel" "type generated 인데 generated_from 없음"
-            continue
-        fi
+            want="$(expected_type "$rel")"
+            if [ -n "$want" ] && [ "$want" != "$doc_type" ]; then
+                report FAIL "$rel" "위치 기준 type 은 '$want' 인데 '$doc_type'"
+                continue
+            fi
 
-        report PASS "$rel" "$doc_type/$doc_status"
-    done
+            if ! status_allowed "$doc_type" "$doc_status"; then
+                report FAIL "$rel" "status '$doc_status' 는 type '$doc_type' 에 허용되지 않음"
+                continue
+            fi
 
-    dup="$(cut -f1 "$ID_LIST" | sort | uniq -d)"
-    if [ -n "$dup" ]; then
-        while IFS= read -r d; do
-            [ -n "$d" ] || continue
-            owners="$(awk -F'\t' -v id="$d" '$1 == id { printf "%s ", $2 }' "$ID_LIST")"
-            report FAIL "id: $d" "중복: $owners"
-        done <<< "$dup"
-    fi
+            if ! summary_style_ok "$doc_summary"; then
+                report FAIL "$rel" "summary 가 개조식이 아니다: '$doc_summary'"
+                continue
+            fi
 
-    while IFS=$'\t' read -r ref src; do
-        [ -n "$ref" ] || continue
-        if cut -f1 "$ID_LIST" | grep -qx "$ref"; then
-            report PASS "$src -> id:$ref"
+            h1="$(grep -m1 '^# ' "$f" | sed 's/^# //')"
+            if [ "$h1" != "$doc_title" ]; then
+                report FAIL "$rel" "H1 '$h1' 이 title '$doc_title' 과 다름"
+                continue
+            fi
+
+            if [ "$doc_type" = "generated" ] && ! fm_has_key generated_from "$fm"; then
+                report FAIL "$rel" "type generated 인데 generated_from 없음"
+                continue
+            fi
+
+            report PASS "$rel" "$doc_type/$doc_status"
+        done
+    } > "$TMP_DIR/fm.out"
+fi
+
+if phase_on frontmatter; then
+    banner "front matter"
+    cat "$TMP_DIR/fm.out"
+    tally "$TMP_DIR/fm.out"
+fi
+
+# ---------------------------------------------------------------- 문서 그래프
+
+if phase_on graph; then
+    banner "문서 그래프"
+    {
+        dup="$(cut -f1 "$ID_LIST" | sort | uniq -d)"
+        if [ -n "$dup" ]; then
+            while IFS= read -r d; do
+                [ -n "$d" ] || continue
+                owners="$(awk -F'\t' -v id="$d" '$1 == id { printf "%s ", $2 }' "$ID_LIST")"
+                report FAIL "id: $d" "중복: $owners"
+            done <<< "$dup"
         else
-            report FAIL "$src -> id:$ref" "그런 id 가 없음"
+            report PASS "id 중복" "$(wc -l < "$ID_LIST" | tr -d ' ')개 문서 id 가 모두 다름"
         fi
-    done < "$REF_LIST"
-} > "$TMP_DIR/fm.out"
 
-cat "$TMP_DIR/fm.out"
-fm_fail=$(grep -c '^FAIL' "$TMP_DIR/fm.out" || true)
-fm_pass=$(grep -c '^PASS' "$TMP_DIR/fm.out" || true)
+        while IFS=$'\t' read -r ref src; do
+            [ -n "$ref" ] || continue
+            if cut -f1 "$ID_LIST" | grep -qx "$ref"; then
+                report PASS "$src -> id:$ref"
+            else
+                report FAIL "$src -> id:$ref" "그런 id 가 없음"
+            fi
+        done < "$REF_LIST"
+    } > "$TMP_DIR/graph.out"
+    cat "$TMP_DIR/graph.out"
+    tally "$TMP_DIR/graph.out"
+fi
 
 # ---------------------------------------------------------------- 백틱 경로
 
-echo
-echo "[2/4] 백틱 경로"
-# 코드 블록 안은 규약 예외이므로 제외한다.
-awk '/^[[:space:]]*```/ { fence = !fence; next } !fence' "${DOC_FILES[@]}" \
-    | grep -o "$BACKTICK_PATTERN" \
-    | tr -d '`' \
-    | sed 's:/*$::' \
-    | grep -E '(/|\.(md|yaml|yml|sh|properties|example|Dockerfile))' \
-    | grep -v '^http' \
-    | grep -v '[{}*]' \
-    | sort -u \
-    | while IFS= read -r token; do
-        case " $BACKTICK_ALLOW " in
-            *" $token "*) continue ;;
-        esac
-        # gitignore 대상은 다른 저장소이거나 산출물이다. 링크 대상이 아니다.
-        if git -C "$REPO_ROOT" check-ignore -q "$token" 2> /dev/null; then
-            report PASS "$token" "(다른 저장소 또는 무시 대상)"
-        elif [ -e "$REPO_ROOT/$token" ]; then
-            report FAIL "$token" "저장소 안 경로는 링크로 쓴다"
-        else
-            report PASS "$token" "(저장소 밖 경로)"
-        fi
-    done > "$TMP_DIR/paths.out"
-cat "$TMP_DIR/paths.out"
-path_fail=$(grep -c '^FAIL' "$TMP_DIR/paths.out" || true)
-path_pass=$(grep -c '^PASS' "$TMP_DIR/paths.out" || true)
+if phase_on paths; then
+    banner "백틱 경로"
+    # 코드 블록 안은 규약 예외이므로 제외한다.
+    awk '/^[[:space:]]*```/ { fence = !fence; next } !fence' "${DOC_FILES[@]}" \
+        | grep -o "$BACKTICK_PATTERN" \
+        | tr -d '`' \
+        | sed 's:/*$::' \
+        | grep -E '(/|\.(md|yaml|yml|sh|properties|example|Dockerfile))' \
+        | grep -v '^http' \
+        | grep -v '[{}*]' \
+        | sort -u \
+        | while IFS= read -r token; do
+            case " $BACKTICK_ALLOW " in
+                *" $token "*) continue ;;
+            esac
+            # gitignore 대상은 다른 저장소이거나 산출물이다. 링크 대상이 아니다.
+            if git -C "$REPO_ROOT" check-ignore -q "$token" 2> /dev/null; then
+                report PASS "$token" "(다른 저장소 또는 무시 대상)"
+            elif [ -e "$REPO_ROOT/$token" ]; then
+                report FAIL "$token" "저장소 안 경로는 링크로 쓴다"
+            else
+                report PASS "$token" "(저장소 밖 경로)"
+            fi
+        done > "$TMP_DIR/paths.out"
+    cat "$TMP_DIR/paths.out"
+    tally "$TMP_DIR/paths.out"
+fi
 
 # ---------------------------------------------------------------- 링크 대상
 
-echo
-echo "[3/4] 링크 대상 (저장소 루트 기준)"
-{
-    for f in "${DOC_FILES[@]}"; do
-        rel="$(rel_path "$f")"
-        awk '/^[[:space:]]*```/ { fence = !fence; next } !fence' "$f" \
-            | grep -o '](\([^)h][^)]*\))' 2> /dev/null \
-            | sed 's/^](//; s/)$//; s/#.*$//' \
-            | grep -v '^$' \
-            | sort -u \
-            | while IFS= read -r target; do
-                case "$target" in
-                    /* | ./* | ../*)
-                        report FAIL "$rel -> $target" "저장소 루트 기준 경로로 쓴다"
-                        continue
-                        ;;
-                esac
-                if [ -e "$REPO_ROOT/$target" ]; then
-                    report PASS "$rel -> $target"
-                else
-                    report FAIL "$rel -> $target" "대상 없음"
-                fi
-            done
-    done
-} > "$TMP_DIR/links.out"
-cat "$TMP_DIR/links.out"
-rel_fail=$(grep -c '^FAIL' "$TMP_DIR/links.out" || true)
-rel_pass=$(grep -c '^PASS' "$TMP_DIR/links.out" || true)
+if phase_on links; then
+    banner "링크 대상 (저장소 루트 기준)"
+    {
+        for f in "${DOC_FILES[@]}"; do
+            rel="$(rel_path "$f")"
+            awk '/^[[:space:]]*```/ { fence = !fence; next } !fence' "$f" \
+                | grep -o '](\([^)h][^)]*\))' 2> /dev/null \
+                | sed 's/^](//; s/)$//; s/#.*$//' \
+                | grep -v '^$' \
+                | sort -u \
+                | while IFS= read -r target; do
+                    case "$target" in
+                        /* | ./* | ../*)
+                            report FAIL "$rel -> $target" "저장소 루트 기준 경로로 쓴다"
+                            continue
+                            ;;
+                    esac
+                    if [ -e "$REPO_ROOT/$target" ]; then
+                        report PASS "$rel -> $target"
+                    else
+                        report FAIL "$rel -> $target" "대상 없음"
+                    fi
+                done
+        done
+    } > "$TMP_DIR/links.out"
+    cat "$TMP_DIR/links.out"
+    tally "$TMP_DIR/links.out"
+fi
 
 # ---------------------------------------------------------------- URL
 
@@ -354,14 +444,8 @@ check_url() {
     esac
 }
 
-echo
-echo "[4/4] URL"
-url_fail=0
-url_skip=0
-url_pass=0
-if [ "$CHECK_NET" -eq 0 ]; then
-    echo "SKIP 옵션 --no-net 으로 URL 검사를 건너뛴다"
-else
+if phase_on urls; then
+    banner "URL"
     {
         grep -ho '](http[^)]*)' "${DOC_FILES[@]}" | sed 's/^](//; s/)$//'
         grep -ho '<http[^>]*>' "${DOC_FILES[@]}" | tr -d '<>'
@@ -372,14 +456,8 @@ else
         check_url "$url"
     done < "$TMP_DIR/urls" > "$TMP_DIR/urls.out"
     cat "$TMP_DIR/urls.out"
-    url_fail=$(grep -c '^FAIL' "$TMP_DIR/urls.out" || true)
-    url_skip=$(grep -c '^SKIP' "$TMP_DIR/urls.out" || true)
-    url_pass=$(grep -c '^PASS' "$TMP_DIR/urls.out" || true)
+    tally "$TMP_DIR/urls.out"
 fi
-
-total_pass=$((fm_pass + path_pass + rel_pass + url_pass))
-total_fail=$((fm_fail + path_fail + rel_fail + url_fail))
-total_skip=$((url_skip))
 
 echo
 echo "결과: PASS $total_pass, FAIL $total_fail, SKIP $total_skip"
