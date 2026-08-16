@@ -121,14 +121,16 @@ repos:
           shellcheck 로 정적 분석하고 shfmt 로 형식을 본다. 형식 기준은 .editorconfig 다.
           shfmt 에 형식 플래그를 주면 .editorconfig 가 무시되므로 주지 않는다.
 
-      # PR3: YAML 형식과 스키마
-      # - id: yaml-lint
-      #   name: YAML 검사
-      #   entry: bash tests/check-yaml.sh
-      #   language: system
-      #   files: \.(yml|yaml)$
-      #   pass_filenames: false
-      #   groups: [config]
+      - id: yaml-lint
+        name: YAML 검사
+        entry: bash tests/check-yaml.sh
+        language: system
+        files: \.(yml|yaml)$
+        pass_filenames: false
+        groups: [config]
+        description: >
+          yamllint 으로 YAML 문법과 형식을 보고, 워크플로는 내장 GitHub Actions
+          스키마로 키 구조까지 본다. 형식 기준은 .yamllint.yaml 이고 경고도 실패다.
 
       - id: workflow-lint
         name: GitHub Actions 워크플로 검사
@@ -140,6 +142,7 @@ repos:
         description: >
           actionlint 로 문법과 step 안 셸을 보고, zizmor 로 자격 증명 잔류, 주입,
           미고정 action 을 감사한다. 토큰이 없으면 zizmor 는 --offline 으로 돈다.
+          워크플로를 고칠 때만 돈다. 전체 재검사는 pre-push 의 workflow-lint-push 다.
 
       - id: hook-config
         name: 훅 설정 규약 검증
@@ -197,6 +200,19 @@ repos:
         description: >
           id 중복과 related, supersedes 대상이 실재하는지 본다. 문서 하나만 봐서는
           알 수 없고 저장소 전체를 봐야 하므로 pre-push 다.
+
+      - id: workflow-lint-push
+        name: GitHub Actions 워크플로 전체 검사
+        entry: bash tests/check-workflows.sh --only actionlint
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-push]
+        groups: [config, slow]
+        description: >
+          워크플로 파일을 안 고쳐도 워크플로는 깨진다. run: 이 부르는 스크립트나
+          로컬 액션이 바뀌면 pre-commit 의 파일 필터에 걸리지 않는다. push 전에
+          저장소 전체 워크플로를 다시 본다. zizmor 는 pre-commit 과 CI 에서만 돈다.
 
       # PR2: 타입 검사와 단위 테스트
       # - id: mypy

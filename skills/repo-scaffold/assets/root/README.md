@@ -17,6 +17,7 @@
 │   ├── check-markdown.sh  마크다운 구조와 형식
 │   ├── check-prose.sh     산문, 용어, 문자 규칙
 │   ├── check-shell.sh     셸 스크립트 shellcheck, shfmt 검사
+│   ├── check-yaml.sh      YAML yamllint, 워크플로 스키마 검사
 │   ├── check-workflows.sh 워크플로 actionlint, zizmor 검사
 │   ├── check-hooks.sh     훅 설정 규약 검증
 │   ├── check-env.sh       .env 와 .env.example 키 동기화 검증
@@ -34,6 +35,8 @@
 ├── .rumdl.toml              마크다운 구조와 형식 규칙
 ├── .vale.ini                산문과 용어 규칙
 ├── .editorconfig            편집기와 shfmt 의 형식 기준
+├── .shellcheckrc            shellcheck 의 source 해석 설정
+├── .yamllint.yaml           yamllint 의 형식 기준
 ├── .env.example  →  .env  자격 증명 키 목록
 ├── AGENTS.md              에이전트 작업 규칙
 ├── CLAUDE.md              AGENTS.md 를 가리키는 포인터

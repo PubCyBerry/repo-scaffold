@@ -537,6 +537,7 @@ render tests/check-docs.sh tests/check-docs.sh
 render tests/check-markdown.sh tests/check-markdown.sh
 render tests/check-prose.sh tests/check-prose.sh
 render tests/check-shell.sh tests/check-shell.sh
+render tests/check-yaml.sh tests/check-yaml.sh
 render tests/check-workflows.sh tests/check-workflows.sh
 render tests/check-hooks.sh tests/check-hooks.sh
 render tests/check-env.sh tests/check-env.sh
@@ -552,6 +553,8 @@ render_mergeable root/editorconfig .editorconfig
 render_mergeable root/gitignore .gitignore
 render_mergeable root/rumdl.toml .rumdl.toml
 render_mergeable root/vale.ini .vale.ini
+render_mergeable root/shellcheckrc .shellcheckrc
+render_mergeable root/yamllint.yaml .yamllint.yaml
 render root/env.example .env.example
 render root/AGENTS.md AGENTS.md
 render root/CLAUDE.md CLAUDE.md
