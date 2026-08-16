@@ -159,6 +159,9 @@ run_self_check check-workflows.sh
 run_self_check check-hooks.sh
 run_self_check check-env.sh
 run_self_check check-secrets.sh
+# 파이썬이 없는 저장소에서도 SKIP 으로 통과해야 한다. FAIL 이면 훅이 매 커밋 막는다.
+run_self_check check-python.sh
+run_self_check run-tests.sh
 
 # 모르는 검사 단계는 돌기 전에 거절한다.
 expect_failure "$TMP_ROOT/bad-phase.log" bash "$REPO/tests/check-docs.sh" --only nosuchphase
@@ -202,8 +205,7 @@ if [ -n "$JUST_BIN" ]; then
         fail "렌더된 Justfile 을 just 가 파싱하지 못함"
     fi
     summary=" $(tr '\n' ' ' < "$TMP_ROOT/just-summary.log") "
-    for recipe in bootstrap doctor fmt fix lint markdown prose docs links-internal hooks \
-        security verify check; do
+    for recipe in bootstrap doctor fmt fix lint lint-python type markdown prose docs links-internal hooks security test test-unit verify check; do
         case "$summary" in
             *" $recipe "*) ;;
             *) fail "just --summary 에 $recipe 레시피가 없음" ;;
@@ -226,6 +228,7 @@ fi
 for script in tests/check-docs.sh tests/check-markdown.sh tests/check-prose.sh \
     tests/check-shell.sh tests/check-workflows.sh \
     tests/check-hooks.sh tests/check-env.sh tests/check-secrets.sh \
+    tests/check-python.sh tests/run-tests.sh \
     scripts/run-all.sh scripts/bootstrap.sh scripts/doctor.sh scripts/fmt.sh scripts/fix.sh; do
     log="$TMP_ROOT/help-$(basename "$script").log"
     if ! (cd "$REPO/docs" && bash "../$script" --help) > "$log" 2>&1; then
