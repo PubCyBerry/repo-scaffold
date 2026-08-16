@@ -149,23 +149,76 @@ run_self_check() {
 new_repo self-check
 bash "$SCAFFOLD" --target "$REPO" --name SELFCHECK > "$TMP_ROOT/self-check.log"
 run_self_check check-docs.sh --no-net
+run_self_check check-docs.sh --only frontmatter,paths
+run_self_check check-docs.sh --only links
+run_self_check check-docs.sh --only graph
 run_self_check check-shell.sh
 run_self_check check-workflows.sh
+run_self_check check-hooks.sh
 run_self_check check-env.sh
 run_self_check check-secrets.sh
 
+# 모르는 검사 단계는 돌기 전에 거절한다.
+expect_failure "$TMP_ROOT/bad-phase.log" bash "$REPO/tests/check-docs.sh" --only nosuchphase
+expect_failure "$TMP_ROOT/missing-only.log" bash "$REPO/tests/check-docs.sh" --only
+
+# Justfile 은 스캐폴딩 치환 키를 하나도 갖지 않는다. 남으면 just 가 파싱 단계에서 죽는다.
+if grep -nE '\{\{[A-Z][A-Z0-9_]*\}\}' "$REPO/Justfile" > "$TMP_ROOT/justfile-placeholders.log" 2>&1; then
+    cat "$TMP_ROOT/justfile-placeholders.log"
+    fail "Justfile 에 치환되지 않은 자리표시자가 남음"
+fi
+
+# doctor 는 환경에 따라 SKIP 과 FAIL 이 갈린다. 렌더 결과에 대한 판정만 본다.
+(cd "$REPO" && CI=false bash scripts/doctor.sh) > "$TMP_ROOT/self-doctor.log" 2>&1 || true
+if ! grep -q '^PASS Justfile' "$TMP_ROOT/self-doctor.log"; then
+    cat "$TMP_ROOT/self-doctor.log"
+    fail "doctor.sh 가 Justfile 자리표시자 검사를 통과하지 못함"
+fi
+
+# 렌더된 Justfile 이 실제로 파싱되는지 본다. 렌더링 버그를 사용자보다 한 층 앞에서 잡는다.
+JUST_BIN="${JUST:-}"
+if [ -z "$JUST_BIN" ] && command -v just > /dev/null 2>&1; then
+    JUST_BIN="just"
+fi
+if [ -n "$JUST_BIN" ]; then
+    if ! (cd "$REPO" && "$JUST_BIN" --summary) > "$TMP_ROOT/just-summary.log" 2>&1; then
+        cat "$TMP_ROOT/just-summary.log"
+        fail "렌더된 Justfile 을 just 가 파싱하지 못함"
+    fi
+    summary=" $(tr '\n' ' ' < "$TMP_ROOT/just-summary.log") "
+    for recipe in bootstrap doctor fmt fix lint docs links-internal hooks security verify check; do
+        case "$summary" in
+            *" $recipe "*) ;;
+            *) fail "just --summary 에 $recipe 레시피가 없음" ;;
+        esac
+    done
+    # Justfile 에 없는 이름은 FAIL 이 아니라 SKIP 이다. verify 목록을 도입 전에 적어둘 수 있다.
+    if ! (cd "$REPO" && JUST="$JUST_BIN" bash scripts/run-all.sh not-a-real-recipe) \
+        > "$TMP_ROOT/run-all-skip.log" 2>&1; then
+        cat "$TMP_ROOT/run-all-skip.log"
+        fail "run-all.sh 가 없는 레시피를 FAIL 로 처리함"
+    fi
+    grep -q '^SKIP not-a-real-recipe' "$TMP_ROOT/run-all-skip.log" \
+        || fail "run-all.sh 가 없는 레시피를 SKIP 으로 보고하지 않음"
+else
+    echo "SKIP just 를 찾을 수 없어 Justfile 파싱 검사를 건너뜀 (JUST=/path/to/just 로 지정한다)"
+fi
+
 # --help 은 헤더 주석만 낸다. 저장소 루트가 아닌 곳에서 상대 경로로 불러도 자기 파일을 찾아야 한다.
 # 스크립트가 REPO_ROOT 로 cd 한 뒤 상대 BASH_SOURCE 를 읽으면 여기서 걸린다.
-for script in check-docs.sh check-shell.sh check-workflows.sh check-env.sh check-secrets.sh; do
-    if ! (cd "$REPO/docs" && bash "../tests/$script" --help) > "$TMP_ROOT/help-$script.log" 2>&1; then
-        cat "$TMP_ROOT/help-$script.log"
+for script in tests/check-docs.sh tests/check-shell.sh tests/check-workflows.sh \
+    tests/check-hooks.sh tests/check-env.sh tests/check-secrets.sh \
+    scripts/run-all.sh scripts/bootstrap.sh scripts/doctor.sh scripts/fmt.sh scripts/fix.sh; do
+    log="$TMP_ROOT/help-$(basename "$script").log"
+    if ! (cd "$REPO/docs" && bash "../$script" --help) > "$log" 2>&1; then
+        cat "$log"
         fail "$script --help 가 실패함"
     fi
-    if ! grep -q '^# 종료 코드' "$TMP_ROOT/help-$script.log"; then
-        cat "$TMP_ROOT/help-$script.log"
+    if ! grep -q '^# 종료 코드' "$log"; then
+        cat "$log"
         fail "$script --help 가 헤더 주석을 출력하지 못함"
     fi
-    if grep -q 'set -uo pipefail' "$TMP_ROOT/help-$script.log"; then
+    if grep -q 'set -uo pipefail' "$log"; then
         fail "$script --help 가 헤더 주석을 넘어 코드까지 출력함"
     fi
 done
