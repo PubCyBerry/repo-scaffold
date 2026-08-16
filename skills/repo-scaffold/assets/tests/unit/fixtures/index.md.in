@@ -1,0 +1,20 @@
+---
+id: index-docs
+title: Document Index
+type: index
+status: active
+summary: Entry point of the fixture document graph
+scope:
+  - docs/**
+read_when:
+  - Never. This is a fixture
+---
+
+# Document Index
+
+## Purpose
+
+One of the two roots the reachability check starts from. Tests append link lines below to
+make a fixture document reachable.
+
+## Documents

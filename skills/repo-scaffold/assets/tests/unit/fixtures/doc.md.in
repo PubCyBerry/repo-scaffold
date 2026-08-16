@@ -1,0 +1,14 @@
+---
+@FRONT@
+---
+
+# @TITLE@
+
+## Purpose
+
+Fixture document. It exists so that the documentation lifecycle checkers have something to
+read, and it carries no meaning outside the test that wrote it.
+
+## Scope
+
+Nothing outside this fixture repository.

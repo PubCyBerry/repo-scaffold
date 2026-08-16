@@ -91,9 +91,9 @@ doc-rules:
 doc-index:
     bash scripts/gen-doc-index.sh --check
 
-# PR5: front matter JSON Schema
-# docs-metadata:
-#     bash tests/check-docs-metadata.sh
+# front matter 기계 계약, 문서 그래프, 수명주기.
+docs-metadata:
+    bash tests/check-docs-metadata.sh
 
 # 저장소 안 링크와 문서 그래프.
 links-internal:

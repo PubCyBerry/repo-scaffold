@@ -4,6 +4,7 @@
     "allow": [
       "Bash(just:*)",
       "Bash(bash tests/check-docs.sh:*)",
+      "Bash(bash tests/check-docs-metadata.sh:*)",
       "Bash(bash tests/check-markdown.sh:*)",
       "Bash(bash tests/check-prose.sh:*)",
       "Bash(bash tests/check-shell.sh:*)",
@@ -17,6 +18,8 @@
       "Bash(bash scripts/fmt.sh:*)",
       "Bash(bash scripts/fix.sh:*)",
       "Bash(bash scripts/run-all.sh:*)",
+      "Bash(uv run --script scripts/docs_freshness.py:*)",
+      "Bash(uv run --script scripts/docs_graph.py:*)",
       "Bash(prek run:*)",
       "Bash(rg:*)",
       "Bash(fd:*)",

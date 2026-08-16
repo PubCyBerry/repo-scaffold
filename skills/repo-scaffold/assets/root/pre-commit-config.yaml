@@ -60,14 +60,18 @@ repos:
           마크다운 링크 대상이 실재하는지 확인한다. docs/ 밖 문서를 고쳐도 링크가
           깨질 수 있으므로 모든 마크다운 변경에 돈다. 외부 URL 은 보지 않는다.
 
-      # PR5: front matter JSON Schema 검증
-      # - id: docs-metadata
-      #   name: front matter 스키마 검증
-      #   entry: bash tests/check-docs-metadata.sh
-      #   language: system
-      #   files: \.(md|mdx)$
-      #   pass_filenames: false
-      #   groups: [docs, config]
+      - id: docs-metadata
+        name: front matter 스키마 검증
+        entry: bash tests/check-docs-metadata.sh --only schema
+        language: system
+        files: \.(md|mdx)$
+        pass_filenames: false
+        groups: [docs, config]
+        description: >
+          front matter 를 저장소 밖 임시 디렉터리에 YAML 로 떼어내
+          schemas/docs-frontmatter.schema.json 과 대조한다. check-jsonschema 에는 front
+          matter 리더가 없어서 떼어내는 단계가 필요하다. 키 이름 오타처럼 doc-rules 가
+          못 잡는 것을 잡는다. 그래프와 수명주기는 pre-push 와 just verify 가 본다.
 
       - id: markdown
         name: 마크다운 검사
@@ -245,12 +249,16 @@ repos:
           tests/unit 만 돌린다. 경계를 넘는 갈래는 CI 가 맡는다.
           디렉터리가 없거나 수집할 테스트가 없으면 SKIP 이다.
 
-      # PR5: 문서가 서술하는 코드가 바뀌었는지
-      # - id: source-drift
-      #   name: 문서 source drift 검사
-      #   entry: bash tests/check-docs-drift.sh
-      #   language: system
-      #   always_run: true
-      #   pass_filenames: false
-      #   stages: [pre-push]
-      #   groups: [docs, slow]
+      - id: source-drift
+        name: 문서 source drift 검사
+        entry: bash tests/check-docs-metadata.sh --only drift
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-push]
+        groups: [docs, slow]
+        description: >
+          front matter 의 sources 에 적힌 경로가 last_reviewed 이후에 바뀌었는지 git
+          이력으로 본다. 문서 하나만 봐서는 알 수 없고 저장소 이력을 봐야 하므로 pre-push 다.
+          시간이 흘러 낡은 것(stale-by-time)은 여기서 보지 않는다. 그것으로 푸시를 막으면
+          문서와 무관한 작업이 달력 때문에 멈춘다. 예약 CI 가 본다.

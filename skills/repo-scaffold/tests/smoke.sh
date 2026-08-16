@@ -152,6 +152,7 @@ run_self_check check-docs.sh --no-net
 run_self_check check-docs.sh --only frontmatter,paths
 run_self_check check-docs.sh --only links
 run_self_check check-docs.sh --only graph
+run_self_check check-docs-metadata.sh
 run_self_check check-markdown.sh
 run_self_check check-prose.sh
 run_self_check check-shell.sh
@@ -225,8 +226,8 @@ fi
 
 # --help 은 헤더 주석만 낸다. 저장소 루트가 아닌 곳에서 상대 경로로 불러도 자기 파일을 찾아야 한다.
 # 스크립트가 REPO_ROOT 로 cd 한 뒤 상대 BASH_SOURCE 를 읽으면 여기서 걸린다.
-for script in tests/check-docs.sh tests/check-markdown.sh tests/check-prose.sh \
-    tests/check-shell.sh tests/check-workflows.sh \
+for script in tests/check-docs.sh tests/check-docs-metadata.sh tests/check-markdown.sh \
+    tests/check-prose.sh tests/check-shell.sh tests/check-workflows.sh \
     tests/check-hooks.sh tests/check-env.sh tests/check-secrets.sh \
     tests/check-python.sh tests/run-tests.sh \
     scripts/run-all.sh scripts/bootstrap.sh scripts/doctor.sh scripts/fmt.sh scripts/fix.sh; do
@@ -243,5 +244,34 @@ for script in tests/check-docs.sh tests/check-markdown.sh tests/check-prose.sh \
         fail "$script --help 가 헤더 주석을 넘어 코드까지 출력함"
     fi
 done
+
+# PEP-723 문서 검사기는 argparse 로 --help 를 낸다. 헤더 주석 규약은 셸 스크립트의 것이다.
+# uv 가 없으면 훅과 CI 가 SKIP 으로 넘기므로 여기서도 넘긴다.
+if command -v uv > /dev/null 2>&1; then
+    for script in docs_freshness.py docs_graph.py; do
+        log="$TMP_ROOT/help-$script.log"
+        if ! (cd "$REPO" && uv run --script "scripts/$script" --help) > "$log" 2>&1; then
+            cat "$log"
+            fail "scripts/$script --help 가 실패함"
+        fi
+        grep -q -- '--only' "$log" || fail "scripts/$script --help 가 사용법을 내지 못함"
+    done
+
+    # 검사기가 실제 결함을 잡는지 본다. 조용히 통과하는 검사기의 초록 불은 미검사와 같다.
+    cp "$REPO/docs/standards/shell.md" "$TMP_ROOT/shell.md.orig"
+    sed 's/^id: standard-shell$/id: standard-testing/' "$TMP_ROOT/shell.md.orig" \
+        > "$REPO/docs/standards/shell.md"
+    if (cd "$REPO" && bash tests/check-docs-metadata.sh --only graph) \
+        > "$TMP_ROOT/duplicate-id.log" 2>&1; then
+        cat "$TMP_ROOT/duplicate-id.log"
+        fail "중복 id 를 FAIL 로 잡지 못함"
+    fi
+    grep -q '2개 문서에 있다' "$TMP_ROOT/duplicate-id.log" \
+        || fail "중복 id 를 그 이유로 지적하지 않음"
+    cp "$TMP_ROOT/shell.md.orig" "$REPO/docs/standards/shell.md"
+    run_self_check check-docs-metadata.sh --only graph
+else
+    echo "SKIP uv 를 찾을 수 없어 문서 수명주기 검사기 확인을 건너뜀"
+fi
 
 echo "PASS repo-scaffold smoke"
