@@ -1,0 +1,110 @@
+# 파이썬 도구 설정. 사람이 읽을 규약은 docs/standards/python.md 에 있다.
+#
+# 여기 있는 한도는 발명한 것이 아니라 docs/standards/code-quality.md 의 hard limit 을
+# 기계로 옮긴 것이다. 한도를 바꾸려면 그 문서를 먼저 고친다. 반대 방향은 없다.
+#
+# 이 파일이 있으면 scripts/bootstrap.sh 가 uv sync 로 uv.lock 을 만들고,
+# tests/check-python.sh 와 tests/run-tests.sh 가 uv run --frozen 으로 도구를 부른다.
+# 그래야 훅과 CI 와 손으로 돌릴 때가 잠긴 같은 버전을 쓴다.
+#
+# [project] 를 두지 않는다. 이 파일의 일은 도구 설정이고, 저장소 이름이 배포 이름과
+# 같으리라는 보장이 없다. 배포할 패키지가 생기면 그때 [project] 를 손으로 넣는다.
+#
+# 버전은 손으로 올리지 않는다. Renovate 가 uv.lock 을 갱신한다.
+
+[dependency-groups]
+dev = [
+    "ruff==0.16.3",
+    "mypy==2.3.1",
+    "pytest==9.1.1",
+    "coverage==7.15.4",
+]
+
+# --- ruff ---------------------------------------------------------------------
+
+[tool.ruff]
+# code-quality.md: 줄 길이 100. 줄을 나누는 일은 formatter 가 한다.
+# E501 은 켜지 않는다. formatter 가 이미 100 에 맞춰 나누므로, 둘 다 켜면 formatter 가
+# 나눌 수 없는 긴 URL 과 긴 문자열에서만 지적이 나와서 noqa 를 부른다.
+line-length = 100
+
+# 파일 목록을 명시해도 exclude 를 적용한다. 훅과 CI 와 손으로 돌릴 때 대상이 같아진다.
+force-exclude = true
+
+[tool.ruff.lint]
+# select 가 아니라 extend-select 다. select 를 쓰면 ruff 기본값이 통째로 사라져서
+# 정의되지 않은 이름조차 안 잡힌다. 아래는 code-quality.md 에서 유도한 것만 얹는다.
+extend-select = [
+    "C901",    # 순환 복잡도 상한
+    "PLR0913", # 위치 인자 개수 상한
+    "PLR0915", # 함수 길이 상한
+    "TID252",  # 상대 임포트 금지
+    "D",       # docstring
+    "PGH004",  # 근거 없는 blanket noqa 금지
+    "RUF100",  # 쓰이지 않는 noqa 금지
+    "ERA001",  # 주석 처리된 코드 금지
+    "BLE001",  # 예외를 뭉뚱그려 잡지 않는다
+    "TRY",     # 예외를 삼키거나 잘못 되던지지 않는다
+]
+
+# TRY003 은 "예외 메시지를 길게 쓰지 마라" 인데 code-quality.md 는 정반대로
+# "어떤 작업, 어떤 입력, 어떻게 고치는지를 메시지에 담으라" 고 요구한다.
+# 규약이 이기므로 이 규칙 하나만 끈다. 다른 예외는 근거 없이 늘리지 않는다.
+ignore = ["TRY003"]
+
+[tool.ruff.lint.mccabe]
+# code-quality.md: 순환 복잡도 8 이하
+max-complexity = 8
+
+[tool.ruff.lint.pylint]
+# code-quality.md: 위치 인자 5 개 이하
+max-args = 5
+
+[tool.ruff.lint.pydocstyle]
+# code-quality.md: Google 스타일 docstring
+convention = "google"
+
+[tool.ruff.lint.flake8-tidy-imports]
+# code-quality.md: 절대 임포트만
+ban-relative-imports = "all"
+
+[tool.ruff.lint.per-file-ignores]
+# code-quality.md 의 docstring 규칙은 "공개 API" 에 걸린다. 테스트는 공개 API 가 아니다.
+"tests/**" = ["D"]
+
+# --- mypy ---------------------------------------------------------------------
+
+[tool.mypy]
+# 새 저장소는 strict 로 시작한다. 이미 코드가 있는 저장소를 여기까지 끌어올리는
+# 절차는 docs/standards/python.md 에 있다. 한 번에 켜면 지적이 수백 개 나와서
+# 아무도 읽지 않고, 읽지 않는 출력은 없는 것과 같다.
+strict = true
+
+# tests/unit/test_x.py 와 tests/integration/test_x.py 를 같이 넘기면 mypy 가
+# 같은 모듈 이름으로 보고 죽는다. 저장소 루트를 패키지 기준점으로 삼아
+# tests.unit.test_x 로 읽게 한다.
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "."
+
+# --- pytest -------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+# tests/run-tests.sh 는 tests/unit 처럼 갈래를 하나씩 지정해 부른다. 이 값은 인자 없이
+# pytest 를 직접 칠 때만 쓰인다. tests/ 는 검증 스크립트가 있어 항상 존재한다.
+testpaths = ["tests"]
+
+# 이 줄이 없으면 tests/unit/test_x.py 안의 import 가 전부 죽는다. pytest 는 __init__.py
+# 가 없는 테스트 디렉터리를 보면 그 디렉터리만 sys.path 에 넣고 저장소 루트는 넣지 않는다.
+# [project] 를 두지 않아 설치되는 패키지도 없으므로 루트를 직접 얹어야 한다.
+pythonpath = ["."]
+
+# --- coverage -----------------------------------------------------------------
+
+[tool.coverage.run]
+# 분기까지 센다. 줄만 세면 if 한쪽만 지나가도 100% 로 보인다.
+branch = true
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
