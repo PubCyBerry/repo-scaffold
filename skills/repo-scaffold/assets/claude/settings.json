@@ -4,6 +4,8 @@
     "allow": [
       "Bash(just:*)",
       "Bash(bash tests/check-docs.sh:*)",
+      "Bash(bash tests/check-markdown.sh:*)",
+      "Bash(bash tests/check-prose.sh:*)",
       "Bash(bash tests/check-shell.sh:*)",
       "Bash(bash tests/check-workflows.sh:*)",
       "Bash(bash tests/check-hooks.sh:*)",

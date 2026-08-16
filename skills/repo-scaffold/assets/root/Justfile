@@ -75,13 +75,13 @@ lint-shell:
 # type:
 #     bash tests/check-python.sh --only type
 
-# PR4: 마크다운 구조와 형식
-# markdown:
-#     bash tests/check-markdown.sh
+# 마크다운 구조와 형식.
+markdown:
+    bash tests/check-markdown.sh
 
-# PR4: 산문, 용어, 문자 규칙
-# prose:
-#     bash tests/check-prose.sh
+# 산문, 용어, 문자 규칙.
+prose:
+    bash tests/check-prose.sh
 
 # 문서 규약과 인덱스 최신 여부.
 docs:

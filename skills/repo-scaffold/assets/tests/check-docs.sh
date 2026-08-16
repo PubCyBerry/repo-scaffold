@@ -6,7 +6,7 @@
 #                title 과 H1 일치, generated 문서의 generated_from
 #   graph        id 중복, related 와 supersedes 대상. 저장소 전체를 봐야 답이 나온다
 #   paths        백틱으로 감싼 로컬 경로의 링크 표기 위반
-#   links        마크다운 링크 대상 존재 여부 (저장소 루트 기준 상대 경로)
+#   links        마크다운 링크 대상 존재 여부. 링크는 문서 기준 상대 경로다
 #   urls         마크다운 링크 [text](url) 와 자동 링크 <url> 의 HTTP 응답
 #
 # 규약: docs/standards/documentation.md
@@ -397,27 +397,67 @@ fi
 
 # ---------------------------------------------------------------- 링크 대상
 
+# 문서 기준 상대 경로를 저장소 루트 기준 경로로 편다.
+# 문자열로만 푼다. 심링크를 따르지 않고 대상이 아직 없어도 답이 나온다.
+# 저장소 밖으로 나가면 1 을 돌려준다.
+# resolve_link DOC_DIR TARGET
+resolve_link() {
+    local rest="${1:+$1/}$2" out="" part
+    while [ -n "$rest" ]; do
+        case "$rest" in
+            */*)
+                part="${rest%%/*}"
+                rest="${rest#*/}"
+                ;;
+            *)
+                part="$rest"
+                rest=""
+                ;;
+        esac
+        case "$part" in
+            '' | .) ;;
+            ..)
+                case "$out" in
+                    '') return 1 ;;
+                    */*) out="${out%/*}" ;;
+                    *) out="" ;;
+                esac
+                ;;
+            *) out="${out:+$out/}$part" ;;
+        esac
+    done
+    printf '%s\n' "$out"
+}
+
 if phase_on links; then
-    banner "링크 대상 (저장소 루트 기준)"
+    banner "링크 대상 (문서 기준 상대 경로)"
     {
         for f in "${DOC_FILES[@]}"; do
             rel="$(rel_path "$f")"
+            dir="$(dirname "$rel")"
+            [ "$dir" != "." ] || dir=""
+            # 코드 블록 안은 예시이므로 제외한다.
+            # 외부 링크는 urls 단계가 본다. 여기서는 대상 첫 글자가 아니라 스킴으로 거른다.
             awk '/^[[:space:]]*```/ { fence = !fence; next } !fence' "$f" \
-                | grep -o '](\([^)h][^)]*\))' 2> /dev/null \
+                | grep -o '](\([^)][^)]*\))' 2> /dev/null \
                 | sed 's/^](//; s/)$//; s/#.*$//' \
-                | grep -v '^$' \
+                | grep -vE '^$|^(https?|mailto|ftp|tel):' \
                 | sort -u \
                 | while IFS= read -r target; do
                     case "$target" in
-                        /* | ./* | ../*)
-                            report FAIL "$rel -> $target" "저장소 루트 기준 경로로 쓴다"
+                        /*)
+                            report FAIL "$rel -> $target" "절대 경로는 쓰지 않는다. 문서 기준 상대 경로로 쓴다"
                             continue
                             ;;
                     esac
-                    if [ -e "$REPO_ROOT/$target" ]; then
-                        report PASS "$rel -> $target"
+                    if ! resolved="$(resolve_link "$dir" "$target")"; then
+                        report FAIL "$rel -> $target" "저장소 밖으로 나간다"
+                    elif [ -e "$REPO_ROOT/$resolved" ]; then
+                        report PASS "$rel -> $target" "$resolved"
+                    elif [ -e "$REPO_ROOT/$target" ]; then
+                        report FAIL "$rel -> $target" "저장소 루트 기준으로 쓰였다. 문서 기준 상대 경로로 고친다"
                     else
-                        report FAIL "$rel -> $target" "대상 없음"
+                        report FAIL "$rel -> $target" "대상 없음: $resolved"
                     fi
                 done
         done

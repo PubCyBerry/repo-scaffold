@@ -21,15 +21,21 @@ related:
 
 Keep every document in this repository in one shape: file names, path notation, metadata, and body structure.
 
-An agent decides whether to open a document from its front matter. If the body has to be read before that decision can be made, the metadata is incomplete.
+An agent decides whether to open a document from its front matter. If the body has to be read
+before that decision can be made, the metadata is incomplete.
 
 ## Scope
 
-Every Markdown document under [docs/](docs/index.md).
+Every Markdown document under [docs/](../index.md).
 
-The repository root files [README.md](README.md), [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md), and [SECURITY.md](SECURITY.md) carry no front matter. Hosting services recognize README and SECURITY by their conventional names, and CLAUDE.md is a single import line, so metadata would outweigh the body. Notation rules still apply to all four.
+The repository root files [README.md](../../README.md), [AGENTS.md](../../AGENTS.md),
+[CLAUDE.md](../../CLAUDE.md), and [SECURITY.md](../../SECURITY.md) carry no front matter.
+Hosting services recognize README and SECURITY by their conventional names, and CLAUDE.md is
+a single import line, so metadata would outweigh the body. Notation rules still apply to all
+four.
 
-Language and notation are defined in [Writing Style](docs/standards/writing-style.md). Everything under [docs/](docs/index.md) is written in English.
+Language and notation are defined in [Writing Style](writing-style.md). Everything under
+[docs/](../index.md) is written in English.
 
 ## File names
 
@@ -40,27 +46,38 @@ Use lowercase kebab-case.
 | Lowercase only | `error-handling.md` |
 | Hyphen between words | `commit-convention.md` |
 | No underscores, spaces, or uppercase | `Error_Handling.md` is rejected |
-| Directory index is always `index.md` | [docs/standards/index.md](docs/standards/index.md) |
+| Directory index is always `index.md` | [docs/standards/index.md](index.md) |
 
 Keep a dot only when it carries meaning, such as a product version: `install-4.2.md`.
 
 ## Path notation
 
-Point at a file or directory inside the repository with a Markdown link. Do not use a bare backtick path.
+Point at a file or directory inside the repository with a Markdown link. Do not use a bare
+backtick path.
 
-**The link target is relative to the repository root, not to the document.** Moving a document to another directory then does not break its links.
+**The link target is relative to the document that contains it, not to the repository root.** This is
+the notation Markdown itself defines, so the link resolves the same way in a web view, in an editor,
+and in a linter.
 
 ```markdown
 Wrong: The startup procedure is in `README.md`, chapter 4.
-Wrong: [Testing](../standards/testing.md)              relative to the document
-Right: [Testing](docs/standards/testing.md)            relative to the repository root
+Wrong: [Testing](docs/standards/testing.md)      relative to the repository root
+Right: [Testing](testing.md)                     same directory
+Right: [Document index](../index.md)             one level up
+Right: [Contributing](../../README.md)           repository root
 ```
 
 - Use the document title or a human-readable name as the link text. The path itself is not required.
 - Link a directory through its `index.md`.
 - When a glob makes a single link impossible, split the item and link each target.
+- Write a heading anchor as `<path>#<heading-slug>`, for example
+  [Hard limits](code-quality.md#hard-limits). Both the file and the heading are verified.
 
-A root-relative path is resolved against the current directory by Markdown renderers, so these links are not clickable in a web view. Documents here are read by agents and local editors, so path stability wins.
+The cost is that moving a document breaks the links it holds and the links pointing at it. That cost
+is paid back by the checks it buys: link targets and heading anchors are verified across files,
+including anchors in another directory, which a root-relative path cannot express to any Markdown
+tool. Fix the links in the same commit as the move, then run
+[tests/check-docs.sh](../../tests/check-docs.sh) and `just markdown`.
 
 Three exceptions use backticks instead.
 
@@ -92,7 +109,8 @@ summary: Exception hierarchy, standard error response, log level rules
 summary: Defines the exception hierarchy, standard error response, and log levels.
 ```
 
-`id` is independent of the file path. Move a document to another directory and the `id` stays, so `related` references do not break.
+`id` is independent of the file path. Move a document to another directory and the `id`
+stays, so `related` references do not break.
 
 ### type enum
 
@@ -166,7 +184,7 @@ Where it applies. The `scope` field written out as prose.
 
 ## Related documents
 
-- [Error handling and logging](docs/standards/error-handling.md)
+- [Error handling and logging](error-handling.md)
 
 ## References
 
@@ -269,31 +287,53 @@ Indexes come in two layers.
 
 | Index | Contents | Updated by |
 | --- | --- | --- |
-| The document index in [AGENTS.md](AGENTS.md) | File names grouped by directory. No descriptions | **Generated.** Never edited by hand |
-| [docs/index.md](docs/index.md) and each directory `index.md` | One line per document, plus reading order | Written by hand |
+| The document index in [AGENTS.md](../../AGENTS.md) | File names grouped by directory. No descriptions | **Generated.** Never edited by hand |
+| [docs/index.md](../index.md) and each directory `index.md` | One line per document, plus reading order | Written by hand |
 
 - After adding a document, add one row to that directory's index
 - Do not restate index contents in another document
 
-The AGENTS.md index is produced by [gen-doc-index.sh](scripts/gen-doc-index.sh) and run by a pre-commit hook just before the commit. The hook is configured in [.pre-commit-config.yaml](.pre-commit-config.yaml). Everything between `<!-- DOC-INDEX:START -->` and `<!-- DOC-INDEX:END -->` is replaced wholesale, so hand-written content placed there disappears on the next commit.
+The AGENTS.md index is produced by [gen-doc-index.sh](../../scripts/gen-doc-index.sh) and run
+by a pre-commit hook just before the commit. The hook is configured in
+[.pre-commit-config.yaml](../../.pre-commit-config.yaml). Everything between
+`<!-- DOC-INDEX:START -->` and `<!-- DOC-INDEX:END -->` is replaced wholesale, so
+hand-written content placed there disappears on the next commit.
 
 The format groups files by directory and joins the groups with a single `|`.
 
-```
+```text
 <directory>:{<file1>,<file2>,...}|<directory>:{...}
 ```
 
-Hooks are installed once per clone. The procedure is in the pre-commit hooks section of [README.md](README.md).
+Hooks are installed once per clone. The procedure is in the pre-commit hooks section of [README.md](../../README.md).
 
-When the index changes, the hook rewrites AGENTS.md, stages it, and **fails that commit**. That is the signal that the commit contents changed; commit again as is. It is the standard pre-commit framework behavior.
+When the index changes, the hook rewrites AGENTS.md, stages it, and **fails that commit**.
+That is the signal that the commit contents changed; commit again as is. It is the standard
+pre-commit framework behavior.
 
 ## Staying stateless
 
-Keep information that goes stale quickly out of [AGENTS.md](AGENTS.md) and out of `standards` documents: progress, to-do lists, current branch names, personal assignments. That belongs in an issue or a separate work note.
+Keep information that goes stale quickly out of [AGENTS.md](../../AGENTS.md) and out of
+`standards` documents: progress, to-do lists, current branch names, personal assignments.
+That belongs in an issue or a separate work note.
 
 ## Reporting conflicts
 
-When two documents disagree, or a document disagrees with the code, do not pick a side. Report the paths, the wording, and the observed behavior.
+When two documents disagree, or a document disagrees with the code, do not pick a side.
+Report the paths, the wording, and the observed behavior.
+
+## What is checked mechanically
+
+`just markdown` runs rumdl over every tracked Markdown file. Its configuration is the machine
+form of this document: heading structure, list and fence formatting, the 100-character line
+limit, link target existence, and heading anchors both inside a file and across files.
+
+rumdl runs over the whole repository rather than over the changed files. Its cross-file anchor
+check builds an index from whatever it was handed and skips silently when a target file is not
+in that index, so handing it one file at a time turns anchor checking off without saying so.
+
+Character and wording rules are not rumdl's. They belong to Vale, described in
+[Writing Style](writing-style.md). No rule is defined in both tools.
 
 ## Checklist
 
@@ -301,13 +341,14 @@ When two documents disagree, or a document disagrees with the code, do not pick 
 - Are all seven required front matter properties present?
 - Does `type` match the directory, and is `status` allowed for that `type`?
 - Is any in-repository path written with backticks instead of a link?
-- Is every link target relative to the repository root?
+- Is every link target relative to the document that holds it?
 - Does the H1 match `title`, and are `## Purpose` and `## Scope` present?
 - Was the new document added to its directory index?
-- Does [tests/check-docs.sh](tests/check-docs.sh) pass?
+- Do [tests/check-docs.sh](../../tests/check-docs.sh) and
+  [tests/check-markdown.sh](../../tests/check-markdown.sh) pass?
 
 ## Related documents
 
-- [Document index](docs/index.md)
-- [Writing Style](docs/standards/writing-style.md)
-- [Standards](docs/standards/index.md)
+- [Document index](../index.md)
+- [Writing Style](writing-style.md)
+- [Standards](index.md)

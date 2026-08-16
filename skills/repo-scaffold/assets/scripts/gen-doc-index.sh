@@ -105,7 +105,8 @@ trap 'rm -f "$TMP"' EXIT
 
 INDEX_LINE="$INDEX" awk -v start="$START" -v end="$END" '
     BEGIN { index_line = ENVIRON["INDEX_LINE"] }
-    $0 == start { print; print "```"; print index_line; print "```"; skip = 1; next }
+    # 마크다운 규칙상 코드 펜스는 앞뒤에 빈 줄이 있어야 하고 언어가 붙어야 한다.
+    $0 == start { print; print ""; print "```text"; print index_line; print "```"; print ""; skip = 1; next }
     $0 == end   { skip = 0 }
     !skip       { print }
 ' "$TARGET" > "$TMP"

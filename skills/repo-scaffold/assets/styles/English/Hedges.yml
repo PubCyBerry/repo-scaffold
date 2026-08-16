@@ -1,0 +1,14 @@
+# 정보가 없는 완충어 네 개. docs/standards/writing-style.md 의 Tone 절에 있다.
+#
+# warning 이라 커밋을 막지 않는다. 네 낱말 모두 문맥에 따라 정당한 쓰임이 있고,
+# 그 판단은 정규식이 못 한다. 막으면 --no-verify 가 습관이 되고 훅 전체가 죽는다.
+extends: existence
+message: "정보를 담지 않는 완충어다. 빼도 뜻이 같은지 본다: '%s'"
+level: warning
+ignorecase: true
+link: docs/standards/writing-style.md
+tokens:
+  - basically
+  - just
+  - simply
+  - actually

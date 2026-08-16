@@ -1,0 +1,18 @@
+# 제품명은 그 제품이 쓰는 대소문자를 그대로 쓴다. 고유명사라 번역도 하지 않는다.
+# ignorecase 를 켜면 올바른 표기까지 잡히므로 켜지 않는다.
+extends: substitution
+message: "'%s' 로 쓴다. '%s' 가 아니다"
+level: error
+nonword: true
+ignorecase: false
+link: docs/standards/writing-style.md
+swap:
+  '깃허브|깃헙|Github|GITHUB': GitHub
+  '깃랩|Gitlab': GitLab
+  '자바스크립트|Javascript': JavaScript
+  '타입스크립트|Typescript': TypeScript
+  'NodeJS|Nodejs': Node.js
+  'Postgresql|PostgreSql': PostgreSQL
+  'MacOS|Mac OS X': macOS
+  'Json': JSON
+  'Yaml': YAML

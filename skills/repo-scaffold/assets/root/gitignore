@@ -25,6 +25,10 @@ target/
 out/
 *.log
 
+# 검사 도구 캐시
+.rumdl_cache/
+.vale-cache/
+
 # 에디터, OS
 .idea/
 .vscode/*

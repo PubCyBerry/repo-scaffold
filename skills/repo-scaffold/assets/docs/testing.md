@@ -20,7 +20,8 @@ related:
 
 ## Purpose
 
-A test suite is only worth its runtime if a passing suite means the code works. These rules exist to keep that true.
+A test suite is only worth its runtime if a passing suite means the code works. These rules
+exist to keep that true.
 
 ## Scope
 
@@ -30,15 +31,18 @@ All test code in this repository.
 
 ### Test behavior, not implementation
 
-A test verifies what the code does, not how it does it. If a refactor breaks the tests but not the code, the tests were wrong.
+A test verifies what the code does, not how it does it. If a refactor breaks the tests but
+not the code, the tests were wrong.
 
-Assert on return values, emitted events, and observable state. Do not assert on call counts of internal helpers or on the order of private operations.
+Assert on return values, emitted events, and observable state. Do not assert on call counts
+of internal helpers or on the order of private operations.
 
 ### Test edges and errors, not just the happy path
 
 Bugs live at the edges: empty inputs, boundaries, malformed data, missing files, network failures, timeouts.
 
-Every error path the code handles has a test that triggers it. An `except` branch with no test is an untested branch.
+Every error path the code handles has a test that triggers it. An `except` branch with no
+test is an untested branch.
 
 ### Mock boundaries, not logic
 
@@ -60,11 +64,13 @@ A test that has never failed has not been shown to work.
 
 Do this systematically with mutation testing: `cargo-mutants` for Rust, `mutmut` for Python.
 
-Use property-based testing for parsers, serialization, and algorithms: `proptest` for Rust, `hypothesis` for Python.
+Use property-based testing for parsers, serialization, and algorithms: `proptest` for Rust,
+`hypothesis` for Python.
 
 ### Running tests
 
-Before committing, run the tests relevant to the change, not the full suite. The full suite is CI's job.
+Before committing, run the tests relevant to the change, not the full suite. The full suite
+is CI's job.
 
 ## Checklist
 
@@ -76,5 +82,5 @@ Before committing, run the tests relevant to the change, not the full suite. The
 
 ## Related documents
 
-- [Code quality](docs/standards/code-quality.md)
-- [Code review](docs/standards/code-review.md)
+- [Code quality](code-quality.md)
+- [Code review](code-review.md)

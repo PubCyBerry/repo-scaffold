@@ -17,22 +17,23 @@ related:
 
 ## Purpose
 
-Collect the rules, procedures, and reference material tied to {{PRODUCT_DIR}}. None of it applies to components on a different stack.
+Collect the rules, procedures, and reference material tied to {{PRODUCT_DIR}}.
+None of it applies to components on a different stack.
 
 ## Scope
 
-Everything under [{{DOCS_DIR}}/]({{DOCS_DIR}}/index.md).
+Everything under [{{DOCS_DIR}}/](index.md).
 
-Rules that apply regardless of stack belong in [docs/standards/](docs/standards/index.md) instead.
+Rules that apply regardless of stack belong in [docs/standards/](../standards/index.md) instead.
 
 ## Documents
 
 | Directory | Nature |
 | --- | --- |
-| [standards/]({{DOCS_DIR}}/standards/index.md) | Product-specific rules |
-| [guides/]({{DOCS_DIR}}/guides/index.md) | Product-specific procedures |
-| [references/]({{DOCS_DIR}}/references/index.md) | Product specifications, installation, external material |
+| [standards/](standards/index.md) | Product-specific rules |
+| [guides/](guides/index.md) | Product-specific procedures |
+| [references/](references/index.md) | Product specifications, installation, external material |
 
 ## Related documents
 
-- [Document index](docs/index.md)
+- [Document index](../index.md)
