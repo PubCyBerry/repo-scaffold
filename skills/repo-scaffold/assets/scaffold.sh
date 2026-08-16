@@ -18,8 +18,13 @@
 #   --product DIR     제품 종속 문서 디렉터리명. 예: --product nexus 면 docs/nexus/ 생성
 #   --lang en|ko      문서 언어. 검증 스크립트의 summary 문체 검사에만 영향. 기본 en.
 #                     docs/ 를 영어로 쓰는 것이 규약이므로 ko 는 규약을 벗어날 때만 쓴다
+#   --with LANG       감지 결과와 무관하게 그 언어의 도구 설정을 배치한다. 여러 번 줄 수 있다
+#   --without LANG    감지 결과와 무관하게 배치하지 않는다. 여러 번 줄 수 있다
 #   --init            대상이 git 저장소가 아니면 git init 한다
 #   --dry-run         쓰지 않고 계획만 출력한다
+#
+# 판정: ADD 새로 만듦 / PLAN 만들 예정 / SKIP 이미 있음 / OMIT 이 저장소에 불필요 /
+#       NOTE 이미 있어서 사람이 손으로 합쳐야 함 / FAIL 실패
 #
 # 종료 코드: 실패가 있으면 1, 아니면 0
 
@@ -27,11 +32,16 @@ set -uo pipefail
 
 ASSET_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# 도구 설정 파일을 언어별로 거르는 대상. 스크립트와 Justfile 과 훅 설정은 여기 없다.
+KNOWN_LANGS="python"
+
 TARGET=""
 NAME=""
 DESC=""
 PRODUCT=""
 LANG_CODE="en"
+WITH_LANGS=""
+WITHOUT_LANGS=""
 DO_INIT=0
 DRY_RUN=0
 
@@ -48,9 +58,18 @@ require_option_value() {
     esac
 }
 
+require_known_lang() {
+    case " $KNOWN_LANGS " in
+        *" $1 "*) return 0 ;;
+    esac
+    echo "FAIL: 그런 언어가 없다: $1" >&2
+    echo "      쓸 수 있는 언어: $KNOWN_LANGS" >&2
+    return 1
+}
+
 while [ $# -gt 0 ]; do
     case "$1" in
-        --target | --name | --desc | --product | --lang)
+        --target | --name | --desc | --product | --lang | --with | --without)
             require_option_value "$@" || exit 2
             ;;
     esac
@@ -73,6 +92,16 @@ while [ $# -gt 0 ]; do
             ;;
         --lang)
             LANG_CODE="$2"
+            shift 2
+            ;;
+        --with)
+            require_known_lang "$2" || exit 2
+            WITH_LANGS="$WITH_LANGS $2"
+            shift 2
+            ;;
+        --without)
+            require_known_lang "$2" || exit 2
+            WITHOUT_LANGS="$WITHOUT_LANGS $2"
             shift 2
             ;;
         --init)
@@ -165,6 +194,8 @@ fi
 
 add_count=0
 skip_count=0
+omit_count=0
+note_count=0
 fail_count=0
 GENERATED_PATHS=()
 GENERATED_INDEX=0
@@ -172,9 +203,13 @@ GENERATED_AGENTS=0
 
 report() {
     # $1: 판정, $2: 대상, $3: 사유
+    # 파일이 없는 이유는 셋이다. SKIP 이미 있음 / OMIT 이 저장소에 불필요 /
+    # NOTE 이미 있어서 사람이 손으로 합쳐야 함. 셋을 뭉치면 무엇을 해야 하는지 알 수 없다.
     case "$1" in
         ADD | PLAN) add_count=$((add_count + 1)) ;;
         SKIP) skip_count=$((skip_count + 1)) ;;
+        OMIT) omit_count=$((omit_count + 1)) ;;
+        NOTE) note_count=$((note_count + 1)) ;;
         FAIL) fail_count=$((fail_count + 1)) ;;
     esac
     printf '%-4s %-44s %s\n' "$1" "$2" "${3:-}"
@@ -286,6 +321,36 @@ render() {
     fi
 }
 
+# 이미 있으면 사람이 손으로 합쳐야 하는 설정 파일. SKIP 대신 원본 경로를 짚어준다.
+# TOML 과 JSON 을 자동으로 병합하지 않는다. 주석과 순서가 사라지고 의도를 알 수 없다.
+# render_mergeable SRC DEST [KEY=VALUE ...]
+render_mergeable() {
+    local dest_rel="$2"
+
+    # 심링크 판정은 render 가 한다. 여기서 -e 로 먼저 걸러버리면 심링크가 NOTE 로 새어나간다.
+    if ! symlink_component "$TARGET/$dest_rel" && [ -e "$TARGET/$dest_rel" ]; then
+        report NOTE "$dest_rel" "이미 있다. 합칠 원본: $ASSET_DIR/$1"
+        return
+    fi
+    render "$@"
+}
+
+# 언어별 도구 설정. 감지 결과가 yes 일 때만 배치한다.
+# 스크립트와 Justfile 과 훅 설정에는 쓰지 않는다. 그것들은 언어와 무관하게 항상 깐다.
+# render_lang LANG SRC DEST [KEY=VALUE ...]
+# shellcheck disable=SC2329  # 확장 지점. 호출자는 언어별 설정 템플릿이 들어올 때 생긴다
+render_lang() {
+    local lang="$1" dest_rel="$3"
+    shift
+    case "$(lang_verdict "$lang")" in
+        yes) render_mergeable "$@" ;;
+        unknown)
+            report OMIT "$dest_rel" "$lang 사용 여부를 판단할 근거가 없다. --with $lang 으로 강제한다"
+            ;;
+        *) report OMIT "$dest_rel" "$lang 을 쓰는 흔적이 없다" ;;
+    esac
+}
+
 # 카테고리 인덱스는 템플릿 하나를 메타만 갈아끼워 여러 번 쓴다.
 # render_category CAT DOCS_DIR ID_PREFIX TITLE_PREFIX
 render_category() {
@@ -333,34 +398,145 @@ render_category() {
         "CAT_PURPOSE=$purpose"
 }
 
+# --- 언어 감지 ----------------------------------------------------------------
+#
+# 감지가 정하는 것은 도구 설정 파일뿐이다. Justfile, 훅 설정, tests/*, scripts/* 는
+# 언어와 무관하게 항상 깐다. 스크립트를 언어로 거르면 "파이썬 없음" 이 깨끗한 SKIP 이
+# 아니라 매 커밋 "No such file" 훅 에러가 된다.
+#
+# package.json 도 거르지 않는다. Node 는 도구 의존성이지 소스 언어가 아니다.
+
+# vendor 경로를 직접 뺀다. 대상에 .gitignore 가 아직 없으면 --exclude-standard 는 무력하고,
+# 그러면 .venv 하나 때문에 모든 저장소가 다국어로 판정된다.
+#
+# 짧은 형식 :!PATH 를 쓰지 않는다. PATH 첫 글자를 pathspec magic 으로 읽어서
+# ':!__pycache__/**' 가 "Unimplemented pathspec magic '_'" 로 죽는다.
+# 맨 앞의 '.' 는 positive pathspec 이다. 제외만 주면 매칭 규칙이 git 버전마다 갈린다.
+PATHSPEC=(
+    '.'
+    ':(exclude).venv/**' ':(exclude)node_modules/**' ':(exclude)__pycache__/**'
+    ':(exclude)vendor/**' ':(exclude)dist/**' ':(exclude)build/**'
+    ':(exclude)target/**' ':(exclude)site-packages/**'
+)
+
+# --cached 만 보면 git init 만 하고 아무것도 add 하지 않은 저장소가 전부 빈 것으로 보인다.
+# 그게 가장 흔한 실제 상황이므로 --others 까지 본다.
+repo_files() {
+    git -C "$TARGET" ls-files --cached --others --exclude-standard \
+        -- "${PATHSPEC[@]}" 2> /dev/null
+}
+
+# 저장소가 사실상 비었는가. 어느 저장소에나 있는 파일만 남으면 빈 것으로 본다.
+repo_is_empty() {
+    local f
+    while IFS= read -r f; do
+        case "$f" in
+            README* | LICENSE* | COPYING* | .gitignore | .gitattributes | .github/*) continue ;;
+        esac
+        return 1
+    done < <(repo_files)
+    return 0
+}
+
+lang_evidence() {
+    case "$1" in
+        python)
+            repo_files | grep -qE \
+                '(^|/)(pyproject\.toml|setup\.py|setup\.cfg|Pipfile|requirements[^/]*\.txt)$|\.pyi?$'
+            ;;
+        *) return 1 ;;
+    esac
+}
+
+LANG_YES=""
+LANG_NO=""
+LANG_UNKNOWN=""
+
+lang_verdict() {
+    case " $LANG_YES " in *" $1 "*)
+        echo yes
+        return
+        ;;
+    esac
+    case " $LANG_UNKNOWN " in *" $1 "*)
+        echo unknown
+        return
+        ;;
+    esac
+    echo no
+}
+
+# unknown 을 yes 로 올리지 않는다. 빈 저장소에 파이썬 설정을 깔면 파이썬을 안 쓰는
+# 사람이 그것을 지워야 한다. 다시 돌려도 덮어쓰지 않으므로 나중에 다시 돌리면 된다.
+detect_languages() {
+    local lang empty=0
+    repo_is_empty && empty=1
+    for lang in $KNOWN_LANGS; do
+        case " $WITHOUT_LANGS " in
+            *" $lang "*)
+                LANG_NO="$LANG_NO $lang"
+                continue
+                ;;
+        esac
+        case " $WITH_LANGS " in
+            *" $lang "*)
+                LANG_YES="$LANG_YES $lang"
+                continue
+                ;;
+        esac
+        if lang_evidence "$lang"; then
+            LANG_YES="$LANG_YES $lang"
+        elif [ "$empty" -eq 1 ]; then
+            LANG_UNKNOWN="$LANG_UNKNOWN $lang"
+        else
+            LANG_NO="$LANG_NO $lang"
+        fi
+    done
+}
+
+detect_languages
+
 # --- 배치 --------------------------------------------------------------------
 
 echo "대상:   $TARGET"
 echo "이름:   $NAME"
 echo "언어:   $LANG_CODE${PRODUCT:+ / 제품 디렉터리 docs/$PRODUCT}"
+verdict_line=""
+for lang in $KNOWN_LANGS; do
+    verdict_line="$verdict_line $lang=$(lang_verdict "$lang")"
+done
+echo "감지:  $verdict_line"
 [ "$DRY_RUN" -eq 1 ] && echo "모드:   dry-run. 아무것도 쓰지 않는다"
 echo
 
 echo "[1/3] 검증 스크립트와 훅"
 render scripts/gen-doc-index.sh scripts/gen-doc-index.sh
+render scripts/run-all.sh scripts/run-all.sh
+render scripts/bootstrap.sh scripts/bootstrap.sh
+render scripts/doctor.sh scripts/doctor.sh
+render scripts/fmt.sh scripts/fmt.sh
+render scripts/fix.sh scripts/fix.sh
 render tests/check-docs.sh tests/check-docs.sh
 render tests/check-shell.sh tests/check-shell.sh
 render tests/check-workflows.sh tests/check-workflows.sh
+render tests/check-hooks.sh tests/check-hooks.sh
 render tests/check-env.sh tests/check-env.sh
 render tests/check-secrets.sh tests/check-secrets.sh
-render root/pre-commit-config.yaml .pre-commit-config.yaml
+render_mergeable root/pre-commit-config.yaml .pre-commit-config.yaml
 
 echo
 echo "[2/3] 저장소 루트 파일"
-render root/gitattributes .gitattributes
-render root/editorconfig .editorconfig
-render root/gitignore .gitignore
+render_mergeable root/Justfile Justfile
+render_mergeable root/tools.txt tools.txt
+render_mergeable root/gitattributes .gitattributes
+render_mergeable root/editorconfig .editorconfig
+render_mergeable root/gitignore .gitignore
 render root/env.example .env.example
 render root/AGENTS.md AGENTS.md
 render root/CLAUDE.md CLAUDE.md
 render root/README.md README.md
 render root/SECURITY.md SECURITY.md
-render claude/settings.json .claude/settings.json
+render_mergeable claude/settings.json .claude/settings.json
 
 echo
 echo "[3/3] 문서 체계"
@@ -390,13 +566,13 @@ fi
 
 echo
 if [ "$DRY_RUN" -eq 1 ]; then
-    echo "결과: PLAN $add_count, SKIP $skip_count, FAIL $fail_count"
+    echo "결과: PLAN $add_count, SKIP $skip_count, OMIT $omit_count, NOTE $note_count, FAIL $fail_count"
     echo "실제로 적용하려면 --dry-run 을 뺀다"
     [ "$fail_count" -gt 0 ] && exit 1
     exit 0
 fi
 
-echo "결과: ADD $add_count, SKIP $skip_count, FAIL $fail_count"
+echo "결과: ADD $add_count, SKIP $skip_count, OMIT $omit_count, NOTE $note_count, FAIL $fail_count"
 
 if [ "$GENERATED_INDEX" -eq 1 ] && [ "$GENERATED_AGENTS" -eq 1 ]; then
     echo
@@ -415,18 +591,22 @@ cat << EOF
 다음 절차:
 
   cd $TARGET
-  uv tool install prek                  # 훅 실행기. 또는 brew install prek
-  prek install                          # 클론마다 한 번
-
-  # shell-lint, workflow-lint 훅이 부르는 도구. 없으면 로컬 SKIP, CI FAIL
-  for t in shellcheck-py shfmt-py actionlint-py zizmor; do uv tool install "\$t"; done
-
-  bash tests/check-docs.sh --no-net     # 문서 규약 확인
-  bash tests/check-shell.sh             # shellcheck, shfmt
-  git add -A && git commit              # 훅이 인덱스를 갱신하고 한 번 실패시킨다. 그대로 다시 커밋한다
+  uv tool install rust-just    # just 하나만 손으로 깐다
+  just bootstrap               # 나머지 도구, 의존성, git 훅. 클론마다 한 번
+  just doctor                  # 환경 진단
+  just verify                  # 검사 전체
 
 SKIP 된 파일은 이미 있어서 건드리지 않았다. 내용을 합칠지는 사람이 판단한다.
+NOTE 는 이미 있는 설정 파일이다. 원본을 열어 필요한 부분만 손으로 합친다.
 EOF
+
+if [ -n "$LANG_UNKNOWN" ]; then
+    cat << EOF
+
+저장소가 비어 있어 다음 언어의 사용 여부를 판단하지 못했다:$LANG_UNKNOWN
+코드를 넣은 뒤 다시 돌리거나, 지금 배치하려면 --with 로 지정한다. 다시 돌려도 덮어쓰지 않는다.
+EOF
+fi
 
 [ "$fail_count" -gt 0 ] && exit 1
 exit 0
