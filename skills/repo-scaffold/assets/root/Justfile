@@ -121,6 +121,19 @@ secret-scan:
 env-sync:
     bash tests/check-env.sh
 
+# --- 예약 실행 ----------------------------------------------------------------
+#
+# 달력과 남의 서버에 의존하는 검사다. 훅에도 verify 에도 넣지 않는다.
+# 넣으면 자기 변경과 무관한 이유로 커밋과 머지가 막힌다. 예약 CI 가 부른다.
+
+# 검토 주기를 넘긴 문서를 보고한다. WARN 이라 종료 코드를 바꾸지 않는다.
+docs-freshness:
+    bash tests/check-docs-metadata.sh --only time
+
+# 예약 CI 의 문서 건강 검사. 외부 링크와 검토 주기를 함께 본다.
+docs-health:
+    bash scripts/run-all.sh links-external docs-freshness
+
 # 테스트 전체. 갈래마다 디렉터리 하나다.
 test:
     bash tests/run-tests.sh

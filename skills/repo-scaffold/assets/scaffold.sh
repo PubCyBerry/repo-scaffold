@@ -604,12 +604,24 @@ render_mergeable root/yamllint.yaml .yamllint.yaml
 # CI 와 어쩌다 도구가 깔려 있는 개발자 머신이 같은 규칙을 쓰게 하는 유일한 방법이다.
 render_mergeable root/gitleaks.toml .gitleaks.toml
 render_mergeable root/lychee.toml lychee.toml
+# 의존성 갱신 PR 의 단일 출처. Dependabot 은 Alerts 만 켜고 .github/dependabot.yml 은 두지 않는다.
+render_mergeable root/renovate.json renovate.json
 render root/env.example .env.example
 render root/AGENTS.md AGENTS.md
 render root/CLAUDE.md CLAUDE.md
 render root/README.md README.md
 render root/SECURITY.md SECURITY.md
 render_mergeable claude/settings.json .claude/settings.json
+
+echo
+echo "      CI 워크플로"
+# 잡 이름이 브랜치 룰셋의 required status check 이름이다. 파일명이 아니다.
+# quality, tests, docs, security 넷을 그 이름 그대로 둔다. 바꾸면 룰셋을 쓰는 저장소에서
+# 모든 PR 이 오지 않는 검사를 영원히 기다린다.
+render github/workflows/quality.yml .github/workflows/quality.yml
+render github/workflows/test.yml .github/workflows/test.yml
+render github/workflows/security.yml .github/workflows/security.yml
+render github/workflows/docs-health.yml .github/workflows/docs-health.yml
 
 echo
 echo "      산문 규칙 (Vale)"
