@@ -93,22 +93,28 @@ repos:
           error 만 실패로 친다. warning 은 보고만 한다. Vale 은 첫 실행에 네트워크가
           필요하므로 없으면 로컬 SKIP, CI FAIL 이다.
 
-      # PR2: 파이썬 형식과 정적 분석
-      # - id: python-format
-      #   name: 파이썬 형식 검사
-      #   entry: bash tests/check-python.sh --only format
-      #   language: system
-      #   files: \.pyi?$
-      #   pass_filenames: false
-      #   groups: [code, python]
-      #
-      # - id: python-lint
-      #   name: 파이썬 정적 분석
-      #   entry: bash tests/check-python.sh --only lint
-      #   language: system
-      #   files: \.pyi?$
-      #   pass_filenames: false
-      #   groups: [code, python]
+      - id: python-format
+        name: 파이썬 형식 검사
+        entry: bash tests/check-python.sh --only format
+        language: system
+        files: \.pyi?$
+        pass_filenames: false
+        groups: [code, python]
+        description: >
+          ruff format --check 로 형식이 어긋난 파일만 알린다. 파일을 고치지 않는다.
+          훅이 커밋 도중에 파일을 다시 쓰면 커밋한 내용과 검사한 내용이 갈린다.
+          고치는 것은 just fmt 다. 형식 기준은 pyproject.toml 에 있다.
+
+      - id: python-lint
+        name: 파이썬 정적 분석
+        entry: bash tests/check-python.sh --only lint
+        language: system
+        files: \.pyi?$
+        pass_filenames: false
+        groups: [code, python]
+        description: >
+          ruff check 로 정적 분석한다. 규칙은 pyproject.toml 이 갖고 있고 그 근거는
+          docs/standards/code-quality.md 다. 자동으로 고칠 수 있는 지적은 just fix 로 고친다.
 
       - id: shell-lint
         name: 셸 스크립트 검사
@@ -214,24 +220,30 @@ repos:
           로컬 액션이 바뀌면 pre-commit 의 파일 필터에 걸리지 않는다. push 전에
           저장소 전체 워크플로를 다시 본다. zizmor 는 pre-commit 과 CI 에서만 돈다.
 
-      # PR2: 타입 검사와 단위 테스트
-      # - id: mypy
-      #   name: 타입 검사
-      #   entry: bash tests/check-python.sh --only type
-      #   language: system
-      #   always_run: true
-      #   pass_filenames: false
-      #   stages: [pre-push]
-      #   groups: [code, python, slow]
-      #
-      # - id: unit-test
-      #   name: 단위 테스트
-      #   entry: bash tests/run-tests.sh --only unit
-      #   language: system
-      #   always_run: true
-      #   pass_filenames: false
-      #   stages: [pre-push]
-      #   groups: [test, slow]
+      - id: mypy
+        name: 타입 검사
+        entry: bash tests/check-python.sh --only type
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-push]
+        groups: [code, python, slow]
+        description: >
+          mypy 는 고친 파일만 봐서는 답이 안 나온다. 타입 변경은 그 파일을 부르는
+          쪽에서 터지므로 저장소 전체를 봐야 한다. 느려서가 아니라 부분 검사가
+          틀린 답을 내서 pre-push 다. 파이썬 파일이 없으면 SKIP 이다.
+
+      - id: unit-test
+        name: 단위 테스트
+        entry: bash tests/run-tests.sh --only unit
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [pre-push]
+        groups: [test, slow]
+        description: >
+          tests/unit 만 돌린다. 경계를 넘는 갈래는 CI 가 맡는다.
+          디렉터리가 없거나 수집할 테스트가 없으면 SKIP 이다.
 
       # PR5: 문서가 서술하는 코드가 바뀌었는지
       # - id: source-drift
