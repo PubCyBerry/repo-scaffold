@@ -30,9 +30,18 @@ pre-commit hook으로 커밋 직전에 자동 생성한다.
 | `docs/guides/` | 절차 |
 | `docs/references/` | 사실 조회 |
 | `docs/generated/` | 코드나 스키마에서 생성. 손으로 고치지 않음 |
+| `docs/architecture/` | 시스템 구조. 그 아래 `adr/` 는 결정 기록 |
 
 제품이나 프레임워크에 종속되는 자료는 `docs/` 아래 별도 도메인 디렉터리로 분리한다.
 그 안에서도 `standards/`, `guides/`, `references/` 구분은 같다.
+`architecture/` 는 최상위에 하나만 둔다. 두 제품 사이의 경계는 어느 쪽 것도 아니다.
+
+결정 기록(ADR)은 한 번 쓰고 고치지 않는다. 결정이 바뀌면 새 기록을 쓰고 옛 기록의
+`status` 를 `superseded` 로 바꾼다. 형식은 `docs/architecture/adr/index.md` 에 있다.
+
+문서 front matter 의 `sources` 는 그 문서가 서술하는 저장소 경로다. `last_reviewed` 이후에
+그 경로가 바뀌면 push 전에 검사가 막는다. `last_reviewed` 는 사람이 문서를 다시 읽었을 때만
+손으로 올린다. 도구가 올리지 않는다.
 
 ## 코드 탐색
 

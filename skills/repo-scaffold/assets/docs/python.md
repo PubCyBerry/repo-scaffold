@@ -13,6 +13,9 @@ read_when:
   - A ruff or mypy check fails
   - Turning these gates on in a repository that already has Python
   - Deciding which directory a new test file goes in
+sources:
+  - tests/check-python.sh
+  - tests/run-tests.sh
 related:
   - standard-code-quality
   - standard-testing

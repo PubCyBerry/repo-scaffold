@@ -41,9 +41,11 @@ Every document under [docs/](index.md) is written in English. The rule is in [Wr
 | [guides/](guides/index.md) | How a task is carried out | When following a procedure |
 | [references/](references/index.md) | External and supporting facts | When looking a fact up |
 | [generated/](generated/index.md) | Produced from code or a schema | When checking the current implementation state |
+| [architecture/](architecture/index.md) | System shape, and the decisions behind it | Before moving a boundary between components |
 
 Material tied to one product or framework goes into its own domain directory under `docs`.
-The same four categories apply inside it.
+The first four categories apply inside it. Architecture stays at the top level, because a
+boundary between two products belongs to neither of them.
 
 ### Repository root files
 
@@ -56,6 +58,7 @@ These carry no front matter. Notation rules still apply.
 | Credentials, secrets, sensitive data | [SECURITY.md](../SECURITY.md) |
 | Environment variable keys | [.env.example](../.env.example) |
 | Document verification | [tests/check-docs.sh](../tests/check-docs.sh) |
+| Front matter contract and lifecycle | [tests/check-docs-metadata.sh](../tests/check-docs-metadata.sh) |
 
 ## Related documents
 

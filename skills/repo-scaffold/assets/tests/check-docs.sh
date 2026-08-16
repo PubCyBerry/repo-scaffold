@@ -9,6 +9,14 @@
 #   links        마크다운 링크 대상 존재 여부. 링크는 문서 기준 상대 경로다
 #   urls         마크다운 링크 [text](url) 와 자동 링크 <url> 의 HTTP 응답
 #
+# 대상은 .md 와 .mdx 다. 훅이 두 확장자에 다 도는데 검사가 .md 만 보면 .mdx 는
+# 훅이 돌면서도 아무것도 검사하지 않는다.
+#
+# frontmatter, graph, paths 는 docs/ 안만 본다. front matter 를 갖는 문서가 거기뿐이다.
+# links 와 urls 는 저장소 루트 문서까지 본다. README.md 의 깨진 링크도 깨진 링크다.
+#
+# front matter 의 기계 계약(JSON Schema)과 수명주기는 tests/check-docs-metadata.sh 가 본다.
+#
 # 규약: docs/standards/documentation.md
 #
 # 사용법:
@@ -43,7 +51,7 @@ BACKTICK_ALLOW=".env .git .gitignore .github .github/workflows"
 BACKTICK_PATTERN="\`[^\`]\\+\`"
 
 REQUIRED_KEYS="id title type status summary scope read_when"
-TYPE_ENUM="index standard guide reference generated"
+TYPE_ENUM="index standard guide reference generated decision"
 
 # summary 문체 검사. 문서 언어에 따라 규칙이 다르다. none 이면 검사하지 않는다.
 SUMMARY_STYLE="{{SUMMARY_STYLE}}"
@@ -165,12 +173,20 @@ fi
 DOC_FILES=()
 while IFS= read -r doc; do
     DOC_FILES[${#DOC_FILES[@]}]="$doc"
-done < <(find "$DOCS_ROOT" -type f -name '*.md' | sort)
+done < <(find "$DOCS_ROOT" -type f \( -name '*.md' -o -name '*.mdx' \) | sort)
 
 if [ "${#DOC_FILES[@]}" -eq 0 ]; then
     echo "FAIL: $DOCS_ROOT 에 문서가 없다" >&2
     exit 1
 fi
+
+# 링크와 URL 은 docs/ 밖에서도 깨진다. 훅은 모든 마크다운 변경에 도는데 검사 범위가
+# docs/ 안이면 README.md 나 AGENTS.md 의 깨진 링크는 훅이 돌면서도 잡히지 않는다.
+# front matter 가 없는 문서라 나머지 단계의 대상은 아니다.
+LINK_FILES=("${DOC_FILES[@]}")
+while IFS= read -r doc; do
+    LINK_FILES[${#LINK_FILES[@]}]="$doc"
+done < <(find "$REPO_ROOT" -maxdepth 1 -type f \( -name '*.md' -o -name '*.mdx' \) | sort)
 
 # 임시 파일은 저장소 밖에 둔다. 저장소 안에 두면 실수로 커밋되거나 검사 대상에 섞인다.
 TMP_DIR="$(mktemp -d)"
@@ -218,6 +234,9 @@ expected_type() {
         guides) echo "guide" ;;
         references) echo "reference" ;;
         generated) echo "generated" ;;
+        # architecture/ 는 그 자체가 참고 자료이고 그 아래 adr/ 만 결정 기록이다.
+        architecture) echo "reference" ;;
+        adr) echo "decision" ;;
         *) echo "" ;;
     esac
 }
@@ -229,6 +248,7 @@ status_allowed() {
         guide) [[ "$2" =~ ^(draft|active|outdated)$ ]] ;;
         reference) [[ "$2" =~ ^(active|outdated|archived)$ ]] ;;
         generated) [[ "$2" =~ ^(current|stale)$ ]] ;;
+        decision) [[ "$2" =~ ^(proposed|accepted|rejected|superseded)$ ]] ;;
         *) return 1 ;;
     esac
 }
@@ -251,7 +271,7 @@ summary_style_ok() {
     return 0
 }
 
-echo "대상 문서: ${#DOC_FILES[@]}개"
+echo "대상 문서: ${#DOC_FILES[@]}개 (링크와 URL 은 루트 문서까지 ${#LINK_FILES[@]}개)"
 
 ID_LIST="$TMP_DIR/ids"
 REF_LIST="$TMP_DIR/refs"
@@ -369,8 +389,10 @@ fi
 
 if phase_on paths; then
     banner "백틱 경로"
-    # 코드 블록 안은 규약 예외이므로 제외한다.
-    awk '/^[[:space:]]*```/ { fence = !fence; next } !fence' "${DOC_FILES[@]}" \
+    # 코드 블록 안은 규약 예외이므로 제외한다. 파일이 바뀌면 fence 상태를 되돌린다.
+    awk 'FNR == 1 { fence = 0 }
+         /^[[:space:]]*```/ { fence = !fence; next }
+         !fence' "${DOC_FILES[@]}" \
         | grep -o "$BACKTICK_PATTERN" \
         | tr -d '`' \
         | sed 's:/*$::' \
@@ -432,7 +454,7 @@ resolve_link() {
 if phase_on links; then
     banner "링크 대상 (문서 기준 상대 경로)"
     {
-        for f in "${DOC_FILES[@]}"; do
+        for f in "${LINK_FILES[@]}"; do
             rel="$(rel_path "$f")"
             dir="$(dirname "$rel")"
             [ "$dir" != "." ] || dir=""
@@ -486,9 +508,16 @@ check_url() {
 
 if phase_on urls; then
     banner "URL"
+    # 코드 블록 안은 예시다. links 단계와 같은 기준으로 뺀다. 문서 구조 예시에 적힌
+    # https://example.com/spec 을 실제로 두드리면 영원히 404 다.
+    # 파일이 바뀌면 fence 상태를 되돌린다. 안 그러면 펜스 개수가 홀수인 문서 하나가
+    # 뒤따르는 모든 문서를 통째로 코드 블록으로 만든다.
+    awk 'FNR == 1 { fence = 0 }
+         /^[[:space:]]*```/ { fence = !fence; next }
+         !fence' "${LINK_FILES[@]}" > "$TMP_DIR/urls.src"
     {
-        grep -ho '](http[^)]*)' "${DOC_FILES[@]}" | sed 's/^](//; s/)$//'
-        grep -ho '<http[^>]*>' "${DOC_FILES[@]}" | tr -d '<>'
+        grep -ho '](http[^)]*)' "$TMP_DIR/urls.src" | sed 's/^](//; s/)$//'
+        grep -ho '<http[^>]*>' "$TMP_DIR/urls.src" | tr -d '<>'
     } | sort -u > "$TMP_DIR/urls"
 
     while IFS= read -r url; do

@@ -159,6 +159,23 @@ fi
 echo "대상 갈래: $SUITES"
 echo "실행 경로: $RUNNER_LABEL"
 
+# 갈래 디렉터리가 하나도 없으면 pytest 를 찾지 않는다. 파이썬을 쓰지 않는 저장소에도
+# scripts/*.py 검사기가 깔리므로 추적 파일 검사만으로는 여기까지 온다. 돌릴 것이
+# 없는데 도구가 없다고 CI 를 빨갛게 만들면, 그 빨간불은 아무 사실도 알려주지 않는다.
+have_suite=0
+for suite in $SUITES; do
+    [ -d "tests/$suite" ] && have_suite=1
+done
+
+if [ "$have_suite" -eq 0 ]; then
+    for suite in $SUITES; do
+        report SKIP "$suite" "tests/$suite 가 없다"
+    done
+    echo
+    echo "결과: PASS $pass_count, FAIL $fail_count, SKIP $skip_count"
+    exit 0
+fi
+
 if require_tool pytest "uv sync (또는 just bootstrap)"; then
     suite_total="$(printf '%s\n' "$SUITES" | wc -w | tr -d ' ')"
     suite_index=0

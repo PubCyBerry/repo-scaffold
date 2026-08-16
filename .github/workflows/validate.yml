@@ -17,6 +17,16 @@
 # scaffolded repository's check-markdown.sh and check-prose.sh, and both
 # treat a missing tool as a failure under CI. vale ships as a wrapper that
 # downloads its real binary on first run, so this step needs network.
+#
+# check-jsonschema is installed for check-docs-metadata.sh, which validates
+# front matter against the schema the skill ships. Its Python checkers run
+# through uv run --script and pull no dependencies, so uv alone covers them.
+#
+# ruff and mypy are installed because those checkers are Python files that
+# land in every scaffolded repository, so check-python.sh no longer skips.
+# A scaffolded repository without pyproject.toml gives ruff its default
+# line length of 88, so the shipped Python is written to format identically
+# at 88 and at the repository standard of 100.
 
 name: Validate
 
@@ -41,6 +51,9 @@ env:
   ZIZMOR_VERSION: 1.29.0
   RUMDL_VERSION: 0.2.55
   VALE_VERSION: 3.13.0.0
+  CHECK_JSONSCHEMA_VERSION: 0.38.0
+  RUFF_VERSION: 0.16.3
+  MYPY_VERSION: 2.3.1
 
 jobs:
   validate:
@@ -72,6 +85,9 @@ jobs:
           uv tool install "zizmor==${ZIZMOR_VERSION}"
           uv tool install "rumdl==${RUMDL_VERSION}"
           uv tool install "vale==${VALE_VERSION}"
+          uv tool install "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}"
+          uv tool install "ruff==${RUFF_VERSION}"
+          uv tool install "mypy==${MYPY_VERSION}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: shellcheck

@@ -10,10 +10,13 @@
 │   ├── standards/         지켜야 하는 작업 규칙
 │   ├── guides/            작업 절차
 │   ├── references/        사실 조회용 자료
-│   └── generated/         코드나 스키마에서 생성한 정보
+│   ├── generated/         코드나 스키마에서 생성한 정보
+│   └── architecture/      시스템 구조. adr/ 는 결정 기록
+├── schemas/               front matter 의 기계 계약 (JSON Schema)
 ├── styles/                Vale 산문 규칙. Project(문자), English, Korean
 ├── tests/
 │   ├── check-docs.sh      문서 규약, 링크, 경로 검증
+│   ├── check-docs-metadata.sh  front matter 스키마, 문서 그래프, 수명주기
 │   ├── check-markdown.sh  마크다운 구조와 형식
 │   ├── check-prose.sh     산문, 용어, 문자 규칙
 │   ├── check-shell.sh     셸 스크립트 shellcheck, shfmt 검사
@@ -21,14 +24,17 @@
 │   ├── check-workflows.sh 워크플로 actionlint, zizmor 검사
 │   ├── check-hooks.sh     훅 설정 규약 검증
 │   ├── check-env.sh       .env 와 .env.example 키 동기화 검증
-│   └── check-secrets.sh   커밋 대상 자격 증명 스캔
+│   ├── check-secrets.sh   커밋 대상 자격 증명 스캔
+│   └── unit/              문서 검사기 단위 테스트와 fixture
 ├── scripts/
 │   ├── bootstrap.sh       도구, 의존성, git 훅 설치
 │   ├── doctor.sh          환경 진단
 │   ├── fmt.sh             형식 정리
 │   ├── fix.sh             자동 수정
 │   ├── run-all.sh         레시피 여러 개를 끝까지 돌리고 집계
-│   └── gen-doc-index.sh   AGENTS.md 문서 인덱스 생성
+│   ├── gen-doc-index.sh   AGENTS.md 문서 인덱스 생성
+│   ├── docs_freshness.py  문서 수명주기. 시간과 source drift
+│   └── docs_graph.py      문서 그래프. id, 참조, 대체 관계, 고아 문서
 ├── Justfile                 명령 인터페이스. `just verify` 가 Definition of Done
 ├── tools.txt                개발 도구와 버전의 단일 출처
 ├── .pre-commit-config.yaml  커밋과 푸시 직전 검증
@@ -73,7 +79,7 @@ cat docs/index.md           # 문서 진입점
 | `just fix` | 자동으로 고칠 수 있는 지적 수정. 파일을 바꾼다 |
 | `just markdown` | 마크다운 구조와 형식 |
 | `just prose` | 산문, 용어, 문자 규칙 |
-| `just docs` | 문서 규약과 인덱스 최신 여부 |
+| `just docs` | 문서 규약, 인덱스 최신 여부, front matter 계약과 수명주기 |
 | `just links-internal` | 저장소 안 링크와 문서 그래프 |
 | `just security` | 자격 증명 스캔과 `.env` 키 검증 |
 | `just check` | 훅 전체를 손으로 실행 |
@@ -94,7 +100,7 @@ cat docs/index.md           # 문서 진입점
 | --- | --- |
 | `pre-commit` | 파일 단위로 빠르게 끝나는 검사. 문서, 마크다운, 산문, 셸, 워크플로, 자격 증명 |
 | `commit-msg` | 커밋 메시지 규약 |
-| `pre-push` | 저장소 전체를 봐야 답이 나오는 검사. 문서 그래프 |
+| `pre-push` | 저장소 전체를 봐야 답이 나오는 검사. 문서 그래프, 문서 source drift |
 
 전역 `core.hooksPath` 가 설정된 환경이라 설치가 거부되면 다음처럼 그 확인만 우회한다.
 전역 설정은 바뀌지 않는다.
@@ -132,10 +138,17 @@ prek update --cooldown-days 7
 [docs/standards/writing-style.md](docs/standards/writing-style.md) 다.
 Vale 은 첫 실행에 네트워크로 실행 파일을 받는다. 폐쇄망에서는 로컬 SKIP 이고 CI 에서는 FAIL 이다.
 
+문서 수명주기는 `scripts/docs_freshness.py` 와 `scripts/docs_graph.py` 가 본다.
+PEP-723 인라인 메타데이터를 갖고 `uv run --script` 로 돌아서 `pyproject.toml` 이 없어도 되고
+의존성도 없다. front matter 의 `sources` 에 적힌 경로가 `last_reviewed` 이후에 바뀌면
+push 를 막는다. 시간이 흘러 낡은 것은 경고만 하고 막지 않는다. `last_reviewed` 는 사람이
+문서를 다시 읽었을 때만 손으로 올린다.
+
 외부 URL 검사는 시간이 걸려 훅에서 제외했다. 링크를 새로 넣었으면 직접 돌린다.
 
 ```bash
 bash tests/check-docs.sh                     # URL 포함 전체
+bash tests/check-docs-metadata.sh            # front matter 계약, 그래프, 수명주기
 bash tests/check-secrets.sh --all            # 추적 파일 전체 스캔
 ```
 
