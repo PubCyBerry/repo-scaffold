@@ -12,6 +12,10 @@ read_when:
   - Writing or reviewing a code comment
   - Naming a heading, table header, status, or option
   - Choosing between an em dash, a colon, and a comma
+sources:
+  - tests/check-prose.sh
+  - .vale.ini
+  - styles
 related:
   - standard-documentation
   - standard-commit-convention

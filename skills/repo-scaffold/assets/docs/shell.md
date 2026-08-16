@@ -11,6 +11,9 @@ read_when:
   - Writing or editing a shell script
   - A shellcheck or shfmt check fails
   - Deciding how a script should report failure
+sources:
+  - tests/check-shell.sh
+  - .shellcheckrc
 related:
   - standard-code-quality
   - standard-github-actions

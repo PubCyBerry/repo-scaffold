@@ -12,6 +12,8 @@ read_when:
   - Adding or bumping an action version
   - Configuring Dependabot
   - An actionlint or zizmor finding needs resolving
+sources:
+  - tests/check-workflows.sh
 related:
   - standard-shell
   - standard-commit-convention

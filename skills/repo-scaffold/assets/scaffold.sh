@@ -430,11 +430,19 @@ render_category() {
 # 짧은 형식 :!PATH 를 쓰지 않는다. PATH 첫 글자를 pathspec magic 으로 읽어서
 # ':!__pycache__/**' 가 "Unimplemented pathspec magic '_'" 로 죽는다.
 # 맨 앞의 '.' 는 positive pathspec 이다. 제외만 주면 매칭 규칙이 git 버전마다 갈린다.
+#
+# 이 스크립트가 스스로 까는 파일도 뺀다. 문서 검사기는 언어와 무관하게 항상 깔리는
+# 파이썬 파일이라, 빼지 않으면 두 번째 실행이 첫 번째 실행의 결과물을 보고
+# "이 저장소는 파이썬을 쓴다" 로 판정한다. 그러면 스캐폴딩이 멱등이 아니게 된다.
 PATHSPEC=(
     '.'
     ':(exclude).venv/**' ':(exclude)node_modules/**' ':(exclude)__pycache__/**'
     ':(exclude)vendor/**' ':(exclude)dist/**' ':(exclude)build/**'
     ':(exclude)target/**' ':(exclude)site-packages/**'
+    ':(exclude)scripts/docs_freshness.py' ':(exclude)scripts/docs_graph.py'
+    ':(exclude)tests/unit/conftest.py'
+    ':(exclude)tests/unit/test_docs_freshness.py'
+    ':(exclude)tests/unit/test_docs_graph.py'
 )
 
 # --cached 만 보면 git init 만 하고 아무것도 add 하지 않은 저장소가 전부 빈 것으로 보인다.
@@ -534,7 +542,12 @@ render scripts/bootstrap.sh scripts/bootstrap.sh
 render scripts/doctor.sh scripts/doctor.sh
 render scripts/fmt.sh scripts/fmt.sh
 render scripts/fix.sh scripts/fix.sh
+# PEP-723 인라인 메타데이터를 갖고 uv run --script 로 돈다. 대상 저장소에
+# pyproject.toml 이 없어도 되고, 의존성도 없다.
+render scripts/docs_freshness.py scripts/docs_freshness.py
+render scripts/docs_graph.py scripts/docs_graph.py
 render tests/check-docs.sh tests/check-docs.sh
+render tests/check-docs-metadata.sh tests/check-docs-metadata.sh
 render tests/check-markdown.sh tests/check-markdown.sh
 render tests/check-prose.sh tests/check-prose.sh
 render tests/check-shell.sh tests/check-shell.sh
@@ -546,6 +559,20 @@ render tests/check-secrets.sh tests/check-secrets.sh
 render tests/check-python.sh tests/check-python.sh
 render tests/run-tests.sh tests/run-tests.sh
 render_mergeable root/pre-commit-config.yaml .pre-commit-config.yaml
+# front matter 의 기계 계약. 사람이 읽는 원본은 docs/standards/documentation.md 다.
+render schemas/docs-frontmatter.schema.json schemas/docs-frontmatter.schema.json
+
+echo
+echo "      문서 검사기 단위 테스트"
+# 검사기 자체(scripts/docs_*.py)는 언어와 무관하게 항상 깐다. 훅이 부르기 때문이다.
+# 그 단위 테스트는 감지로 거른다. pytest 로 돌아야 하고 conftest.py 가 pytest 를
+# import 하므로, 파이썬 없는 저장소에 두면 mypy 가 pytest 스텁을 못 찾아 실패한다.
+render_lang python render tests/unit/conftest.py tests/unit/conftest.py
+render_lang python render tests/unit/test_docs_freshness.py tests/unit/test_docs_freshness.py
+render_lang python render tests/unit/test_docs_graph.py tests/unit/test_docs_graph.py
+render_lang python render tests/unit/fixtures/doc.md.in tests/unit/fixtures/doc.md.in
+render_lang python render tests/unit/fixtures/index.md.in tests/unit/fixtures/index.md.in
+render_lang python render tests/unit/fixtures/agents.md.in tests/unit/fixtures/agents.md.in
 
 echo
 echo "[2/4] 저장소 루트 파일"
@@ -599,6 +626,13 @@ render docs/github-actions.md docs/standards/github-actions.md
 render_category guides docs "index-" ""
 render_category references docs "index-" ""
 render_category generated docs "index-" ""
+# architecture 는 render_category 를 쓰지 않는다. 카테고리 인덱스 템플릿은 Documents 표를
+# 비운 채로 깔지만, 이 두 인덱스는 처음부터 아래 문서를 가리켜야 한다. sed 치환은 한 줄
+# 값만 받으므로 표를 자리표시자로 넣을 수 없다.
+render docs/architecture-index.md docs/architecture/index.md
+render docs/architecture-overview.md docs/architecture/overview.md
+render docs/adr-index.md docs/architecture/adr/index.md
+render docs/adr-0001.md docs/architecture/adr/0001-record-architecture-decisions.md
 
 if [ -n "$PRODUCT" ]; then
     render docs/product-index.md "docs/$PRODUCT/index.md" \
