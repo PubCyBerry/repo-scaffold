@@ -143,16 +143,18 @@ echo "검사 파일: ${scan_count}개"
 
 GITLEAKS_CONFIG=".gitleaks.toml"
 
-if ! command -v gitleaks > /dev/null 2>&1; then
-    echo "SKIP gitleaks 미설치. CI 전용 도구다. 패턴 스캔만 돌았다"
-elif [ ! -f "$GITLEAKS_CONFIG" ]; then
-    # 도구가 없는 것은 기계의 성질이고 설정 파일이 없는 것은 저장소의 결함이다.
-    # 병합 사고로 이 파일이 사라져도 검사는 계속 초록 불이 되므로 CI 에서는 FAIL 이다.
+# 설정 파일 검사가 먼저다. 도구가 있는지부터 물으면, 도구가 없는 기계에서는 설정이
+# 사라진 사실을 영영 알아채지 못한다. CI 에서 이 스크립트는 gitleaks 를 깔기 전에 도는
+# 잡에서도 불리므로, 순서가 반대면 이 판정은 어디서도 못 나온다.
+# 도구가 없는 것은 기계의 성질이고 설정 파일이 없는 것은 저장소의 결함이다.
+if [ ! -f "$GITLEAKS_CONFIG" ]; then
     if [ "${CI:-}" = "true" ]; then
         report_fail gitleaks "$GITLEAKS_CONFIG 가 없다. 규칙이 저장소에 있어야 한다"
     else
         echo "SKIP gitleaks $GITLEAKS_CONFIG 가 없다"
     fi
+elif ! command -v gitleaks > /dev/null 2>&1; then
+    echo "SKIP gitleaks 미설치. CI 전용 도구다. 패턴 스캔만 돌았다"
 else
     if [ "$MODE" = "staged" ]; then
         GITLEAKS_ARGS=(git --staged)

@@ -74,6 +74,17 @@ report() {
     printf '%-4s %-18s %s\n' "$1" "$2" "${3:-}"
 }
 
+# 저장소 파일이 없을 때의 판정. CI 에서는 FAIL 이다.
+# 도구가 없는 것은 기계의 성질이고 설정 파일이 없는 것은 저장소의 결함이다.
+missing_config() {
+    # $1: 이름, $2: 사유
+    if [ "${CI:-}" = "true" ]; then
+        report FAIL "$1" "$2"
+    else
+        report SKIP "$1" "$2"
+    fi
+}
+
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
     # $1: 명령, $2: 설치 명령
@@ -103,11 +114,8 @@ while IFS= read -r f; do
     RENOVATE_FILES[${#RENOVATE_FILES[@]}]="$f"
 done < <(git ls-files -- 'renovate.json' '.renovaterc.json' '.github/renovate.json' | sort)
 
-if [ "${#FILES[@]}" -eq 0 ] && [ "${#RENOVATE_FILES[@]}" -eq 0 ]; then
-    echo "SKIP 추적 중인 YAML 파일과 Renovate 설정이 없다"
-    exit 0
-fi
-
+# 대상이 하나도 없어도 여기서 멈추지 않는다. 멈추면 renovate.json 이 사라진 것을
+# 알려야 하는 3단계가 영영 못 돈다. 단계마다 스스로 판정을 남긴다.
 echo "대상 YAML: ${#FILES[@]}개 (워크플로 ${#WORKFLOWS[@]}개), Renovate 설정: ${#RENOVATE_FILES[@]}개"
 
 echo
@@ -149,7 +157,9 @@ fi
 echo
 echo "[3/3] Renovate 스키마"
 if [ "${#RENOVATE_FILES[@]}" -eq 0 ]; then
-    report SKIP renovate-schema "추적 중인 Renovate 설정이 없다"
+    # 파일이 사라진 것과 파일이 잘못된 것은 결과가 같다. 갱신 PR 이 0건이 되고
+    # 그 상태는 갱신할 것이 없는 상태와 구분되지 않는다. CI 에서는 FAIL 이다.
+    missing_config renovate-schema "추적 중인 Renovate 설정이 없다. 의존성 갱신 정책이 저장소에 있어야 한다"
 elif require_tool check-jsonschema "uv tool install check-jsonschema"; then
     if out="$(check-jsonschema --builtin-schema "$RENOVATE_SCHEMA" "${RENOVATE_FILES[@]}" 2>&1)"; then
         report PASS renovate-schema "Renovate 설정 스키마 일치"
