@@ -173,7 +173,10 @@ else
     while IFS= read -r entry; do
         [ -n "$entry" ] || continue
         case "$entry" in
-            "bash tests/"* | "bash scripts/"*)
+            # .github/ 도 저장소 안이다. 저장소 전용 훅이 거기 스크립트를 부르는 일이
+            # 흔한데, 빼두면 그 훅만 "저장소 안 스크립트 호출이 아니다" 로 SKIP 된다.
+            # 사실이 아닌 SKIP 이라 스크립트가 없어져도 아무도 모른다.
+            "bash tests/"* | "bash scripts/"* | "bash .github/"*)
                 target="${entry#bash }"
                 target="${target%% *}"
                 if [ -f "$target" ]; then

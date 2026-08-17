@@ -92,6 +92,30 @@ back to whatever is on `PATH` and say so in their output.
 
 Versions are raised by the dependency update bot, not by hand.
 
+### Pin the interpreter, or the lock file picks one for you
+
+The shipped `pyproject.toml` declares no `requires-python`, because it declares no `project`
+table either. `uv` still has to write a `requires-python` into `uv.lock`, so it uses the
+interpreter it found on the machine that generated the file. Whoever runs `just bootstrap`
+first therefore decides the floor for everyone else, silently, and the first sign of it is a
+resolution failure on somebody else's machine.
+
+Set the floor explicitly instead. One line, at the top level of `pyproject.toml`:
+
+```toml
+requires-python = ">=3.13"
+```
+
+Pick the oldest interpreter the repository actually supports, not the newest one installed.
+Then regenerate the lock file so it records the decision rather than the accident.
+
+```bash
+uv sync
+```
+
+The same value belongs in whatever the continuous integration workflow installs, so the floor
+is checked rather than assumed.
+
 ### Checks
 
 | Command | Tool | Hook |

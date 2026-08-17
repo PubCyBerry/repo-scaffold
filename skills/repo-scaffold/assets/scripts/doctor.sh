@@ -162,7 +162,21 @@ else
         binary="${binary:-$pkg}"
 
         if [ "$source" != "uv" ]; then
-            report NOTE "$binary" "출처 $source. 손으로 설치한다 ($spec)"
+            # uv 로 깔 수 없는 도구다. 버전은 고정할 수 없어도 도는지 안 도는지는 볼 수 있다.
+            # NOTE 한 줄로 뭉개면 아예 없는 도구가 "손으로 설치한다" 안내에 묻히고,
+            # 그 도구를 부르는 검사는 진단에 안 잡힌 채로 실패한다.
+            #
+            # command -v 로 끝내지 않고 실제로 실행해 본다. PATH 에는 멀쩡히 잡히면서
+            # exec 에서 Permission denied 로 죽는 shim 이 실재한다. 그런 도구는 진단에
+            # PASS 로 찍히고 정작 그것을 부르는 검사는 엉뚱한 이유로 실패한다.
+            # 출력은 버리고 종료 코드만 본다. 버전 문자열은 믿을 것이 못 된다.
+            if "$binary" --version > /dev/null 2>&1; then
+                report NOTE "$binary" "출처 $source. 버전이 고정되지 않는다: $(command -v "$binary")"
+            elif command -v "$binary" > /dev/null 2>&1; then
+                report FAIL "$binary" "PATH 에 있지만 실행되지 않는다: $(command -v "$binary")"
+            else
+                missing_tool "$binary" "미설치. 출처 $source. 손으로 설치한다 ($spec)"
+            fi
             continue
         fi
 

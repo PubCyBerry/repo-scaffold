@@ -77,15 +77,29 @@ require_tool() {
     return 1
 }
 
-# 이 줄은 이 저장소에만 있다. 배포되는 원본은
+# 이 목록은 이 저장소에만 있다. 배포되는 원본은
 # skills/repo-scaffold/assets/tests/check-prose.sh 이고 거기에는 없다.
 #
-# skills/*/assets/ 아래는 대상 저장소로 복사되기 전의 템플릿이라 front matter 에
-# 치환 키가 그대로 있다. Vale 은 front matter 를 YAML 로 파싱하므로 그런 파일을
-# 하나라도 넘기면 E201 로 실행 자체가 멈춘다. 검사가 느슨해지는 것이 아니라
-# 아무것도 검사하지 못하게 된다. 렌더된 결과는 skills/repo-scaffold/tests/smoke.sh 가
-# 임시 저장소에서 검사한다. 같은 예외가 .rumdl.toml 의 exclude 에도 있다.
-EXCLUDE=(':(exclude)skills/*/assets/**')
+# Vale 은 front matter 를 YAML 로 파싱하고, 파싱에 실패하면 E201 로 실행 자체를 멈춘다.
+# 그 파일 하나만 건너뛰는 것이 아니라 뒤따르는 파일이 전부 미검사가 된다.
+#
+# 걸리는 것은 값의 첫 글자가 치환 키인 경우뿐이다. '{' 로 시작하는 값은 YAML 이
+# flow mapping 으로 읽는다. 아래 둘이 그렇다.
+#   category-index.md   id: {{IDX_ID}}
+#   product-index.md    id: {{IDX_ID}}
+# 값 중간에 있는 것은 평범한 문자열이라 통과한다. assets/docs/index.md 의
+# 'summary: Entry point for the {{REPO_NAME}} documentation' 이 그 예다.
+#
+# 그래서 assets/ 를 통째로 빼지 않고 이 둘만 뺀다. 통째로 빼면 템플릿 문서 27 편이
+# 영영 산문 검사를 안 받는다. 새 템플릿이 값 첫 자리에 치환 키를 두면 Vale 이 그 파일
+# 이름을 대고 멈추므로, 그때 이 목록에 한 줄 추가한다. 조용히 지나가지 않는다.
+#
+# 렌더된 결과는 skills/repo-scaffold/tests/smoke.sh 가 임시 저장소에서 검사한다.
+# .rumdl.toml 쪽 예외는 이보다 넓다. 사유가 달라서다. 근거는 ADR 0002 에 있다.
+EXCLUDE=(
+    ':(exclude)skills/*/assets/docs/category-index.md'
+    ':(exclude)skills/*/assets/docs/product-index.md'
+)
 
 FILES=()
 while IFS= read -r f; do

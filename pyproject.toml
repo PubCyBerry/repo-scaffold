@@ -12,6 +12,11 @@
 #
 # 버전은 손으로 올리지 않는다. Renovate 가 uv.lock 을 갱신한다.
 
+# 인터프리터 하한을 손으로 못박는다. 안 적으면 uv 가 uv.lock 을 만든 사람의 인터프리터를
+# 그대로 requires-python 에 박고, 그 사람이 모두의 하한을 조용히 정하게 된다.
+# 근거는 docs/standards/python.md 의 "Pin the interpreter" 절에 있다.
+requires-python = ">=3.13"
+
 [dependency-groups]
 dev = [
     "ruff==0.16.3",

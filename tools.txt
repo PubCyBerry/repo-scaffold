@@ -19,6 +19,12 @@
 # 폐쇄망에서는 깔리지 않으므로 tests/check-prose.sh 가 로컬 SKIP, CI FAIL 로 처리한다.
 
 rust-just==1.58.0         uv  just
+# 아래 두 줄은 이 저장소에만 있다. 배포되는 tools.txt 에는 없다.
+# .github/scripts/validate-skills.sh 가 스킬 계약을 검사할 때만 쓰고, 스캐폴딩된 저장소는
+# 그 스크립트를 받지 않는다. 배포판에 넣으면 아무도 안 쓰는 도구 둘을 모두에게 요구하게 된다.
+# PyPI 밖이라 uv tool install 로 안 깔린다. 출처가 manual 인 이유다.
+yq==4.53.3                manual  yq
+jq==1.8.1                 manual  jq
 prek==0.4.13              uv  prek
 shellcheck-py==0.11.0.1   uv  shellcheck
 shfmt-py==4.0.0           uv  shfmt
