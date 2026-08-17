@@ -21,7 +21,7 @@
 │   ├── check-markdown.sh  마크다운 구조와 형식
 │   ├── check-prose.sh     산문, 용어, 문자 규칙
 │   ├── check-shell.sh     셸 스크립트 shellcheck, shfmt 검사
-│   ├── check-yaml.sh      YAML yamllint, 워크플로 스키마 검사
+│   ├── check-yaml.sh      YAML yamllint, 워크플로와 Renovate 스키마 검사
 │   ├── check-workflows.sh 워크플로 actionlint, zizmor 검사
 │   ├── check-hooks.sh     훅 설정 규약 검증
 │   ├── check-commit-msg.sh 커밋 메시지 규약 검증
