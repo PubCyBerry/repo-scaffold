@@ -111,6 +111,11 @@ hooks:
 workflow-check:
     bash tests/check-workflows.sh
 
+# 라벨 정의와 원격의 드리프트. 읽기만 한다. 만드는 것은 --apply 를 준 같은 스크립트다.
+# 네트워크와 gh 인증을 타므로 verify 에 넣지 않는다.
+labels-check:
+    bash scripts/apply-github-labels.sh --check
+
 # 자격 증명과 .env 키.
 security:
     bash scripts/run-all.sh secret-scan env-sync

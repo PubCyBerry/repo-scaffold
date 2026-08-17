@@ -42,8 +42,10 @@ esac
 # git ls-files 는 인덱스를 읽는다. 커밋될 상태를 그대로 반영한다.
 #
 # .agents/ 는 뺀다. 스킬 정의는 에이전트 런타임이 직접 읽으므로 인덱스에서 고를 대상이 아니다.
+# .github/pull_request_template.md 도 뺀다. 읽을 문서가 아니라 GitHub 이 PR 본문에 붙이는
+# 서식이고, 인덱스에 들어가면 에이전트가 읽을 문서로 착각한다.
 # 다시 넣으려면 아래 제외 pathspec 을 지운다.
-EXCLUDE=(':!.agents/*')
+EXCLUDE=(':!.agents/*' ':!.github/pull_request_template.md')
 
 FILES=()
 while IFS= read -r f; do

@@ -440,9 +440,11 @@ PATHSPEC=(
     ':(exclude)vendor/**' ':(exclude)dist/**' ':(exclude)build/**'
     ':(exclude)target/**' ':(exclude)site-packages/**'
     ':(exclude)scripts/docs_freshness.py' ':(exclude)scripts/docs_graph.py'
+    ':(exclude)scripts/check_pr_metadata.py'
     ':(exclude)tests/unit/conftest.py'
     ':(exclude)tests/unit/test_docs_freshness.py'
     ':(exclude)tests/unit/test_docs_graph.py'
+    ':(exclude)tests/unit/test_check_pr_metadata.py'
 )
 
 # --cached 만 보면 git init 만 하고 아무것도 add 하지 않은 저장소가 전부 빈 것으로 보인다.
@@ -546,6 +548,11 @@ render scripts/fix.sh scripts/fix.sh
 # pyproject.toml 이 없어도 되고, 의존성도 없다.
 render scripts/docs_freshness.py scripts/docs_freshness.py
 render scripts/docs_graph.py scripts/docs_graph.py
+# PR 제목과 본문 계약 검사기. .github/workflows/pr-policy.yml 이 부른다.
+render scripts/check_pr_metadata.py scripts/check_pr_metadata.py
+# 원격을 바꾸는 스크립트 둘. 인자 없이 부르면 dry-run 이고 --apply 를 줘야 실제로 바꾼다.
+render scripts/apply-github-labels.sh scripts/apply-github-labels.sh
+render scripts/apply-github-repository-settings.sh scripts/apply-github-repository-settings.sh
 render tests/check-docs.sh tests/check-docs.sh
 render tests/check-docs-metadata.sh tests/check-docs-metadata.sh
 render tests/check-links-external.sh tests/check-links-external.sh
@@ -572,6 +579,7 @@ echo "      문서 검사기 단위 테스트"
 render_lang python render tests/unit/conftest.py tests/unit/conftest.py
 render_lang python render tests/unit/test_docs_freshness.py tests/unit/test_docs_freshness.py
 render_lang python render tests/unit/test_docs_graph.py tests/unit/test_docs_graph.py
+render_lang python render tests/unit/test_check_pr_metadata.py tests/unit/test_check_pr_metadata.py
 render_lang python render tests/unit/fixtures/doc.md.in tests/unit/fixtures/doc.md.in
 render_lang python render tests/unit/fixtures/index.md.in tests/unit/fixtures/index.md.in
 render_lang python render tests/unit/fixtures/agents.md.in tests/unit/fixtures/agents.md.in
@@ -622,6 +630,27 @@ render github/workflows/quality.yml .github/workflows/quality.yml
 render github/workflows/test.yml .github/workflows/test.yml
 render github/workflows/security.yml .github/workflows/security.yml
 render github/workflows/docs-health.yml .github/workflows/docs-health.yml
+# pr-policy 의 잡 이름도 required status check 이름이다. stale 은 필수 검사가 아니다.
+render github/workflows/pr-policy.yml .github/workflows/pr-policy.yml
+render github/workflows/stale-needs-info.yml .github/workflows/stale-needs-info.yml
+
+echo
+echo "      이슈와 PR 거버넌스"
+# Issue Form 이 붙이는 라벨이 .github/labels.yml 에 없으면 GitHub 이 조용히 버린다.
+# 라벨을 먼저 만든다. 절차는 docs/guides/github-governance-setup.md 에 있다.
+render github/labels.yml .github/labels.yml
+render github/issue-template/config.yml .github/ISSUE_TEMPLATE/config.yml
+render github/issue-template/bug.yml .github/ISSUE_TEMPLATE/bug.yml
+render github/issue-template/feature.yml .github/ISSUE_TEMPLATE/feature.yml
+render github/issue-template/task.yml .github/ISSUE_TEMPLATE/task.yml
+render github/pull-request-template.md .github/pull_request_template.md
+# CODEOWNERS 와 룰셋은 예제로만 깐다. 실제 핸들과 잡 이름을 사람이 채워야 하고,
+# 잘못 걸면 기본 브랜치가 잠긴다.
+render github/codeowners.example .github/CODEOWNERS.example
+render github/rulesets/default-branch.solo.example.json \
+    .github/rulesets/default-branch.solo.example.json
+render github/rulesets/default-branch.team.example.json \
+    .github/rulesets/default-branch.team.example.json
 
 echo
 echo "      산문 규칙 (Vale)"
@@ -650,11 +679,19 @@ render docs/writing-style.md docs/standards/writing-style.md
 render docs/code-quality.md docs/standards/code-quality.md
 render docs/testing.md docs/standards/testing.md
 render docs/code-review.md docs/standards/code-review.md
+render docs/review-feedback.md docs/standards/review-feedback.md
 render docs/commit-convention.md docs/standards/commit-convention.md
 render docs/shell.md docs/standards/shell.md
 render docs/python.md docs/standards/python.md
 render docs/github-actions.md docs/standards/github-actions.md
-render_category guides docs "index-" ""
+render docs/issue-lifecycle.md docs/standards/issue-lifecycle.md
+render docs/triage-labels.md docs/standards/triage-labels.md
+render docs/pull-request-lifecycle.md docs/standards/pull-request-lifecycle.md
+render docs/github-enforcement.md docs/standards/github-enforcement.md
+# guides 인덱스는 카테고리 템플릿을 쓰지 않는다. 처음부터 아래 안내서를 가리켜야 하는데
+# 카테고리 템플릿은 Documents 표를 비운 채로 깔고 sed 치환은 한 줄 값만 받는다.
+render docs/guides-index.md docs/guides/index.md
+render docs/github-governance-setup.md docs/guides/github-governance-setup.md
 render_category references docs "index-" ""
 render_category generated docs "index-" ""
 # architecture 는 render_category 를 쓰지 않는다. 카테고리 인덱스 템플릿은 Documents 표를
