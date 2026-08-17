@@ -1,0 +1,9 @@
+# 이슈 폼 설정.
+#
+# 빈 이슈를 끈다. 빈 이슈는 kind 도 status 도 없이 열려서 수명주기 밖에 남고,
+# 아무도 트리아지 대상으로 세지 않는다. 근거는 docs/standards/issue-lifecycle.md 다.
+#
+# contact_links 는 폼 대신 보낼 곳이다. 보안 신고 창구나 토론 링크를 여기에 넣는다.
+
+blank_issues_enabled: false
+contact_links: []

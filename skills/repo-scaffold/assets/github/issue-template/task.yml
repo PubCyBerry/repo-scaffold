@@ -1,0 +1,70 @@
+# 엔지니어링 작업 폼. 규약은 docs/standards/issue-lifecycle.md 에 있다.
+#
+# labels 의 이름은 .github/labels.yml 에 있어야 한다. 없으면 조용히 버려진다.
+
+name: Engineering task
+description: Track non-trivial engineering or repository work
+title: ""
+labels:
+  - "kind/task"
+  - "status/needs-triage"
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What outcome should this task produce?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this work needed now?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What work is included?
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: What is intentionally excluded?
+      placeholder: N/A if there are no meaningful non-goals.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Define observable completion conditions.
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and blockers
+      description: Link prerequisite issues, external dependencies, or blockers.
+      placeholder: N/A if none.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+    validations:
+      required: false

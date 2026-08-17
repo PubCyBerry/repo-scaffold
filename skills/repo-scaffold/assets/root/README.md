@@ -36,7 +36,17 @@
 │   ├── run-all.sh         레시피 여러 개를 끝까지 돌리고 집계
 │   ├── gen-doc-index.sh   AGENTS.md 문서 인덱스 생성
 │   ├── docs_freshness.py  문서 수명주기. 시간과 source drift
-│   └── docs_graph.py      문서 그래프. id, 참조, 대체 관계, 고아 문서
+│   ├── docs_graph.py      문서 그래프. id, 참조, 대체 관계, 고아 문서
+│   ├── check_pr_metadata.py  PR 제목, 필수 절, 이슈 연결 계약
+│   ├── apply-github-labels.sh  라벨 반영. 기본은 dry-run
+│   └── apply-github-repository-settings.sh  머지 설정 반영. 기본은 dry-run
+├── .github/
+│   ├── workflows/         CI. 잡 이름이 룰셋의 required check 이름이다
+│   ├── ISSUE_TEMPLATE/    이슈 폼 3종과 설정
+│   ├── pull_request_template.md  PR 필수 9개 절
+│   ├── labels.yml         라벨 정의의 단일 출처
+│   ├── CODEOWNERS.example 복사해서 실제 핸들로 바꾼다
+│   └── rulesets/          기본 브랜치 룰셋 예제. solo 와 team
 ├── Justfile                 명령 인터페이스. `just verify` 가 Definition of Done
 ├── tools.txt                개발 도구와 버전의 단일 출처
 ├── package.json  package-lock.json  commitlint 하나. Node 는 도구 의존성이다
@@ -89,6 +99,7 @@ cat docs/index.md           # 문서 진입점
 | `just links-internal` | 저장소 안 링크와 문서 그래프 |
 | `just links-external` | 외부 URL. 네트워크를 탄다. `just verify` 에 없다 |
 | `just security` | 자격 증명 스캔과 `.env` 키 검증 |
+| `just labels-check` | `.github/labels.yml` 과 원격 라벨의 차이. 읽기만 한다 |
 | `just check` | 훅 전체를 손으로 실행 |
 
 `just verify` 는 훅 실행기를 거치지 않는다. 훅을 설치하지 않은 새 클론에서도 그대로 돈다.
@@ -172,6 +183,30 @@ bash tests/check-docs.sh                     # URL 포함 전체. curl 만 쓰�
 bash tests/check-docs-metadata.sh            # front matter 계약, 그래프, 수명주기
 bash tests/check-secrets.sh --all            # 추적 파일 전체 스캔
 ```
+
+### GitHub 거버넌스
+
+`.github/` 의 이슈 폼, PR 템플릿, 룰셋 예제는 깔린 상태로는 아무 일도 하지 않는다.
+라벨을 먼저 만들고, 머지 설정을 맞추고, 룰셋을 골라 걸어야 동작한다.
+순서와 이유는 [docs/guides/github-governance-setup.md](docs/guides/github-governance-setup.md) 다.
+
+원격을 바꾸는 스크립트 둘은 인자 없이 부르면 무엇이 바뀔지만 보여준다.
+실제로 바꾸는 것은 `--apply` 를 줬을 때뿐이다.
+
+```bash
+bash scripts/apply-github-labels.sh                       # 차이만 본다
+bash scripts/apply-github-labels.sh --apply               # 라벨을 만들고 고친다
+bash scripts/apply-github-repository-settings.sh          # 현재 값과 의도한 값
+bash scripts/apply-github-repository-settings.sh --apply  # 머지 설정을 반영한다
+```
+
+라벨이 없으면 세 가지가 조용히 깨진다. 이슈 폼은 없는 라벨을 오류 없이 버리고,
+stale 워크플로는 아무것도 매칭하지 못한 채 매일 초록으로 끝나며, `pr-policy` 는
+`policy/skip-issue` 를 붙일 수 없어 사소한 PR 을 전부 막는다.
+
+브랜치 룰셋은 어떤 스크립트도 걸지 않는다. 잘못 걸면 기본 브랜치가 잠기고
+푸는 데 같은 관리자 권한이 필요하다. 1 인 저장소는 `solo` 예제를 쓴다.
+`team` 예제는 승인 1 건과 코드 소유자 승인을 요구해서 혼자서는 아무것도 머지하지 못한다.
 
 ## 문서
 

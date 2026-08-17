@@ -261,7 +261,7 @@ if [ -n "$JUST_BIN" ]; then
         fail "렌더된 Justfile 을 just 가 파싱하지 못함"
     fi
     summary=" $(tr '\n' ' ' < "$TMP_ROOT/just-summary.log") "
-    for recipe in bootstrap doctor fmt fix lint lint-python type markdown prose docs links-internal links-external hooks security test test-unit verify check; do
+    for recipe in bootstrap doctor fmt fix lint lint-python type markdown prose docs links-internal links-external hooks labels-check security test test-unit verify check; do
         case "$summary" in
             *" $recipe "*) ;;
             *) fail "just --summary 에 $recipe 레시피가 없음" ;;
@@ -286,7 +286,8 @@ for script in tests/check-docs.sh tests/check-docs-metadata.sh tests/check-markd
     tests/check-hooks.sh tests/check-env.sh tests/check-secrets.sh \
     tests/check-commit-msg.sh tests/check-links-external.sh \
     tests/check-python.sh tests/run-tests.sh \
-    scripts/run-all.sh scripts/bootstrap.sh scripts/doctor.sh scripts/fmt.sh scripts/fix.sh; do
+    scripts/run-all.sh scripts/bootstrap.sh scripts/doctor.sh scripts/fmt.sh scripts/fix.sh \
+    scripts/apply-github-labels.sh scripts/apply-github-repository-settings.sh; do
     log="$TMP_ROOT/help-$(basename "$script").log"
     if ! (cd "$REPO/docs" && bash "../$script" --help) > "$log" 2>&1; then
         cat "$log"
@@ -304,7 +305,7 @@ done
 # PEP-723 문서 검사기는 argparse 로 --help 를 낸다. 헤더 주석 규약은 셸 스크립트의 것이다.
 # uv 가 없으면 훅과 CI 가 SKIP 으로 넘기므로 여기서도 넘긴다.
 if command -v uv > /dev/null 2>&1; then
-    for script in docs_freshness.py docs_graph.py; do
+    for script in docs_freshness.py docs_graph.py check_pr_metadata.py; do
         log="$TMP_ROOT/help-$script.log"
         if ! (cd "$REPO" && uv run --script "scripts/$script" --help) > "$log" 2>&1; then
             cat "$log"
@@ -326,6 +327,76 @@ if command -v uv > /dev/null 2>&1; then
         || fail "중복 id 를 그 이유로 지적하지 않음"
     cp "$TMP_ROOT/shell.md.orig" "$REPO/docs/standards/shell.md"
     run_self_check check-docs-metadata.sh --only graph
+
+    # PR 계약 검사기. squash 커밋 제목이 PR 제목에서 합성되므로 제목 검사가 핵심이다.
+    # 통과 경로와 실패 경로를 둘 다 확인한다. 조용히 통과하는 검사기는 미검사와 같다.
+    PR_BODY_GOOD="$TMP_ROOT/pr-body.good"
+    : > "$PR_BODY_GOOD"
+    for section in "Summary" "Motivation" "Linked issue" "Changes" "Scope / Non-goals" \
+        "Validation" "Risk / Compatibility" "Documentation" "Reviewer focus"; do
+        printf '## %s\n\n' "$section" >> "$PR_BODY_GOOD"
+        if [ "$section" = "Linked issue" ]; then
+            printf 'Closes #12\n\n' >> "$PR_BODY_GOOD"
+        else
+            printf 'content\n\n' >> "$PR_BODY_GOOD"
+        fi
+    done
+
+    pr_policy() {
+        # $1: 제목, $2: 본문 파일, $3...: 추가 인자
+        local title="$1" body="$2"
+        shift 2
+        (cd "$REPO" && uv run --script scripts/check_pr_metadata.py \
+            --title "$title" --body-file "$body" "$@")
+    }
+
+    if ! pr_policy 'feat(policy): add a governance gate' "$PR_BODY_GOOD" \
+        > "$TMP_ROOT/pr-policy-good.log" 2>&1; then
+        cat "$TMP_ROOT/pr-policy-good.log"
+        fail "올바른 PR 을 check_pr_metadata.py 가 막음"
+    fi
+
+    if pr_policy 'feat(policy): Add a governance gate' "$PR_BODY_GOOD" \
+        > "$TMP_ROOT/pr-policy-title.log" 2>&1; then
+        cat "$TMP_ROOT/pr-policy-title.log"
+        fail "대문자로 시작하는 PR 제목을 FAIL 로 잡지 못함"
+    fi
+    grep -q '소문자로 시작한다' "$TMP_ROOT/pr-policy-title.log" \
+        || fail "대문자 제목을 그 이유로 지적하지 않음"
+
+    grep -v '^## Validation$' "$PR_BODY_GOOD" > "$TMP_ROOT/pr-body.missing"
+    if pr_policy 'feat(policy): add a governance gate' "$TMP_ROOT/pr-body.missing" \
+        > "$TMP_ROOT/pr-policy-section.log" 2>&1; then
+        cat "$TMP_ROOT/pr-policy-section.log"
+        fail "빠진 필수 절을 FAIL 로 잡지 못함"
+    fi
+    grep -q '필수 절이 없다' "$TMP_ROOT/pr-policy-section.log" \
+        || fail "빠진 절을 그 이유로 지적하지 않음"
+
+    # 절은 남기고 닫는 키워드만 없앤다. 줄째로 지우면 절이 비어서 다른 검사에 걸린다.
+    sed 's/^Closes #12$/no issue for this one/' "$PR_BODY_GOOD" > "$TMP_ROOT/pr-body.noissue"
+    if pr_policy 'feat(policy): add a governance gate' "$TMP_ROOT/pr-body.noissue" \
+        > "$TMP_ROOT/pr-policy-issue.log" 2>&1; then
+        cat "$TMP_ROOT/pr-policy-issue.log"
+        fail "이슈 미연결을 FAIL 로 잡지 못함"
+    fi
+    grep -q '이슈를 걸거나' "$TMP_ROOT/pr-policy-issue.log" \
+        || fail "이슈 미연결을 그 이유로 지적하지 않음"
+
+    # 면제 라벨이 있으면 같은 본문이 통과해야 한다. 없으면 사소한 PR 이 전부 막힌다.
+    if ! pr_policy 'feat(policy): add a governance gate' "$TMP_ROOT/pr-body.noissue" \
+        --label policy/skip-issue > "$TMP_ROOT/pr-policy-skip.log" 2>&1; then
+        cat "$TMP_ROOT/pr-policy-skip.log"
+        fail "policy/skip-issue 라벨로 면제되지 않음"
+    fi
+
+    # 배포한 PR 템플릿을 그대로 낸 PR 은 통과하면 안 된다.
+    if pr_policy 'feat(policy): add a governance gate' \
+        "$REPO/.github/pull_request_template.md" \
+        > "$TMP_ROOT/pr-policy-template.log" 2>&1; then
+        cat "$TMP_ROOT/pr-policy-template.log"
+        fail "빈 템플릿 본문을 FAIL 로 잡지 못함"
+    fi
 else
     echo "SKIP uv 를 찾을 수 없어 문서 수명주기 검사기 확인을 건너뜀"
 fi
