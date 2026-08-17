@@ -144,15 +144,17 @@ repos:
           shfmt 에 형식 플래그를 주면 .editorconfig 가 무시되므로 주지 않는다.
 
       - id: yaml-lint
-        name: YAML 검사
+        name: YAML 과 선언 설정 검사
         entry: bash tests/check-yaml.sh
         language: system
-        files: \.(yml|yaml)$
+        files: (\.(yml|yaml)$|(^|/)renovate\.json$|(^|/)\.renovaterc\.json$)
         pass_filenames: false
         groups: [config]
         description: >
           yamllint 으로 YAML 문법과 형식을 보고, 워크플로는 내장 GitHub Actions
-          스키마로 키 구조까지 본다. 형식 기준은 .yamllint.yaml 이고 경고도 실패다.
+          스키마로, renovate.json 은 내장 Renovate 스키마로 키 구조까지 본다.
+          형식 기준은 .yamllint.yaml 이고 경고도 실패다. renovate.json 은 YAML 이
+          아니지만 검사기가 같고, 어긋나면 의존성 갱신 PR 이 조용히 0건이 된다.
 
       - id: workflow-lint
         name: GitHub Actions 워크플로 검사

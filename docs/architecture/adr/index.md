@@ -46,6 +46,7 @@ when a reasonable person would ask why. Skip it otherwise.
 | [0002. Dogfood the scaffold in its own source repository](0002-dogfood-the-scaffold-in-its-own-source-repository.md) | accepted | Applying the shipped scaffold here, and the two checks that skip its templates |
 | [0003. Keep the skill contract workflow outside the shipped job names](0003-keep-the-skill-contract-workflow-outside-the-shipped-job-names.md) | accepted | Two extra required check names beyond the five a ruleset expects |
 | [0004. Keep the vulnerability policy at SECURITY.md](0004-keep-the-vulnerability-policy-at-security-md.md) | accepted | Which of two documents claims one reserved filename |
+| [0005. Run external link checking on a schedule only](0005-run-external-link-checking-on-a-schedule-only.md) | accepted | Why lychee stayed out of the pull request gate, against the plan |
 
 Add one row here when a record is added.
 

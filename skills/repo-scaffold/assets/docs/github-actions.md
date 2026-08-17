@@ -99,6 +99,7 @@ YAML; if a check cannot be run by hand with one command, the command is the thin
 | `zizmor` | Credential persistence, injection, unpinned actions | check-workflows.sh |
 | `yamllint` | YAML syntax and formatting | check-yaml.sh |
 | `check-jsonschema` | Workflow key structure against the vendored schema | check-yaml.sh |
+| `check-jsonschema` | `renovate.json` against the vendored Renovate schema | check-yaml.sh |
 
 [tests/check-workflows.sh](../../tests/check-workflows.sh) is what the `workflow-lint` hook
 invokes before each commit, and [tests/check-yaml.sh](../../tests/check-yaml.sh) is what the
@@ -123,6 +124,12 @@ the reason next to the suppression.
   Updates stay off, and the repository has no `.github/dependabot.yml`
 - `vulnerabilityAlerts` lets Renovate open the fix pull request as well, so a vulnerability
   and an ordinary bump arrive through the same review path
+- [tests/check-yaml.sh](../../tests/check-yaml.sh) validates the file against the Renovate
+  schema that `check-jsonschema` vendors, so no hook reaches the network. A wrong value type
+  is caught there. An unknown key and a misspelled preset name are not, because the schema
+  accepts extra properties, and those surface on the Renovate dependency dashboard instead.
+  A configuration nobody validates fails by producing zero update pull requests, which looks
+  the same as having nothing to update
 
 Two update bots on one repository produce two pull requests for the same bump and no way to
 tell which policy won. One owner, one configuration file.

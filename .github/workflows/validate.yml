@@ -66,7 +66,12 @@ env:
   CHECK_JSONSCHEMA_VERSION: 0.38.0
   RUFF_VERSION: 0.16.3
   MYPY_VERSION: 2.3.1
-  RUST_JUST_VERSION: 1.58.0
+  # rust-just has no entry here on purpose: the four template workflows read its
+  # pin out of tools.txt with awk, and a second copy would drift with nothing to
+  # detect it. The pins above are still duplicates of tools.txt entries. They
+  # agree today, and nothing checks that they keep agreeing; moving them here one
+  # at a time is a separate change.
+  TOOLS_FILE: tools.txt
 
 jobs:
   validate:
@@ -101,7 +106,14 @@ jobs:
           uv tool install "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}"
           uv tool install "ruff==${RUFF_VERSION}"
           uv tool install "mypy==${MYPY_VERSION}"
-          uv tool install "rust-just==${RUST_JUST_VERSION}"
+          # The rust-just pin lives in tools.txt, the source the template
+          # workflows read. A second copy here would drift undetected.
+          spec="$(awk '$1 ~ /^rust-just==/ { print $1; exit }' "$TOOLS_FILE")"
+          if [ -z "$spec" ]; then
+            echo "FAIL: no rust-just entry in $TOOLS_FILE" >&2
+            exit 1
+          fi
+          uv tool install "$spec"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: shellcheck
@@ -175,7 +187,14 @@ jobs:
           uv tool install "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}"
           uv tool install "ruff==${RUFF_VERSION}"
           uv tool install "mypy==${MYPY_VERSION}"
-          uv tool install "rust-just==${RUST_JUST_VERSION}"
+          # The rust-just pin lives in tools.txt, the source the template
+          # workflows read. A second copy here would drift undetected.
+          spec="$(awk '$1 ~ /^rust-just==/ { print $1; exit }' "$TOOLS_FILE")"
+          if [ -z "$spec" ]; then
+            echo "FAIL: no rust-just entry in $TOOLS_FILE" >&2
+            exit 1
+          fi
+          uv tool install "$spec"
           # $HOME/.local/bin is an MSYS path here, and the runner resolves
           # GITHUB_PATH entries natively. Ask uv for the path it actually used.
           uv tool dir --bin >> "$GITHUB_PATH"

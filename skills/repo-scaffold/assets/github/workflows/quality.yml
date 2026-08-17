@@ -4,6 +4,11 @@
 # just check 는 pre-commit 스테이지 훅 전체이고, just type 은 pre-push 스테이지의 mypy 다.
 # prek run 은 pre-commit 스테이지만 돌리므로 타입 검사를 따로 부른다.
 #
+# 커밋 메시지도 같은 이유로 여기서 다시 본다. prek run 은 commit-msg 스테이지 훅을 돌리지
+# 않고, node_modules 가 없는 클론에서는 그 훅이 로컬 SKIP 이다. 두 구멍이 겹치면 브랜치
+# 커밋 메시지를 검사하는 게이트가 어디에도 없게 된다. checkout 의 fetch-depth: 0 이
+# 그 검사의 전제다. 얕은 클론이면 base..head 를 계산할 수 없다.
+#
 # 잡 이름 quality 는 브랜치 룰셋의 required status check 이름이다. 룰셋은 파일명이 아니라
 # 잡 이름으로 매칭한다. 바꾸면 모든 PR 이 오지 않는 검사를 영원히 기다린다.
 # merge_group 트리거도 같은 이유로 필수다. 큐에서 보고하지 않는 필수 검사는 큐를 멈춘다.
@@ -45,6 +50,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          # 커밋 메시지 검사는 base..head 를 걷는다. 얕은 클론이면 범위가 비어서
+          # 아무것도 검사하지 않고 초록 불이 된다.
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Install uv
@@ -82,3 +90,17 @@ jobs:
         run: |
           set -euo pipefail
           just type
+
+      - name: Commit messages
+        # PR 에만 있다. push 와 merge_group 에는 검사할 브랜치 범위가 없다.
+        if: github.event_name == 'pull_request'
+        env:
+          # 리비전은 run: 에 직접 보간하지 않는다. 값은 env 로 넘긴다.
+          # base.sha 가 아니라 base.ref 다. base.sha 는 PR 이벤트 시점의 대상 브랜치
+          # 끝이라 그 뒤로 대상 브랜치가 나아가면 이미 머지된 남의 커밋이 범위에 들어온다.
+          # 그러면 내 PR 이 남의 옛 커밋 제목 때문에 빨간불이 된다.
+          # origin/<base> 는 지금의 대상 브랜치를 가리킨다. fetch-depth: 0 이 그것을 받아온다.
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          just commit-range "origin/${BASE_REF}..HEAD"

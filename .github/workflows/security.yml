@@ -40,7 +40,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: security-${{ github.ref }}
+  # 트리거를 키에 넣는다. schedule 과 push 는 둘 다 github.ref 가 refs/heads/main 이라
+  # 이름과 ref 만으로 묶으면 주간 예약 실행과 push 실행이 서로를 취소한다.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -81,11 +83,9 @@ jobs:
           set -euo pipefail
           just bootstrap
 
-      - name: Repository checks
-        run: |
-          set -euo pipefail
-          just security
-
+      # gitleaks 를 저장소 검사보다 먼저 깐다. just security 가 부르는 check-secrets.sh 는
+      # gitleaks 가 PATH 에 있으면 한 층 더 얹는다. 순서가 반대면 CI 에서 그 층이 한 번도
+      # 돌지 않고, 그 사실은 초록 불과 구분되지 않는다.
       - name: Install gitleaks
         run: |
           set -euo pipefail
@@ -94,12 +94,19 @@ jobs:
             | sudo tar -xz -C /usr/local/bin gitleaks
           gitleaks version
 
+      - name: Repository checks
+        run: |
+          set -euo pipefail
+          just security
+
       - name: gitleaks
         run: |
           set -euo pipefail
-          # 설정은 저장소 루트의 .gitleaks.toml 을 자동으로 읽는다. 없으면 기본 규칙이다.
+          # --config 를 명시한다. 안 주면 .gitleaks.toml 이 사라져도 내장 기본 규칙으로
+          # 조용히 떨어져 0 으로 끝난다. 명시하면 파일이 없을 때 에러로 끝난다.
           # 지적이 하나라도 있으면 1 로 끝난다. 값은 --redact 로 가린다.
-          gitleaks git --no-banner --redact .
+          # -v 가 없으면 "leaks found: 1" 한 줄만 남아 규칙도 파일도 줄도 알 수 없다.
+          gitleaks git --no-banner -v --redact --config .gitleaks.toml .
 
       - name: Install osv-scanner
         run: |

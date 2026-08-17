@@ -21,7 +21,7 @@
 │   ├── check-markdown.sh  마크다운 구조와 형식
 │   ├── check-prose.sh     산문, 용어, 문자 규칙
 │   ├── check-shell.sh     셸 스크립트 shellcheck, shfmt 검사
-│   ├── check-yaml.sh      YAML yamllint, 워크플로 스키마 검사
+│   ├── check-yaml.sh      YAML yamllint, 워크플로와 Renovate 스키마 검사
 │   ├── check-workflows.sh 워크플로 actionlint, zizmor 검사
 │   ├── check-hooks.sh     훅 설정 규약 검증
 │   ├── check-commit-msg.sh 커밋 메시지 규약 검증
@@ -167,7 +167,12 @@ push 를 막는다. 시간이 흘러 낡은 것은 경고만 하고 막지 않�
 버전은 `package.json` 과 `package-lock.json` 에 있고 `just bootstrap` 이 `npm ci` 로 깐다.
 Node 는 도구 의존성이지 소스 언어가 아니므로 언어 감지와 무관하게 항상 배치한다.
 훅은 `node_modules/.bin/commitlint` 을 직접 부른다. `npx` 는 훅 안에서 네트워크를 타므로 쓰지 않는다.
-`node_modules` 가 없으면 형식 검사만 SKIP 되고 제목 표기 검사는 그대로 돈다.
+`node_modules` 는 gitignore 대상이라 링크된 worktree 에는 없다. 그래서 현재 worktree 에서 못 찾으면
+주 저장소의 것을 `--config` 와 함께 부른다. 다만 `commitlint` 은 `extends` 를 설정 파일이 있는
+디렉터리에서 풀기 때문에, 두 설정 파일의 내용이 같을 때만 빌려 쓴다. 다르면 주 저장소 규칙으로
+통과시키지 않고 이유를 적어 로컬 SKIP, CI FAIL 로 남긴다. 그때도 제목 표기 검사는 그대로 돈다.
+훅은 커밋 한 건을 보고 CI 는 `just commit-range "<base>..HEAD"` 로 브랜치 커밋 전부를 다시 본다.
+`prek run --all-files` 는 `commit-msg` 스테이지 훅을 돌리지 않으므로 CI 검사가 따로 필요하다.
 
 `gitleaks`, `lychee`, `osv-scanner` 는 **CI 전용 도구**라 `tools.txt` 에 없다.
 PyPI 밖 도구이고 네트워크나 전체 이력이 필요해서 개발자 머신에 요구하지 않는다.

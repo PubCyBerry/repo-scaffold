@@ -112,7 +112,7 @@ remember rather than three.
 
 ### What a tool checks and what a person checks
 
-Two checkers read a commit message at the `commit-msg` stage. Neither replaces the other.
+Two checkers read a commit message. Neither replaces the other.
 
 | Rule | Checked by |
 | --- | --- |
@@ -120,6 +120,14 @@ Two checkers read a commit message at the `commit-msg` stage. Neither replaces t
 | Banned characters in the subject | [tests/check-commit-msg.sh](../../tests/check-commit-msg.sh) |
 | Banned characters in the body | A person, at review |
 | Imperative mood, one logical change, a body that explains why | A person, at review |
+
+Both run at the `commit-msg` stage, one message at a time, and again in CI across the whole
+branch. The CI pass is not a duplicate of the hook. `prek run --all-files` runs `pre-commit`
+stage hooks and never reaches this one, `--no-verify` turns the local hook off outright, and a
+clone without `node_modules` reports SKIP for the format check. The `quality` workflow calls
+`just commit-range "<base>..HEAD"` on every pull request, which walks the commits the branch
+adds and applies both checks to each one. That job checks out the full history, because a
+shallow clone cannot resolve the range and would report an empty one.
 
 [Writing Style](writing-style.md) applies to every written artifact and names commit messages in
 its own scope, but Vale reads Markdown and never sees a commit message. The Notation table there
@@ -184,6 +192,23 @@ git worktree add ../repo-<branch> <branch>
 ```
 
 Two agents in one directory overwrite each other's edits and stage each other's files.
+
+`node_modules` is ignored by git, so a linked worktree never has one. A commitlint resolved
+only against the current working directory would report SKIP in every worktree, which is the
+one setup this section prescribes. [tests/check-commit-msg.sh](../../tests/check-commit-msg.sh)
+falls back to the main working tree's `node_modules/.bin/commitlint` and passes that tree's
+configuration file with `--config`. The flag is required: `@commitlint/resolve-extends`
+resolves `extends` from the directory holding the configuration file, so without it the run
+dies with `Cannot find module "@commitlint/config-conventional"`.
+
+That same resolution rule caps what the fallback can do. The worktree's own configuration
+cannot be used, because it sits in a directory with no `node_modules`, and the main tree's
+configuration carries the main tree's rules rather than the branch's. So the fallback runs
+only when the two configuration files are byte-identical, and the run says which file it
+used. When they differ, when either tree has no configuration file, or when the rules live in
+`package.json` where `--config` cannot reach them, the check reports its reason and declines:
+SKIP locally, FAIL under CI. Passing a branch that changed the rules by applying the old rules
+would be worse than not checking it. Run `npm ci` in the worktree to get the full check back.
 
 ### Pull requests
 
