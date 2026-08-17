@@ -1,0 +1,70 @@
+# 답이 오지 않는 needs-info 이슈만 자동으로 닫는다.
+#
+# "오래되면 낡은 것" 이라는 일반 규칙을 쓰지 않는다. 대상은 status/needs-info 하나다.
+# 그 상태만이 프로젝트가 아니라 신고자가 막고 있는 상태이기 때문이다.
+# 승인된 백로그는 논의가 조용하다는 이유로 닫히지 않는다.
+# 규약은 docs/standards/issue-lifecycle.md 의 stale 절에 있다.
+#
+# only-issue-labels 와 exempt-issue-labels 에 적은 이름이 .github/labels.yml 에 없으면
+# 이 잡은 매일 초록으로 끝나면서 아무것도 하지 않는다. 가장 조용한 실패 방식이다.
+#
+# PR 은 대상이 아니다. days-before-pr-* 를 -1 로 명시해 끈다.
+#
+# 필수 검사가 아니므로 merge_group 트리거가 없다. 이 워크플로는 PR 을 막지 않고
+# 예약과 수동 실행으로만 돈다.
+#
+# 액션은 40자 SHA 로 고정하고 버전은 같은 줄 뒤에 주석으로 단다. Renovate 의 actions
+# 매니저는 같은 줄 트레일링 주석만 읽는다. 윗줄에 두면 그 액션은 영원히 갱신되지 않는다.
+
+name: Stale needs-info issues
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stale-needs-info:
+    name: stale-needs-info
+    runs-on: ubuntu-latest
+    permissions:
+      # 라벨을 붙이고 이슈를 닫는다. 최상위의 contents: read 를 이 잡에서만 넓힌다.
+      contents: read
+      issues: write
+    steps:
+      - name: Mark and close unanswered needs-info issues
+        uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93  # v11.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          days-before-issue-stale: 30
+          days-before-issue-close: 14
+
+          # PR 은 이 자동화의 대상이 아니다.
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+
+          only-issue-labels: "status/needs-info"
+          stale-issue-label: "lifecycle/stale"
+          close-issue-reason: "not_planned"
+
+          # 승인, 진행, 차단, 고우선순위 작업은 비활동만으로 닫지 않는다.
+          exempt-issue-labels: >-
+            priority/p0,priority/p1,status/blocked,status/accepted,status/in-progress
+          exempt-all-issue-milestones: true
+
+          remove-issue-stale-when-updated: true
+
+          stale-issue-message: >
+            This issue is waiting for more information and has had no activity for 30 days.
+            It is now marked `lifecycle/stale`. Please provide the requested information or
+            another material update. Without further activity it will be closed as not
+            planned in 14 days. A later reproducible report can reopen it or be filed again.
+
+          close-issue-message: >
+            Closing as not planned. The information triage needed did not arrive within 14
+            days of the stale warning. If it becomes available, ask for this issue to be
+            reopened or file a new report that references it.

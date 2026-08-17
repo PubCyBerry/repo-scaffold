@@ -6,13 +6,16 @@
 *.key
 !**/keys/*.pub
 
-# 파이썬 로컬 환경. pre-commit 을 여기 설치한다
+# 파이썬 로컬 환경
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
 
 # 노드
 node_modules/
@@ -24,6 +27,11 @@ build/
 target/
 out/
 *.log
+
+# 검사 도구 캐시
+.rumdl_cache/
+.vale-cache/
+.lycheecache
 
 # 에디터, OS
 .idea/

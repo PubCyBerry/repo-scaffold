@@ -1,0 +1,94 @@
+# 버그 신고 폼. 규약은 docs/standards/issue-lifecycle.md 에 있다.
+#
+# labels 의 이름은 .github/labels.yml 에 있어야 한다. 없는 라벨은 GitHub 이 오류 없이
+# 조용히 버린다. 그러면 이슈가 kind 도 triage 상태도 없이 열려서 수명주기가 시작되지 않는다.
+#
+# blank_issues_enabled 를 config.yml 에서 끄므로 이 폼들이 유일한 입구다.
+
+name: Bug report
+description: Report reproducible incorrect or broken behavior
+title: ""
+labels:
+  - "kind/bug"
+  - "status/needs-triage"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for public, non-sensitive bug reports.
+        Do not disclose a vulnerability or a secret here. Follow SECURITY.md instead.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the problem concisely.
+      placeholder: What is broken?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      description: What actually happens?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What should happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest reliable reproduction steps or example.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Versions, platform, runtime, configuration, or commit.
+      placeholder: |
+        Version/commit:
+        OS:
+        Runtime:
+        Relevant configuration:
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Logs, traceback, screenshots, or other evidence. Remove secrets first.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched existing issues and found no equivalent report.
+          required: true
+        - label: This report holds no credential, private key, or non-public vulnerability.
+          required: true

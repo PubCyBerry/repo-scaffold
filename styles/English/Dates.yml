@@ -1,0 +1,10 @@
+# 날짜는 절대 표기다. docs/standards/writing-style.md 가 이 셋을 이름으로 짚는다.
+# 상대 날짜는 문서를 읽는 시점이 언제냐에 따라 뜻이 달라진다.
+extends: existence
+message: "날짜는 절대 표기로 쓴다. 2026-01-01 처럼 적는다: '%s'"
+level: error
+ignorecase: true
+link: docs/standards/writing-style.md
+# raw 목록은 Vale 이 그대로 이어 붙인다. 대안은 한 줄 안에 | 로 묶는다.
+raw:
+  - '\b(last week|recently|currently)\b'

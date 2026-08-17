@@ -1,0 +1,47 @@
+# 마크다운 구조와 형식 규칙. 검사기는 rumdl 이다. https://rumdl.dev
+#
+# 검사:  just markdown       rumdl check. 파일을 바꾸지 않는다
+# 수정:  just fmt            rumdl fmt. 파일을 바꾼다
+#
+# 훅은 check 만 부른다. 훅이 파일을 바꾸면 커밋 대상이 사람이 본 것과 달라진다.
+#
+# 문자 규칙(따옴표, 대시, 보이지 않는 문자)은 Vale 이 갖는다. MD088 과 MD084 는 켜지 않는다.
+# 한 규칙을 두 도구에 두면 어느 쪽을 고쳐야 하는지 알 수 없다.
+# 사람이 읽는 원본은 docs/standards/documentation.md 와 docs/standards/writing-style.md 다.
+
+[global]
+# .editorconfig 와 docs/standards/code-quality.md 가 둘 다 100 이다. 기본값 80 이 아니다.
+line-length = 100
+respect-gitignore = true
+
+# CLAUDE.md 는 문서가 아니라 AGENTS.md 를 가리키는 한 줄 import 포인터다.
+# 첫 줄이 H1 이어야 한다는 MD041 을 만족시킬 수 없고 만족시킬 이유도 없다.
+#
+# .github/pull_request_template.md 도 문서가 아니다. GitHub 이 PR 본문에 그대로 붙이는
+# 서식이라 최상위 제목을 둘 수 없다. 두면 모든 PR 본문이 H1 으로 시작한다.
+# 절 제목은 pr-policy 워크플로가 글자 단위로 검사하므로 구조는 이미 고정돼 있다.
+#
+# skills/repo-scaffold/assets/ 아래는 이 저장소에만 있는 예외다. 대상 저장소로 복사되기
+# 전의 템플릿이라 front matter 에 치환 키가 그대로 있고, 링크도 렌더된 뒤의 깊이를
+# 기준으로 쓰여 있다. 여기서 검사하면 렌더 전 상태를 렌더 후 규칙으로 재는 것이 된다.
+# 렌더된 결과는 skills/repo-scaffold/tests/smoke.sh 가 임시 저장소에서 검사한다.
+exclude = [
+    "CLAUDE.md",
+    ".github/pull_request_template.md",
+    "skills/repo-scaffold/assets",
+]
+
+[MD013]
+# 표는 줄 안에서 접을 수 없다. URL 도 마찬가지다.
+tables = false
+code-blocks = false
+
+[MD025]
+# front matter 의 title 을 최상위 제목으로 세지 않는다.
+# 이 저장소는 title 과 본문 H1 이 같아야 하므로, 세면 모든 문서가 제목 두 개로 걸린다.
+front-matter-title = ""
+
+[MD051]
+# 한글 제목의 앵커를 살린다. python-markdown 과 kramdown 스타일은 ASCII 전용이라
+# '## 코드 품질' 같은 제목이 빈 앵커가 되어 앵커 검사가 조용히 무력해진다.
+anchor-style = "github"

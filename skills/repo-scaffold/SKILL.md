@@ -12,8 +12,9 @@ description: >-
   on the Korean phrasings "저장소 세팅해줘", "스캐폴딩", "프로젝트 초기화",
   "AGENTS.md 만들어줘", "CLAUDE.md 붙여줘", "문서 체계 세워줘",
   "문서 인덱스 자동화", "pre-commit 훅 붙여줘", "린터 붙여줘",
-  "새 레포 만들었는데 뭐부터" — even when neither "scaffold" nor "스캐폴딩" is
-  named. Applies to empty and existing repositories alike. Route elsewhere:
+  "새 레포 만들었는데 뭐부터". Trigger even when neither "scaffold" nor
+  "스캐폴딩" is named. Applies to empty and existing repositories alike.
+  Route elsewhere:
   writing or editing one document, language project generators (cargo new),
   refactors.
 license: MIT
@@ -213,7 +214,7 @@ squash 머지가 PR 제목으로 커밋을 합성하므로 `pr-policy` 워크플
 
 ## 참고
 
-- [references/layout.md](references/layout.md) — 파일별로 무엇을 막는지.
+- [references/layout.md](references/layout.md): 파일별로 무엇을 막는지.
   항목을 빼자는 요구가 나오면 여기를 근거로 답한다
-- [references/retrofit.md](references/retrofit.md) — 기존 저장소에 얹을 때의 충돌 처리와 FAIL 대처
+- [references/retrofit.md](references/retrofit.md): 기존 저장소에 얹을 때의 충돌 처리와 FAIL 대처
 - 템플릿 실체는 [assets](assets) 아래에 있다. 규약을 바꾸려면 템플릿과 검증 스크립트를 같이 고친다

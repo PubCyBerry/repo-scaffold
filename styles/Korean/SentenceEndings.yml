@@ -1,0 +1,13 @@
+# 한 저장소 안에서 문체를 섞지 않는다. 이 저장소의 문체는 평서형('-다')이다.
+#
+# consistency 로 혼용을 탐지하려 했으나 실측에서 발화하지 않아 existence 로 한 문체를 강제한다.
+# 문체 선택을 바꾸려면 아래 raw 목록을 뒤집는다. 규칙 하나로 방향이 정해진다.
+#
+# nonword 없이는 조사와 어미가 붙은 한국어에서 아무것도 잡지 못한다.
+extends: existence
+message: "평서형('-다')으로 쓴다: '%s'"
+level: error
+nonword: true
+link: docs/standards/writing-style.md
+raw:
+  - '(습니다|입니다|십시오|세요|어요|아요)[.!?]'

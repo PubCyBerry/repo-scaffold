@@ -1,4 +1,4 @@
-# Skill Card — `repo-scaffold`
+# Skill Card: `repo-scaffold`
 
 ## Description
 
@@ -10,7 +10,7 @@ This skill is ready for commercial and non-commercial use under the MIT license.
 
 ## Owner
 
-PubCyBerry — <https://github.com/pubcyberry>
+PubCyBerry <https://github.com/pubcyberry>
 
 ## License / Terms of Use
 
@@ -36,7 +36,7 @@ Global.
 | 도구 설치 (`just bootstrap`) | uv, 네트워크. commitlint까지 깔려면 Node 22.12 이상 |
 | 검증 (`just verify`) | `tools.txt`의 도구들. 없으면 로컬 SKIP, `CI=true`에서 FAIL |
 
-`tools.txt`가 고정하는 도구는 열이다 — rust-just 1.58.0, prek 0.4.13, shellcheck-py 0.11.0.1,
+`tools.txt`가 고정하는 도구는 열이다: rust-just 1.58.0, prek 0.4.13, shellcheck-py 0.11.0.1,
 shfmt-py 4.0.0, actionlint-py 1.7.12.24, zizmor 1.29.0, rumdl 0.2.55, vale 3.13.0.0,
 yamllint 1.38.0, check-jsonschema 0.38.0. 파이썬 도구(ruff, mypy, pytest, coverage)는
 `pyproject.toml`의 dev 그룹에, commitlint 21.2.2는 `package.json`에 있다.
@@ -99,9 +99,9 @@ staged 자격 증명을 커밋 전에 잡는 용도이며, 이미 유출된 값�
 
 ## Evaluation
 
-- **Task set:** [`evals/evals.json`](evals/evals.json) — 8 tasks (6 positive activation,
+- **Task set:** [`evals/evals.json`](evals/evals.json): 8 tasks (6 positive activation,
   2 negative activation)
-- **Automated tests:** [`tests/smoke.sh`](tests/smoke.sh) — 스캐폴딩 멱등성, 심링크 거부,
+- **Automated tests:** [`tests/smoke.sh`](tests/smoke.sh): 스캐폴딩 멱등성, 심링크 거부,
   경쟁 생성, 특수문자 치환, 그리고 스캐폴딩 결과가 자기가 배포한 검사 스크립트 전부를
   통과하는지 확인한다. 렌더된 `Justfile`이 실제로 파싱되는지, 검사기가 심어둔 결함을
   실제로 잡는지(루트 기준 링크, 중복 id, 금지 문자 커밋 제목, PR 계약 위반 5종)까지 본다.
@@ -111,4 +111,4 @@ staged 자격 증명을 커밋 전에 잡는 용도이며, 이미 유출된 값�
 
 ## Skill Version
 
-소스 커밋 SHA로 추적한다 — `git log -1 --format=%h -- skills/repo-scaffold`.
+소스 커밋 SHA로 추적한다: `git log -1 --format=%h -- skills/repo-scaffold`.
