@@ -62,6 +62,8 @@
 | `tests/check-workflows.sh` | 워크플로가 저장소 자격 증명을 들고 아무도 안 보는 머신에서 돈다. 태그 고정은 업스트림이 태그를 옮기면 무너진다 |
 | `tests/check-env.sh` | 키를 추가한 사람만 돌고 다른 사람 환경에서 실행이 깨진다. 원인이 `.env` 라는 것을 찾는 데 시간이 든다 |
 | `tests/check-secrets.sh` | 토큰이 커밋에 들어간다. 커밋에 한 번 들어간 값은 이력에 영구히 남는다. 되돌리기가 아니라 폐기가 유일한 대응이다 |
+| `tests/check-commit-msg.sh` | 커밋 제목이 사람마다 다른 형식이 된다. 이력에서 무엇이 기능이고 무엇이 수정인지 기계로 고를 수 없다 |
+| `tests/check-links-external.sh` | 문서가 가리키는 바깥 페이지가 사라져도 아무도 모른다. 링크는 조용히 죽는다 |
 | `.pre-commit-config.yaml` | 검증 스크립트가 있어도 아무도 안 돌린다 |
 
 ### 실행기가 pre-commit 이 아니라 prek 인 이유
@@ -98,6 +100,25 @@ URL 검사는 훅에서 뺐다. 네트워크 대기가 커밋 체감 속도를 �
 **Vale 은 이 보장의 예외다.** PyPI 래퍼가 첫 실행에 GitHub Releases 에서 진짜 실행 파일을 받는다.
 폐쇄망에서는 깔리지 않으므로 `repo: local` 의 보장이 "훅이 항상 **돈다**" 이지
 "훅이 항상 **작동한다**" 는 아니게 된다. `tests/check-prose.sh` 가 로컬 SKIP, CI FAIL 로 처리한다.
+
+**commitlint 도 같은 예외다.** `npm ci` 가 막히면 `node_modules` 가 없고 형식 검사가 계속 SKIP 된다.
+그래서 `tests/check-commit-msg.sh` 는 두 단계로 나뉜다. 형식은 commitlint 가 보고, 제목의 금지
+문자는 bash 가 직접 본다. 뒤쪽은 도구가 없어도 돌아서 폐쇄망에서도 규약 하나는 살아 있다.
+훅은 `node_modules/.bin/commitlint` 를 직접 부른다. `npx` 는 커밋마다 네트워크를 타고
+그때마다 무엇이 실행될지가 원격에 달려 있다.
+
+### gitleaks 와 lychee 를 로컬에 요구하지 않는 이유
+
+둘 다 PyPI 밖 도구라 `uv tool install` 로 깔리지 않고, 권위 있는 답을 내려면 전체 이력이나
+네트워크가 필요하다. 개발자 머신에 요구하면 `just verify` 가 각자 손으로 깐 도구에 의존하게 된다.
+CI 에 두면 버전이 고정되고 실행 환경이 하나다.
+
+설정 파일은 그래도 저장소에 둔다. `.gitleaks.toml` 과 `lychee.toml` 이 없으면 CI 가 기본 설정으로
+돌고, 그러면 예외 목록이 워크플로 파일 안에 흩어져 로컬에서 재현할 수 없게 된다.
+
+로컬이 비는 것은 아니다. 자격 증명은 의존성 없는 `tests/check-secrets.sh` 가 매 커밋 보고,
+`gitleaks` 가 어쩌다 PATH 에 있으면 같은 스크립트가 한 층 더 얹는다.
+없다고 FAIL 로 올리지 않는다. 그 자리는 CI 의 전용 잡이 채운다.
 
 ### 링크를 문서 기준 상대 경로로 쓰는 이유
 

@@ -99,9 +99,9 @@ docs-metadata:
 links-internal:
     bash tests/check-docs.sh --only links,graph
 
-# PR6: 외부 URL. 네트워크를 탄다
-# links-external:
-#     bash tests/check-links-external.sh
+# 외부 URL. 네트워크를 타므로 verify 에 넣지 않는다. lychee 는 CI 전용 도구다.
+links-external:
+    bash tests/check-links-external.sh
 
 # 훅 설정 규약.
 hooks:

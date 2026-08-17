@@ -31,6 +31,7 @@ out/
 # 검사 도구 캐시
 .rumdl_cache/
 .vale-cache/
+.lycheecache
 
 # 에디터, OS
 .idea/

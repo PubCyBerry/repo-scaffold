@@ -548,12 +548,14 @@ render scripts/docs_freshness.py scripts/docs_freshness.py
 render scripts/docs_graph.py scripts/docs_graph.py
 render tests/check-docs.sh tests/check-docs.sh
 render tests/check-docs-metadata.sh tests/check-docs-metadata.sh
+render tests/check-links-external.sh tests/check-links-external.sh
 render tests/check-markdown.sh tests/check-markdown.sh
 render tests/check-prose.sh tests/check-prose.sh
 render tests/check-shell.sh tests/check-shell.sh
 render tests/check-yaml.sh tests/check-yaml.sh
 render tests/check-workflows.sh tests/check-workflows.sh
 render tests/check-hooks.sh tests/check-hooks.sh
+render tests/check-commit-msg.sh tests/check-commit-msg.sh
 render tests/check-env.sh tests/check-env.sh
 render tests/check-secrets.sh tests/check-secrets.sh
 render tests/check-python.sh tests/check-python.sh
@@ -578,6 +580,19 @@ echo
 echo "[2/4] 저장소 루트 파일"
 render_mergeable root/Justfile Justfile
 render_mergeable root/tools.txt tools.txt
+# Node 는 도구 의존성(commitlint)이지 소스 언어가 아니다. 언어 감지로 거르지 않는다.
+# package-lock.json 은 package.json 과 짝이다. 이미 있는 package.json 위에 우리 잠금 파일을
+# 얹으면 npm ci 가 lock file does not match package.json 으로 죽는다.
+# 우리가 package.json 을 새로 깔 때만 잠금 파일을 같이 깐다.
+HAS_PACKAGE_JSON=0
+[ -e "$TARGET/package.json" ] && HAS_PACKAGE_JSON=1
+render_mergeable root/package.json package.json
+if [ "$HAS_PACKAGE_JSON" -eq 1 ]; then
+    report NOTE package-lock.json "package.json 이 이미 있다. devDependencies 를 합치고 npm install 로 만든다"
+else
+    render root/package-lock.json package-lock.json
+fi
+render_mergeable root/commitlint.config.mjs commitlint.config.mjs
 render_mergeable root/gitattributes .gitattributes
 render_mergeable root/editorconfig .editorconfig
 render_mergeable root/gitignore .gitignore
@@ -585,6 +600,10 @@ render_mergeable root/rumdl.toml .rumdl.toml
 render_mergeable root/vale.ini .vale.ini
 render_mergeable root/shellcheckrc .shellcheckrc
 render_mergeable root/yamllint.yaml .yamllint.yaml
+# CI 전용 도구의 설정이다. 도구는 tools.txt 에 없지만 설정은 저장소에 둔다.
+# CI 와 어쩌다 도구가 깔려 있는 개발자 머신이 같은 규칙을 쓰게 하는 유일한 방법이다.
+render_mergeable root/gitleaks.toml .gitleaks.toml
+render_mergeable root/lychee.toml lychee.toml
 render root/env.example .env.example
 render root/AGENTS.md AGENTS.md
 render root/CLAUDE.md CLAUDE.md
