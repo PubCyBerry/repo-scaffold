@@ -5,11 +5,13 @@
       "id": "repo-scaffold.explicit-positive.v1",
       "prompt": "Use the repo-scaffold skill on /work/my-api. It is an existing git repository with a few markdown files already in docs/.",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent loads the skill, fixes --target/--name/--desc first, runs assets/scaffold.sh with --dry-run to show the PLAN/SKIP split, then applies it and runs the five check scripts.",
+      "expected_output": "The agent loads the skill, fixes --target/--name/--desc first, runs assets/scaffold.sh with --dry-run to show the PLAN/SKIP/OMIT/NOTE split, applies it, then bootstraps the toolchain and runs just verify.",
       "assertions": [
         "The repo-scaffold skill is selected and its SKILL.md drives the answer.",
         "A --dry-run is proposed before the applying run.",
-        "The verification step runs tests/check-docs.sh, tests/check-shell.sh, tests/check-workflows.sh, tests/check-env.sh and tests/check-secrets.sh.",
+        "The verification step is `just verify`, not a list of individual check scripts.",
+        "`just bootstrap` is named as the step that installs the tools and the git hooks.",
+        "NOTE results are explained as configuration files a human has to merge by hand.",
         "Every flag named exists in assets/scaffold.sh (no invented flags)."
       ]
     },
@@ -17,10 +19,11 @@
       "id": "repo-scaffold.implicit-positive.ko.v1",
       "prompt": "새 레포 만들었는데 뭐부터 해야 할까? 에이전트가 이 저장소 구조를 잘 파악했으면 좋겠어.",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent recognizes this as a scaffolding request without the skill being named, loads repo-scaffold, and walks through the parameter → dry-run → apply → verify → hook-install sequence.",
+      "expected_output": "The agent recognizes this as a scaffolding request without the skill being named, loads repo-scaffold, and walks through the parameter → dry-run → apply → bootstrap → verify sequence.",
       "assertions": [
         "The skill is triggered from the implicit Korean phrasing without the user naming it.",
-        "The answer covers hook installation, not only file generation."
+        "The answer covers hook installation, not only file generation.",
+        "The answer names `just verify` as the single command to remember."
       ]
     },
     {
@@ -30,17 +33,43 @@
       "expected_output": "The agent identifies the doc-index + pre-commit hook combination this skill ships and applies it rather than hand-writing an AGENTS.md.",
       "assertions": [
         "The skill is triggered from the implicit Korean phrasing.",
-        "The answer routes through assets/scripts/gen-doc-index.sh and the pre-commit hook rather than a one-off hand-written index."
+        "The answer routes through assets/scripts/gen-doc-index.sh and the doc-index hook rather than a one-off hand-written index.",
+        "The answer explains that the first commit fails once because the hook restages AGENTS.md."
       ]
     },
     {
       "id": "repo-scaffold.implicit-positive.en.v1",
       "prompt": "This repo is a mess for agents to work in — nothing tells them where anything lives. Can you make it agent-readable?",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent recognizes the English implicit phrasing, loads repo-scaffold, and proposes the doc index + front matter convention + pre-commit verification set.",
+      "expected_output": "The agent recognizes the English implicit phrasing, loads repo-scaffold, and proposes the doc index + front matter convention + hook and CI verification set.",
       "assertions": [
         "The skill is triggered from English phrasing that never says 'scaffold'.",
-        "The answer explains why verification hooks matter (a stale index is worse than none)."
+        "The answer explains why verification matters (a stale index is worse than none).",
+        "The docs/ hierarchy named includes architecture/ alongside standards, guides, references and generated."
+      ]
+    },
+    {
+      "id": "repo-scaffold.implicit-positive.ko.v3",
+      "prompt": "우리 저장소 검증 명령이 스크립트 다섯 개라 아무도 안 외워. 하나로 줄이고 커밋할 때 자동으로 돌게 하고 싶은데.",
+      "expected_skill": "repo-scaffold",
+      "expected_output": "The agent recognizes this as the command-layer half of the skill, loads repo-scaffold, and proposes the Justfile plus the three-stage prek hook matrix instead of hand-writing a wrapper script.",
+      "assertions": [
+        "The skill is triggered even though no document or AGENTS.md is mentioned.",
+        "The answer proposes the shipped Justfile with `just verify` as the Definition of Done.",
+        "The answer describes hooks split across pre-commit, commit-msg and pre-push rather than one pre-commit stage.",
+        "The answer does not put `just` inside a hook entry, because that would make prek call just call prek."
+      ]
+    },
+    {
+      "id": "repo-scaffold.implicit-positive.en.v2",
+      "prompt": "We scaffolded this repo with an older version of your convention and now every internal link is written from the repository root. What do we do?",
+      "expected_skill": "repo-scaffold",
+      "expected_output": "The agent loads repo-scaffold, reads references/retrofit.md, and runs the link conversion procedure rather than rewriting links by hand.",
+      "assertions": [
+        "The skill is triggered on a retrofit question about an already-scaffolded repository.",
+        "The answer routes to references/retrofit.md for the migration procedure.",
+        "The answer explains that links are now resolved relative to the document, and why: cross-file anchor checking is silently skipped otherwise.",
+        "The link conversion is proposed as its own commit, separate from any other change."
       ]
     },
     {
@@ -50,16 +79,16 @@
       "expected_output": "The agent writes the single document and does NOT scaffold the repository or run scaffold.sh.",
       "assertions": [
         "repo-scaffold is not activated.",
-        "No scaffolding files (AGENTS.md, .editorconfig, pre-commit config) are created."
+        "No scaffolding files (AGENTS.md, .editorconfig, Justfile, pre-commit config) are created."
       ]
     },
     {
       "id": "repo-scaffold.negative.project-generator.v1",
       "prompt": "Set up a new Rust project with cargo and add a CI pipeline that runs clippy on every push.",
       "expected_skill": null,
-      "expected_output": "The agent uses cargo new and writes a CI workflow; it explains that repo-scaffold covers agent-facing documentation structure, not language project generation or CI/CD pipelines.",
+      "expected_output": "The agent uses cargo new and writes a CI workflow; it explains that repo-scaffold covers agent-facing documentation structure, not language project generation.",
       "assertions": [
-        "repo-scaffold is not forced onto a language-generator + CI request.",
+        "repo-scaffold is not forced onto a language-generator request.",
         "If the skill is mentioned at all, it is explicitly scoped out rather than applied."
       ]
     }

@@ -14,8 +14,15 @@
 #   bash scripts/gen-doc-index.sh --print    # 표준 출력으로 인덱스만 출력
 #
 # gitignore 대상은 git ls-files 가 알아서 뺀다.
+#
+# 종료 코드: --check 가 낡음을 발견하거나 --stage 가 파일을 고쳤으면 1,
+#            알 수 없는 옵션이면 2, 아니면 0
 
 set -euo pipefail
+
+# cd 뒤에는 상대 경로인 BASH_SOURCE 가 안 풀린다. --help 가 자기 파일을 읽으므로 먼저 절대 경로로 잡는다.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELF="$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")"
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
@@ -31,6 +38,10 @@ case "${1:-}" in
     --check) MODE="check" ;;
     --print) MODE="print" ;;
     --stage) MODE="stage" ;;
+    -h | --help)
+        sed -n '2,/^$/p' "$SELF"
+        exit 0
+        ;;
     "") ;;
     *)
         echo "알 수 없는 옵션: $1" >&2

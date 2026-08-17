@@ -1,6 +1,6 @@
 # 기존 저장소에 얹기
 
-이미 파일이 있는 저장소에 적용할 때만 읽는다. 빈 저장소면 [SKILL.md](SKILL.md) 절차로 충분하다.
+이미 파일이 있는 저장소에 적용할 때만 읽는다. 빈 저장소면 [SKILL.md](../SKILL.md) 절차로 충분하다.
 
 ## 원칙
 
@@ -15,6 +15,15 @@ bash "$SKILL_DIR/assets/scaffold.sh" --target /path/to/repo --dry-run
 ```
 
 `PLAN` 이 빠진 규약, `SKIP` 이 이미 있는 규약이다. 이 목록을 그대로 사용자에게 보고한다.
+`NOTE` 는 손으로 합쳐야 하는 설정 파일이고 `OMIT` 은 이 저장소에 불필요하다고 판정한 것이다.
+판정이 틀렸으면 `--with python` 처럼 강제한다.
+
+적용한 뒤에는 환경부터 본다. FAIL 을 읽기 전에 무엇이 SKIP 인지 알아야 한다.
+
+```bash
+just doctor     # 무엇이 없고 무엇이 어긋났는지. 아무것도 바꾸지 않는다
+just verify     # 전체 검사. 기존 저장소의 첫 실행은 대량으로 FAIL 이 난다
+```
 
 ## SKIP 항목 처리
 
@@ -26,8 +35,11 @@ bash "$SKILL_DIR/assets/scaffold.sh" --target /path/to/repo --dry-run
 | `.pre-commit-config.yaml` | 기존 훅과 `repos: - repo: local` 블록을 합친다. 훅 id 가 겹치면 안 된다 |
 | `.editorconfig` | `[*.{sh,bash}]` 절이 있는가. 없으면 `shfmt` 가 탭 들여쓰기를 기본값으로 잡아 기존 스크립트를 전부 지적한다 |
 | `.env.example` | 실제 `.env` 와 키 집합이 같은가. `check-env.sh` 로 확인한다 |
-| `docs/` | 디렉터리명이 `standards`, `guides`, `references`, `generated` 와 다르면 `check-docs.sh` 의 `expected_type` 이 빈 값을 돌려주고 type 검사를 건너뛴다 |
+| `docs/` | 디렉터리명이 `standards`, `guides`, `references`, `generated`, `architecture` 와 다르면 `check-docs.sh` 의 `expected_type` 이 빈 값을 돌려주고 type 검사를 건너뛴다 |
 | `docs/standards/` | 같은 주제를 다루는 기존 규약이 있으면 새 문서를 넣지 않는다. 규칙이 두 벌이 되는 것이 없는 것보다 나쁘다 |
+| `Justfile` | 기존 레시피와 이름이 겹치는지 본다. `verify` 가 이미 있으면 어느 쪽이 Definition of Done 인지 정한다 |
+| `pyproject.toml` | `NOTE` 로 보고된다. `[tool.ruff]` 와 `[dependency-groups]` 를 손으로 옮긴다. TOML 은 자동 병합하지 않는다 |
+| `package.json` | `NOTE` 로 보고된다. `devDependencies` 에 commitlint 두 개를 넣고 `npm install` 로 잠금 파일을 다시 만든다. 우리 `package-lock.json` 을 남의 `package.json` 위에 얹으면 `npm ci` 가 죽는다 |
 
 ### AGENTS.md 에 마커가 없을 때
 
@@ -68,7 +80,7 @@ git status          # 줄바꿈만 바뀐 파일이 잔뜩 뜬다. 별도 커밋
 | --- | --- |
 | `front matter 없음` | 문서 맨 앞에 `---` 블록을 넣는다. 필수 7개는 `id title type status summary scope read_when` |
 | `필수 property 누락` | 빠진 키만 채운다. 값이 없으면 키를 넣지 않는 것이 아니라 값을 정한다 |
-| `type '...' 는 enum 밖` | `index standard guide reference generated` 다섯 개만 쓴다 |
+| `type '...' 는 enum 밖` | `index standard guide reference generated decision` 여섯 개만 쓴다. `decision` 은 `docs/architecture/adr/` 전용이다 |
 | `위치 기준 type 은 X 인데 Y` | 문서를 옮기거나 `type` 을 고친다. 디렉터리와 `type` 은 1:1이다 |
 | `status '...' 는 type '...' 에 허용되지 않음` | 규약 표를 본다. `index` 는 `active` 만 쓴다 |
 | `summary 가 개조식이 아니다` | 명사나 명사구로 끝낸다. 마침표와 서술형 종결어미를 뺀다 |
@@ -139,6 +151,127 @@ rumdl check .
 | 코드 블록 안 예시 링크 | 스크립트가 건드리지 않는다. 규약을 보여주는 예시면 손으로 고친다 |
 | 같은 템플릿이 여러 깊이에 깔리는 문서 | 하드코딩한 상대 경로가 한쪽에서만 맞는다. 치환 키로 뺀다 |
 
+## 문서 메타데이터를 늘릴 때
+
+필수 7개는 예전 판과 같다. 선택 키 둘이 새로 생겼고 **둘 다 없어도 통과한다.**
+없으면 그 검사가 SKIP 이라는 뜻이지 실패가 아니다. 한 번에 다 채우려 하지 않는다.
+
+| 키 | 무엇을 켜나 | 없으면 |
+| --- | --- | --- |
+| `sources` | source drift. 그 경로가 `last_reviewed` 이후에 바뀌면 push 가 막힌다 | SKIP. 문서가 낡아도 아무도 모른다 |
+| `review_interval_days` | 검토 주기. 없으면 `type` 별 기본값을 쓴다 | 기본값으로 동작한다 |
+
+`sources` 는 문서가 **서술하는** 저장소 경로이고 `scope` 는 문서가 **적용되는** 범위다.
+둘은 다르다. `documentation.md` 의 `scope` 는 `docs/**` 이지만 `sources` 는
+`tests/check-docs.sh` 다.
+
+`last_reviewed` 는 사람이 문서를 다시 읽었을 때만 손으로 올린다. 도구가 올리지 않는다.
+자동으로 올리면 아무도 안 읽은 문서가 영원히 최신으로 보고된다.
+
+먼저 검사가 실제로 도는지부터 확인한다. `sources` 에 적은 경로가 아직 커밋되지 않았으면
+git 이력이 없어 SKIP 이다. 초록 불이 곧 미검사인 상태를 만들지 않는다.
+
+```bash
+bash tests/check-docs-metadata.sh --only drift
+bash tests/check-docs-metadata.sh --only time     # WARN 만 낸다. 종료 코드를 바꾸지 않는다
+```
+
+### `docs/architecture/` 를 새로 넣을 때
+
+`type` enum 이 다섯에서 여섯으로 늘었다. `decision` 이 추가됐고
+`docs/architecture/adr/` 아래에서만 쓴다. `docs/architecture/` 바로 아래는 `reference` 다.
+
+`decision` 의 `status` enum 도 다르다. `proposed accepted rejected superseded` 넷이고
+`active` 는 쓰지 않는다. 결정 기록은 한 번 쓰고 고치지 않는다. 결정이 바뀌면 새 기록을 쓰고
+옛 기록의 `status` 를 `superseded` 로 바꾼 뒤 새 기록에 `supersedes` 를 적는다.
+
+기존 저장소에 `docs/adr/` 나 `docs/decisions/` 가 이미 있으면 옮길지 말지부터 정한다.
+옮기면 링크가 전부 깨지고, 그것은 `check-docs.sh --only links` 가 잡아준다.
+안 옮기면 `expected_type` 이 빈 값을 돌려주고 type 검사가 조용히 꺼진다. 옮기는 편이 낫다.
+
+### `docs_graph.py` 의 id 앞머리 WARN
+
+`id` 는 `<type>-<slug>` 규약이다. 기존 저장소는 이 규약을 몰랐으므로 **첫 실행에서 대량으로
+WARN 이 뜬다.** WARN 은 종료 코드를 바꾸지 않으므로 막지 않는다. 한꺼번에 고치려 하지 말고
+문서를 손댈 때마다 하나씩 고친다. `id` 를 바꾸면 그 id 를 가리키는 `related` 와 `supersedes`
+를 같이 고쳐야 하고, 그 짝은 같은 검사가 잡아준다.
+
+## 파이썬 계층을 얹을 때
+
+`pyproject.toml` 이 이미 있으면 `NOTE` 다. 스캐폴딩은 TOML 을 병합하지 않는다.
+`[tool.ruff]` 와 `[tool.mypy]` 블록을 원본에서 손으로 옮긴다.
+
+한도는 발명한 것이 아니라 `docs/standards/code-quality.md` 의 hard limit 을 기계로 옮긴
+것이다. 한도를 바꾸려면 그 문서를 먼저 고친다. 반대 방향은 없다.
+
+`mypy` 는 신규 저장소 기준으로 `strict = true` 다. 기존 저장소에 그대로 켜면 첫 실행에서
+수백 개가 뜨고, 그 상태는 타입을 고치게 만들지 않고 검사를 끄게 만든다. 세 단계로 나눈다.
+
+1. **통과 baseline 을 만든다.** `strict` 를 끄고 돌려 통과하는 지점을 찾는다.
+   모듈별 `[[tool.mypy.overrides]]` 로 아직 못 고친 모듈만 완화한다
+2. **신규 회귀를 차단한다.** 이 상태로 pre-push 훅과 CI 를 켠다. 새로 쓰는 코드는 이미 엄격하다
+3. **override 를 하나씩 지운다.** 모듈 하나를 고칠 때마다 그 override 를 지운다.
+   전부 지워지면 `strict = true` 다
+
+`ruff` 는 반대로 처음부터 전부 켠다. `just fix` 가 자동으로 고칠 수 있는 지적이 대부분이고,
+남는 것은 실제 결함이다. 형식은 `just fmt` 가 한 번에 맞추고 **형식 변경만 따로 커밋한다.**
+
+## 커밋 규약을 얹을 때
+
+`commitlint` 는 **앞으로의 커밋만** 본다. 이미 머지된 이력은 재검사하지 않으므로
+과거 커밋이 규약을 어겼어도 문제되지 않는다. 이력을 다시 쓰지 않는다.
+
+바뀌는 것은 앞으로다. `subject-case` 규칙 때문에 **커밋 제목은 소문자로 시작해야 한다.**
+`feat(api): Add retry` 는 탈락이고 `feat(api): add retry` 는 통과한다. 한국어 제목은 통과한다.
+
+| 형태 | 판정 | 근거 |
+| --- | --- | --- |
+| `fixup!`, `squash!` 접두 | 통과 | `git rebase --autosquash` 를 깨지 않는다 |
+| `Merge branch ...` | 통과 | git 이 만드는 문자열이라 사람이 못 고친다 |
+| `revert:` | 통과 | `git revert` 가 만드는 형식이다 |
+| 대문자로 시작하는 제목 | **탈락** | `subject-case` |
+| 100자를 넘는 제목 | **탈락** | `header-max-length` |
+
+PR 제목도 같은 제약을 받는다. squash 머지가 PR 제목으로 커밋을 합성하면 commitlint 는
+그 문자열을 영원히 못 보므로, `pr-policy` 워크플로가 PR 제목을 따로 검사한다.
+
+`node_modules` 를 못 까는 환경이면 형식 검사는 로컬 SKIP 이고 CI FAIL 이다.
+제목의 금지 문자 검사는 도구를 쓰지 않으므로 그 환경에서도 계속 돈다.
+
+## 거버넌스를 얹을 때
+
+**라벨을 가장 먼저 만든다.** 순서를 바꾸면 조용히 망가진다.
+
+```bash
+bash scripts/apply-github-labels.sh            # dry-run. 무엇이 바뀌는지만 본다
+bash scripts/apply-github-labels.sh --apply    # 실제로 만든다
+```
+
+라벨이 없을 때의 실패 양상이 소비자마다 다르고, 둘은 아무 소리도 내지 않는다.
+
+| 소비자 | 라벨이 없으면 | 알아채나 |
+| --- | --- | --- |
+| Issue Form | GitHub 이 **라벨을 조용히 버린다.** 수명주기가 시작되지 않는다 | 아니오 |
+| `actions/stale` | 아무것도 안 맞아 매일 초록으로 아무 일도 안 한다 | 아니오 |
+| `pr-policy` | `policy/skip-issue` 를 붙일 수 없어 **사소한 PR 이 전부 막힌다** | 예 |
+
+그다음이 룰셋이다. 두 벌 중 하나를 고른다.
+
+| 예제 | 쓸 곳 |
+| --- | --- |
+| `default-branch.solo.example.json` | 1인 저장소. 승인 0건이고 관리자 우회를 남긴다 |
+| `default-branch.team.example.json` | 리뷰어가 둘 이상. 승인 1건 + 코드 소유자 승인 |
+
+1인 저장소에 team 예제를 걸면 **본인 PR 을 영원히 머지하지 못한다.** 승인 1건과 코드 소유자
+승인을 자기 자신이 줄 수 없기 때문이다. 복구는 룰셋을 다시 지우는 것뿐이다.
+
+required check 이름은 워크플로의 **잡 이름**이지 파일명이 아니다. 기본값은
+`quality` `tests` `docs` `security` `pr-policy` 다. 대상 저장소의 잡 이름이 다르면
+룰셋 JSON 을 그 이름으로 고친다. 안 고치면 모든 PR 이 오지 않는 검사를 영원히 기다린다.
+
+`pr-policy` 를 도입 직후 required check 로 올리지 않는다. 열려 있는 PR 이 전부 막힌다.
+한 사이클 돌려 보고 올린다.
+
 ## check-markdown.sh FAIL 대처
 
 | 메시지 | 조치 |
@@ -192,7 +325,8 @@ Vale 은 산문 정책 검사기이자 용어 검사기다. 문법 검사기도,
 | --- | --- |
 | 설치가 `core.hooksPath` 때문에 거부된다 | 전역 `core.hooksPath` 가 걸려 있다. `GIT_CONFIG_GLOBAL=/dev/null prek install` 로 설치한다. 전역 설정은 바뀌지 않는다 |
 | 기존 `.git/hooks/pre-commit` 이 있다 | `.legacy` 로 백업되고 이어서 호출된다. 백업 파일이 생겼는지 확인한다 |
-| 훅이 아예 안 돈다 | 클론마다 설치가 필요하다. `prek install` 을 했는지 확인한다 |
+| 훅이 아예 안 돈다 | 클론마다 설치가 필요하다. `just bootstrap` 을 했는지 확인한다 |
+| commit-msg 와 pre-push 훅만 안 돈다 | `prek install` 을 손으로 불렀고 `default_install_hook_types` 가 없거나 무시됐다. `just bootstrap` 이 세 종류를 명시적으로 건다. `just doctor` 가 디스크의 훅 파일을 보고한다 |
 | 훅이 매번 통째로 실패한다 | `prek run --all-files` 로 원인을 먼저 본다. 커밋을 막은 채로 방치하면 `--no-verify` 가 습관이 된다 |
 | 이미 pre-commit 을 쓰고 있다 | 설정 파일이 같아 실행기만 바꾸면 된다. `pre-commit uninstall` 후 `prek install` 한다. 둘 다 설치하면 훅이 두 번 돈다 |
 
