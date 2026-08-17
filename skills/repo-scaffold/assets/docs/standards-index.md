@@ -40,10 +40,15 @@ that domain directory instead.
 | [Code Quality](code-quality.md) | Size and complexity limits, zero warnings, comments, error handling |
 | [Testing](testing.md) | Behavior over implementation, edge coverage, mocking boundaries |
 | [Code Review](code-review.md) | Review order, finding format, options and recommendation |
+| [Review Feedback](review-feedback.md) | Severity markers, GitHub review decisions, branch history |
 | [Commit Convention](commit-convention.md) | Pre-commit gate, message format, branch policy, pull requests |
 | [Shell](shell.md) | Strict mode, shellcheck and shfmt gates |
 | [Python](python.md) | Ruff and mypy settings derived from code quality, test layout |
 | [GitHub Actions](github-actions.md) | SHA pinning, least privilege, actionlint and zizmor gates |
+| [Issue Lifecycle](issue-lifecycle.md) | Issue states, triage checklist, acceptance, stale handling |
+| [Triage Labels](triage-labels.md) | Label axes, label meanings, the file that creates them |
+| [Pull Request Lifecycle](pull-request-lifecycle.md) | Description contract, readiness gate, merge queue |
+| [GitHub Enforcement](github-enforcement.md) | What GitHub enforces, what CI enforces, what people do |
 
 ## Related documents
 
