@@ -9,6 +9,9 @@
 # 없으면 로컬에서는 SKIP, CI(환경변수 CI=true)에서는 FAIL 이다.
 # 설치는 https://lychee.cli.rs 에 있다.
 #
+# lychee.toml 이 없는 것도 같은 판정이다. 도구가 없는 것은 기계의 성질이지만 설정 파일이
+# 없는 것은 저장소의 결함이다. 병합 사고로 사라지면 예약 잡이 영원히 초록 불이 된다.
+#
 # 네트워크를 타므로 훅에 넣지 않는다. 커밋마다 기다리게 하면 --no-verify 가 습관이 되고
 # 그러면 훅 전체가 함께 죽는다. just verify 에도 넣지 않는다. 손으로 부르거나 CI 가 부른다.
 #
@@ -64,6 +67,18 @@ report() {
     printf '%-4s %-16s %s\n' "$1" "$2" "${3:-}"
 }
 
+# 저장소 파일이 없을 때의 판정. CI 에서는 FAIL 이다.
+# 도구가 없는 것은 기계의 성질이고 설정 파일이 없는 것은 저장소의 결함이다.
+# 병합 사고로 lychee.toml 이 사라져도 예약 잡은 계속 초록 불이 된다.
+missing_config() {
+    # $1: 이름, $2: 사유
+    if [ "${CI:-}" = "true" ]; then
+        report FAIL "$1" "$2"
+    else
+        report SKIP "$1" "$2"
+    fi
+}
+
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
     # $1: 명령, $2: 설치 안내
@@ -88,7 +103,7 @@ echo "[1/1] lychee"
 if [ "${#FILES[@]}" -eq 0 ]; then
     report SKIP lychee "추적 중인 마크다운 문서가 없다"
 elif [ ! -f "$CONFIG" ]; then
-    report SKIP lychee "$CONFIG 가 없다. 규칙 설정이 저장소에 있어야 한다"
+    missing_config lychee "$CONFIG 가 없다. 규칙 설정이 저장소에 있어야 한다"
 elif require_tool lychee "https://lychee.cli.rs"; then
     # 설정은 전부 lychee.toml 이 갖는다. 명령줄로 나누면 CI 와 손으로 돌릴 때가 갈린다.
     out="$(lychee --config "$CONFIG" -- "${FILES[@]}" 2>&1)"

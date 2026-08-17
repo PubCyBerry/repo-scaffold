@@ -18,6 +18,9 @@
 # CI 에서도 마찬가지다. 권위 있는 전체 이력 스캔은 CI 의 전용 잡이 따로 돌리고,
 # 이 스크립트는 그 잡을 대신하지 않는다. 없다고 커밋을 막으면 --no-verify 가 습관이 된다.
 #
+# 도구가 없는 것과 .gitleaks.toml 이 없는 것은 다르다. 앞은 기계의 성질이고 뒤는 저장소의
+# 결함이다. 설정 파일이 사라지면 검사는 계속 초록 불이므로 CI 에서는 FAIL 로 올린다.
+#
 # 예외 처리:
 #   *.example, *.sample, *.lock 은 검사하지 않는다
 #   줄 끝에 `secret-scan: allow` 주석이 있으면 그 줄은 넘어간다
@@ -73,10 +76,15 @@ PATTERNS=(
 fail_count=0
 scan_count=0
 
+report_fail() {
+    # $1: 대상, $2: 사유
+    fail_count=$((fail_count + 1))
+    printf 'FAIL %-48s %s\n' "$1" "$2"
+}
+
 report_hit() {
     # $1: 파일, $2: 줄 번호 목록, $3: 패턴 이름
-    fail_count=$((fail_count + 1))
-    printf 'FAIL %-48s %s (line %s)\n' "$1" "$3" "$2"
+    report_fail "$1" "$(printf '%s (line %s)' "$3" "$2")"
 }
 
 if [ "$MODE" = "staged" ]; then
@@ -138,20 +146,27 @@ GITLEAKS_CONFIG=".gitleaks.toml"
 if ! command -v gitleaks > /dev/null 2>&1; then
     echo "SKIP gitleaks 미설치. CI 전용 도구다. 패턴 스캔만 돌았다"
 elif [ ! -f "$GITLEAKS_CONFIG" ]; then
-    echo "SKIP gitleaks $GITLEAKS_CONFIG 가 없다"
+    # 도구가 없는 것은 기계의 성질이고 설정 파일이 없는 것은 저장소의 결함이다.
+    # 병합 사고로 이 파일이 사라져도 검사는 계속 초록 불이 되므로 CI 에서는 FAIL 이다.
+    if [ "${CI:-}" = "true" ]; then
+        report_fail gitleaks "$GITLEAKS_CONFIG 가 없다. 규칙이 저장소에 있어야 한다"
+    else
+        echo "SKIP gitleaks $GITLEAKS_CONFIG 가 없다"
+    fi
 else
     if [ "$MODE" = "staged" ]; then
         GITLEAKS_ARGS=(git --staged)
     else
         GITLEAKS_ARGS=(dir)
     fi
-    # --redact 는 값을 가린다. 이 스크립트가 값을 출력하지 않는다는 규칙은 gitleaks 에도 건다.
-    if out="$(gitleaks "${GITLEAKS_ARGS[@]}" --no-banner --redact \
+    # -v 가 없으면 gitleaks 는 "leaks found: 1" 한 줄만 낸다. 규칙도 파일도 줄도 없어서
+    # 무엇을 고쳐야 하는지 알 수 없다. --redact 가 값을 가리므로 -v 를 켜도 값은 안 나온다.
+    if out="$(gitleaks "${GITLEAKS_ARGS[@]}" --no-banner -v --redact \
         --config "$GITLEAKS_CONFIG" . 2>&1)"; then
         echo "PASS gitleaks 지적 없음"
     else
         printf '%s\n' "$out"
-        fail_count=$((fail_count + 1))
+        report_fail gitleaks "위 지적에 규칙 이름과 파일과 줄이 있다. 값은 가려져 있다"
     fi
 fi
 
