@@ -96,7 +96,11 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           # 리비전은 run: 에 직접 보간하지 않는다. 값은 env 로 넘긴다.
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          # base.sha 가 아니라 base.ref 다. base.sha 는 PR 이벤트 시점의 대상 브랜치
+          # 끝이라 그 뒤로 대상 브랜치가 나아가면 이미 머지된 남의 커밋이 범위에 들어온다.
+          # 그러면 내 PR 이 남의 옛 커밋 제목 때문에 빨간불이 된다.
+          # origin/<base> 는 지금의 대상 브랜치를 가리킨다. fetch-depth: 0 이 그것을 받아온다.
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           set -euo pipefail
-          just commit-range "${BASE_SHA}..HEAD"
+          just commit-range "origin/${BASE_REF}..HEAD"

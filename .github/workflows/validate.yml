@@ -66,9 +66,11 @@ env:
   CHECK_JSONSCHEMA_VERSION: 0.38.0
   RUFF_VERSION: 0.16.3
   MYPY_VERSION: 2.3.1
-  # rust-just has no entry here on purpose. The four template workflows read its
-  # pin out of tools.txt with awk, and a second copy in this block would drift
-  # with nothing to detect it. TOOLS_FILE names the one source.
+  # rust-just has no entry here on purpose: the four template workflows read its
+  # pin out of tools.txt with awk, and a second copy would drift with nothing to
+  # detect it. The pins above are still duplicates of tools.txt entries. They
+  # agree today, and nothing checks that they keep agreeing; moving them here one
+  # at a time is a separate change.
   TOOLS_FILE: skills/repo-scaffold/assets/root/tools.txt
 
 jobs:
