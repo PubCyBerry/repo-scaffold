@@ -92,7 +92,7 @@ staged 자격 증명을 커밋 전에 잡는 용도이며, 이미 유출된 값�
 | 덩어리 | 내용 |
 | --- | --- |
 | 명령 레이어 | `Justfile`, `tools.txt`, `scripts/{bootstrap,doctor,fmt,fix,run-all}.sh` |
-| 검증 | `tests/check-*.sh` 14종, `tests/run-tests.sh`, `.pre-commit-config.yaml`, `schemas/`, `scripts/docs_{freshness,graph}.py` |
+| 검증 | `tests/check-*.sh` 13종, `tests/run-tests.sh`, `.pre-commit-config.yaml`, `schemas/`, `scripts/docs_{freshness,graph}.py` |
 | 문서 | `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/` 5계층, 규약 문서 14종, `docs/architecture/adr/` |
 | 도구 설정 | `.rumdl.toml`, `.vale.ini`, `styles/`, `.shellcheckrc`, `.yamllint.yaml`, `.gitleaks.toml`, `lychee.toml`, `renovate.json`, `pyproject.toml`, `package.json`, `commitlint.config.mjs` |
 | GitHub | 워크플로 6종, `.github/ISSUE_TEMPLATE/`, `pull_request_template.md`, `labels.yml`, `CODEOWNERS.example`, `rulesets/`, `scripts/{check_pr_metadata.py,apply-github-*.sh}` |
@@ -104,7 +104,8 @@ staged 자격 증명을 커밋 전에 잡는 용도이며, 이미 유출된 값�
 - **Automated tests:** [`tests/smoke.sh`](tests/smoke.sh): 스캐폴딩 멱등성, 심링크 거부,
   경쟁 생성, 특수문자 치환, 그리고 스캐폴딩 결과가 자기가 배포한 검사 스크립트 전부를
   통과하는지 확인한다. 렌더된 `Justfile`이 실제로 파싱되는지, 검사기가 심어둔 결함을
-  실제로 잡는지(루트 기준 링크, 중복 id, 금지 문자 커밋 제목, PR 계약 위반 5종)까지 본다.
+  실제로 잡는지(루트 기준 링크, 중복 id, 금지 문자 커밋 제목, PR 계약 위반 4종과 면제
+  경로)까지 본다.
   CI에서 ubuntu와 windows 양쪽에 매 PR 실행
 - **Live agent benchmark:** 아직 실행하지 않았다. `BENCHMARK.md`가 없는 이유이며, 태스크셋은
   평가 러너가 붙는 즉시 돌릴 수 있도록 미리 넣어 두었다. 성능 수치를 인용하지 말 것.

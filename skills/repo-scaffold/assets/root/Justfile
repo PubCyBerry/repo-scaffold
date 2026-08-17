@@ -5,7 +5,8 @@
 # prek -> just -> prek 순환이 된다. tests/check-hooks.sh 가 그것을 기계로 막는다.
 #
 # just verify 가 Definition of Done 이다. verify 는 prek 를 거치지 않으므로
-# prek install 을 하지 않은 새 클론에서도 그대로 돈다. prek 호출 지점은 check 하나다.
+# prek install 을 하지 않은 새 클론에서도 그대로 돈다.
+# prek 를 부르는 것은 check 와 check-fast 둘뿐이다. 그 둘을 check 계열이라 부른다.
 #
 # 자리표시자 규약: 이 파일에는 스캐폴딩 치환 키를 하나도 두지 않는다.
 # just 보간과 치환 키가 같은 중괄호 두 개를 쓰기 때문이다. 보간은 반드시 안쪽에
@@ -158,7 +159,7 @@ test-e2e:
 verify:
     bash scripts/run-all.sh lint type markdown prose docs links-internal hooks workflow-check security test
 
-# 훅을 그대로 전부 돌린다. prek 를 부르는 유일한 지점이다.
+# 훅을 그대로 전부 돌린다. prek 를 부르는 것은 이 레시피와 아래 check-fast 둘뿐이다.
 check:
     prek run --all-files
 

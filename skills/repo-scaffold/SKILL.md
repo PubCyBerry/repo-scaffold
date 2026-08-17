@@ -12,11 +12,10 @@ description: >-
   on the Korean phrasings "저장소 세팅해줘", "스캐폴딩", "프로젝트 초기화",
   "AGENTS.md 만들어줘", "CLAUDE.md 붙여줘", "문서 체계 세워줘",
   "문서 인덱스 자동화", "pre-commit 훅 붙여줘", "린터 붙여줘",
-  "새 레포 만들었는데 뭐부터". Trigger even when neither "scaffold" nor
-  "스캐폴딩" is named. Applies to empty and existing repositories alike.
-  Route elsewhere:
-  writing or editing one document, language project generators (cargo new),
-  refactors.
+  "검증 명령 하나로 줄여줘", "새 레포 만들었는데 뭐부터". Trigger even when neither
+  "scaffold" nor "스캐폴딩" is named. Applies to empty and existing repositories
+  alike. Route elsewhere: writing or editing one document, language project
+  generators (cargo new), refactors.
 license: MIT
 compatibility: >-
   Requires bash, git, and GNU sed on the target machine; on Windows use Git
@@ -118,7 +117,7 @@ bash "$SKILL_DIR/assets/scaffold.sh" \
 | 덩어리 | 내용 |
 | --- | --- |
 | 명령 레이어 | `Justfile`, `tools.txt`, `scripts/` 의 bootstrap, doctor, fmt, fix, run-all |
-| 검증 | `tests/check-*.sh` 14종, `run-tests.sh`, `.pre-commit-config.yaml`, `schemas/` |
+| 검증 | `tests/check-*.sh` 13종, `run-tests.sh`, `.pre-commit-config.yaml`, `schemas/` |
 | 문서 | `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/` 계층과 규약 문서 14종 |
 | 도구 설정 | `.rumdl.toml`, `.vale.ini`, `styles/`, `.shellcheckrc`, `.yamllint.yaml` 등 |
 | GitHub | 워크플로 6종, Issue Form, PR 템플릿, 라벨 정의, CODEOWNERS 와 룰셋 예제 |
@@ -148,7 +147,8 @@ just verify                  # Definition of Done
 ```
 
 `just verify` 는 prek 를 거치지 않는다. 훅을 안 깐 새 클론에서도 그대로 돈다.
-`just check` 만 prek 를 부르는 지점이다. 둘이 갈리는지 의심되면 `just check` 로 대조한다.
+prek 를 부르는 것은 `check` 계열(`just check` 와 `just check-fast`) 둘뿐이다.
+`verify` 와 훅이 갈리는지 의심되면 `just check` 로 대조한다.
 
 `just verify` 가 부르는 것은 lint, type, markdown, prose, docs, links-internal, hooks,
 workflow-check, security, test 다. 명령을 외우지 않는다. 인자 없이 `just` 를 치면 목록이 나온다.

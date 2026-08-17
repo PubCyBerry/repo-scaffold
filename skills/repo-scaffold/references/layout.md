@@ -81,7 +81,8 @@ Git 은 prek 를 부르고 prek 는 `tests/*.sh` 를 직접 부른다. 훅 `entr
 `tests/check-hooks.sh` 가 `.pre-commit-config.yaml` 의 `entry:` 를 기계로 검사한다.
 
 같은 이유로 `just verify` 는 prek 를 거치지 않는다. `prek install` 을 안 한 새 클론에서도
-Definition of Done 이 돌아야 한다. prek 를 부르는 지점은 `just check` 하나다.
+Definition of Done 이 돌아야 한다. prek 를 부르는 것은 `check` 계열 둘뿐이다.
+`just check` 가 훅 전체이고 `just check-fast` 가 `slow` 그룹을 뺀 것이다.
 
 ## 검증
 
