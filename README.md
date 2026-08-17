@@ -109,14 +109,13 @@ Windows 는 Git Bash 가 필요하다. Git for Windows 기본 설치는 `Git\cmd
 
 ## 이 저장소가 배포물과 다른 점
 
-자기 적용에는 한계가 있다. 다른 부분은 전부 결정 기록에 근거가 있다.
+자기 적용에는 한계가 있다. 갈라진 곳은 일곱이고 전부 결정 기록에 근거가 있다.
+목록은 한 곳에만 둔다. [CONTRIBUTING.md 의 자기 적용 절](CONTRIBUTING.md#자기-적용) 이다.
+같은 표를 두 곳에 두면 그 표부터 갈린다.
 
-| 항목 | 차이 | 근거 |
-| --- | --- | --- |
-| `.pre-commit-config.yaml` | 배포물 그대로에 `skill-contract` 훅 하나를 얹었다 | [ADR 0002](docs/architecture/adr/0002-dogfood-the-scaffold-in-its-own-source-repository.md) |
-| `.rumdl.toml`, `tests/check-prose.sh` | `skills/*/assets/` 를 검사에서 뺀다 | 같은 문서 |
-| `.github/workflows/validate.yml` | 룰셋 예제에 없는 잡 이름을 쓴다 | [ADR 0003](docs/architecture/adr/0003-keep-the-skill-contract-workflow-outside-the-shipped-job-names.md) |
-| `SECURITY.md` | 배포되는 자격 증명 규약 대신 취약점 신고 정책이다 | [ADR 0004](docs/architecture/adr/0004-keep-the-vulnerability-policy-at-security-md.md) |
+크게는 셋이다. `.pre-commit-config.yaml` 은 배포물 그대로에 `skill-contract` 훅 하나를
+얹었고, 검사 설정 넷은 `assets/` 아래 템플릿을 검사 대상에서 빼며,
+`SECURITY.md` 는 배포되는 자격 증명 규약이 아니라 취약점 신고 정책이다.
 
 ## 기여
 

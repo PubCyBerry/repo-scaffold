@@ -47,21 +47,30 @@ Run `assets/scaffold.sh` against this repository and keep the result. The root n
 same command layer, check scripts, document hierarchy, tool configuration, and GitHub
 governance files that a scaffolded repository receives.
 
-Three exceptions are unavoidable, because this repository holds the templates themselves.
+Five exceptions are unavoidable, because this repository holds the templates themselves. This
+table is the complete list for files that are meant to stay in step with a template.
 
 | File | Exception | Reason |
 | --- | --- | --- |
-| `.rumdl.toml` | The whole `assets` subtree is excluded | Template documents carry unrendered placeholders in their front matter and links written for the depth they land at, not the depth they are stored at |
-| [tests/check-prose.sh](../../../tests/check-prose.sh) | Same paths excluded from the file list | Vale parses front matter as YAML and stops the whole run on the first template it reads |
+| `.rumdl.toml` | The whole `assets` subtree is excluded | Template documents carry links written for the depth they land at, not the depth they are stored at. Worse, two copies of the same basename collide in the link index and produce false positives against real repository documents |
+| [tests/check-prose.sh](../../../tests/check-prose.sh) | Two template documents excluded from the file list | Vale parses front matter as YAML and stops the whole run on the first file it cannot parse, so everything after it goes unchecked |
 | [.pre-commit-config.yaml](../../../.pre-commit-config.yaml) | One extra `skill-contract` hook | The skill contract is this repository's own gate and is not part of what is shipped |
+| [pyproject.toml](../../../pyproject.toml) | One extra `per-file-ignores` entry for `skills/*/assets/tests/**` | The shipped entry covers `tests/**`, which does not match the same files one directory deeper |
+| [tools.txt](../../../tools.txt) | Two extra rows, `yq` and `jq`, with source `manual` | Only the skill contract check needs them. A scaffolded repository never receives that script, so shipping the rows would demand two tools nobody there uses |
 
-The Vale exception is not a matter of taste. Without it the tool exits before checking
-anything, so the alternative is not a stricter check but no check at all.
+The Vale exclusion is narrow on purpose. Only the two category index templates put
+substitution keys in front matter, and those are the only two that stop the run. Excluding the
+whole subtree would leave 27 template documents permanently unchecked for prose, which is the
+failure this repository exists to prevent. The rumdl exclusion is wide because the collision
+it avoids is not confined to the templates.
 
-One more difference is a finding rather than a decision: `pyproject.toml` gains a second
-`per-file-ignores` entry for `skills/*/assets/tests/**`. The shipped entry covers `tests/**`,
-which does not match the same files one directory deeper. The two copies are byte-identical,
-so they get the same exemption.
+Neither exclusion is a matter of taste. Without them the alternative is not a stricter check
+but no check at all.
+
+Files that are not meant to track a template at all, such as the root README,
+[AGENTS.md](../../../AGENTS.md), and the records in this directory, are outside this table.
+They belong to this repository and their content is expected to differ. The split is written
+out in [CONTRIBUTING.md](../../../CONTRIBUTING.md).
 
 ## Consequences
 

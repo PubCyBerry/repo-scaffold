@@ -61,6 +61,17 @@ command line makes it ignore `.editorconfig` entirely, so no formatting flags ar
 anywhere: not in the hook, not in CI, not by hand. `.editorconfig` is the single source of
 truth.
 
+`shellcheck` reads [.shellcheckrc](../../.shellcheckrc) at the repository root the same way,
+and for the same reason: a flag passed in one place and not another makes the hook and CI
+disagree about what counts as a finding. Severity, the shell dialect, and any repository-wide
+disable belong in that file, where they are reviewed like any other change.
+
+One optional check is deliberately left off. `enable=quote-safe-variables` flags every
+unquoted expansion, which is correct advice and unusable as a starting point: a repository
+with existing scripts lights up with hundreds of SC2248 findings on the first run. That state
+does not get the findings fixed, it gets the check switched off. Turn it on once the existing
+scripts are clean.
+
 Warnings are fixed, not suppressed, per [Code quality](code-quality.md). When a `shellcheck`
 finding genuinely does not apply, add a targeted directive on the line above with the reason.
 

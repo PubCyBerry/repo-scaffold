@@ -19,6 +19,13 @@ just bootstrap
 just doctor
 ```
 
+`yq` 와 `jq` 는 손으로 깐다. PyPI 밖이라 `uv tool install` 로 안 깔린다.
+스킬 계약 검사가 이 둘을 쓰고, 없으면 `just doctor` 가 SKIP 으로 짚어준다.
+
+```bash
+winget install MikeFarah.yq jqlang.jq     # macOS 는 brew install yq jq
+```
+
 `just bootstrap` 이 하는 일은 넷이다. [tools.txt](tools.txt) 의 도구 설치, `uv sync`,
 `npm ci`, 그리고 pre-commit 과 commit-msg 와 pre-push 훅 설치다.
 훅 세 종류를 다 걸어야 한다. 하나라도 빠지면 그 스테이지의 검사가 한 번도 안 돈다.
@@ -54,14 +61,30 @@ just doctor
 **템플릿을 고쳤으면 루트의 복사본도 같이 고친다.** 두 벌은 자동으로 동기화되지 않는다.
 `assets/` 만 고치고 루트를 두면 이 저장소가 옛 판으로 자기를 검사하게 된다.
 
-예외는 결정 기록에 적혀 있다. 거기 없는 차이는 결정이 아니라 결함이다.
+### 어디까지가 결함인가
+
+불변조건은 저장소 전체가 아니라 **동기화 대상**에만 건다. 그 집합은 셋이다.
+
+| 집합 | 예 | 규칙 |
+| --- | --- | --- |
+| 동기화 대상 | `Justfile`, `tests/*.sh`, `scripts/*`, `styles/`, `schemas/`, `.rumdl.toml` 을 비롯한 도구 설정, `.pre-commit-config.yaml`, `docs/standards/**`, `docs/guides/**` | **아래 표에 없는 차이는 결함이다** |
+| 이 저장소 고유 | `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `docs/architecture/**`, `.github/scripts/`, `.github/workflows/validate.yml` | 내용이 이 저장소 것이다. 템플릿과 같을 이유가 없다 |
+| 생성물 | `AGENTS.md` 의 문서 인덱스, `uv.lock`, `package-lock.json` | 도구가 만든다. 손으로 맞추지 않는다 |
+
+`AGENTS.md` 와 `README.md` 는 스캐폴딩이 뼈대를 깔지만 그 뒤로는 이 저장소가 소유한다.
+`docs/architecture/adr/index.md` 도 마찬가지다. 기록을 추가하면 표가 한 줄 늘어난다.
+
+동기화 대상 중 일부러 갈라둔 것은 다음이 전부다. 여기 없는 차이는 결정이 아니라 결함이다.
 
 | 항목 | 차이 | 근거 |
 | --- | --- | --- |
 | `.pre-commit-config.yaml` | `skill-contract` 훅 하나가 더 있다 | [ADR 0002](docs/architecture/adr/0002-dogfood-the-scaffold-in-its-own-source-repository.md) |
-| `.rumdl.toml`, `tests/check-prose.sh` | `skills/*/assets/` 를 검사에서 뺀다 | 같은 문서 |
+| `.rumdl.toml` | `skills/*/assets` 를 통째로 뺀다 | 같은 문서 |
+| `tests/check-prose.sh` | 치환 키를 front matter 에 둔 템플릿 둘만 뺀다 | 같은 문서 |
+| `pyproject.toml` | `per-file-ignores` 에 `skills/*/assets/tests/**` 한 줄이 더 있다 | 같은 문서 |
+| `tools.txt` | `yq` 와 `jq` 두 줄이 더 있다. 스킬 계약 검사 전용이다 | 같은 문서 |
 | `.github/workflows/validate.yml` | 룰셋 예제에 없는 잡 이름을 쓴다 | [ADR 0003](docs/architecture/adr/0003-keep-the-skill-contract-workflow-outside-the-shipped-job-names.md) |
-| `SECURITY.md` | 취약점 신고 정책이다 | [ADR 0004](docs/architecture/adr/0004-keep-the-vulnerability-policy-at-security-md.md) |
+| `SECURITY.md` | 취약점 신고 정책이다. 배포되는 것은 자격 증명 규약이다 | [ADR 0004](docs/architecture/adr/0004-keep-the-vulnerability-policy-at-security-md.md) |
 
 `assets/` 의 템플릿을 고쳤으면 스모크 테스트가 임시 저장소에 렌더해서
 배포되는 검사 스크립트 전부를 돌린다. 템플릿만 고치고 검사 스크립트를 안 고치면 거기서 잡힌다.
