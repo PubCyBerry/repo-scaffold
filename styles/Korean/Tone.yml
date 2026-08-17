@@ -1,0 +1,23 @@
+# docs/standards/writing-style.md 의 Tone 절과 날짜 규칙의 한국어 대응이다.
+# 영어 낱말 목록은 styles/English/ 에 있고, 이 파일은 같은 규칙의 한국어 쪽이다.
+#
+# 상대 날짜는 문서를 읽는 시점에 따라 뜻이 달라진다. 날짜는 2026-01-01 처럼 절대 표기로 쓴다.
+extends: existence
+message: "마케팅 형용사와 상대 날짜를 쓰지 않는다: '%s'"
+level: error
+nonword: true
+link: docs/standards/writing-style.md
+tokens:
+  - 핵심적인
+  - 필수적인
+  - 중대한
+  - 포괄적인
+  - 강력한
+  - 우아한
+  - 매끄러운
+  - 혁신적인
+  - 획기적인
+  - 최근에
+  - 요즘
+  - 지난주
+  - 다음주

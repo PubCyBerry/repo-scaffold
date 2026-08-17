@@ -1,0 +1,76 @@
+# PR 메타데이터 계약 게이트.
+#
+# 제목이 Conventional Commits 헤더인지, 본문에 필수 9개 절이 있는지, 이슈를 걸었거나
+# policy/skip-issue 를 받았는지 본다. 규약은 docs/standards/pull-request-lifecycle.md 다.
+#
+# 제목 검사가 이 워크플로의 존재 이유다. 저장소가 squash 로 머지하고 squash 커밋 제목의
+# 기본값이 PR 제목이므로, 기본 브랜치에 남는 커밋 메시지는 PR 제목에서 합성된다.
+# commit-msg 훅은 브랜치 커밋만 보므로 그 문자열을 영원히 보지 못한다.
+#
+# 잡 이름 pr-policy 는 브랜치 룰셋의 required status check 이름이다. 룰셋은 파일명이
+# 아니라 잡 이름으로 매칭한다. 바꾸면 모든 PR 이 오지 않는 검사를 영원히 기다린다.
+#
+# merge_group 에서는 본문을 다시 읽지 않는다. 큐에 들어오기 전에 이미 검사했고, 큐가
+# 만드는 커밋에는 PR 본문이 없다. 그래도 같은 잡 이름으로 보고해야 한다. 큐에서
+# 보고하지 않는 필수 검사는 큐를 영원히 멈춘다.
+#
+# 검사 로직은 워크플로 안에 인라인 파이썬으로 두지 않고 scripts/check_pr_metadata.py 에
+# 둔다. YAML 안의 히어독은 단위 테스트를 붙일 수 없고, 손으로 돌려볼 수도 없다.
+#
+# PR 제목과 본문은 신뢰할 수 없는 입력이다. run: 안에 ${{ }} 로 넣지 않고 env 로 넘긴다.
+# 넣으면 PR 을 여는 누구나 러너에서 셸 명령을 실행할 수 있다.
+#
+# 액션은 40자 SHA 로 고정하고 버전은 같은 줄 뒤에 주석으로 단다. Renovate 의 actions
+# 매니저는 같은 줄 트레일링 주석만 읽는다. 윗줄에 두면 그 액션은 영원히 갱신되지 않는다.
+
+name: PR policy
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
+      - ready_for_review
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-policy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-policy:
+    name: pr-policy
+    runs-on: ubuntu-latest
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      PR_BODY: ${{ github.event.pull_request.body }}
+      PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+    steps:
+      - name: Merge group short-circuit
+        if: github.event_name == 'merge_group'
+        run: |
+          set -euo pipefail
+          echo "merge_group: PR 메타데이터는 큐에 들어오기 전에 검사했다"
+
+      - name: Checkout
+        if: github.event_name != 'merge_group'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        if: github.event_name != 'merge_group'
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d  # v10.0.1
+
+      - name: Validate PR metadata contract
+        if: github.event_name != 'merge_group'
+        run: |
+          set -euo pipefail
+          uv run --script scripts/check_pr_metadata.py

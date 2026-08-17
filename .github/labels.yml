@@ -1,0 +1,96 @@
+# 라벨의 단일 출처. 사람이 읽는 규약은 docs/standards/triage-labels.md 에 있다.
+#
+# 라벨은 자동화가 읽는 인터페이스다. 여기 없는 이름을 이슈 폼이나 워크플로가 쓰면
+# GitHub 이 오류 없이 조용히 버린다. 그러면 수명주기가 시작조차 하지 않는다.
+#
+# 만들기:  bash scripts/apply-github-labels.sh --apply
+# 확인:    just labels-check
+#
+# 형식은 고정이다. 항목마다 name, color, description 을 이 순서로 하나씩 쓴다.
+# scripts/apply-github-labels.sh 가 yq 없이 읽으므로 다른 배치는 지원하지 않는다.
+# color 는 # 없는 6 자리 16 진수다. description 에는 콜론을 넣지 않는다.
+#
+# area/* 는 여기 없다. 구성 요소 이름은 저장소마다 다르다. 필요할 때 항목을 더한다.
+
+version: 1
+
+labels:
+  - name: kind/bug
+    color: d73a4a
+    description: Existing behavior is incorrect or broken
+
+  - name: kind/feature
+    color: a2eeef
+    description: New externally meaningful capability or enhancement
+
+  - name: kind/task
+    color: 0e8a16
+    description: Engineering work that is neither a bug nor a user-facing feature
+
+  - name: kind/docs
+    color: 0075ca
+    description: Documentation-only work
+
+  - name: kind/refactor
+    color: c5def5
+    description: Internal restructuring with no intended behavior change
+
+  - name: kind/security
+    color: b60205
+    description: Security work that is safe to discuss in public
+
+  - name: status/needs-triage
+    color: ededed
+    description: New or reopened. The project has not decided yet
+
+  - name: status/needs-info
+    color: d876e3
+    description: Blocked on information the reporter has
+
+  - name: status/accepted
+    color: 0e8a16
+    description: In scope and defined well enough to implement
+
+  - name: status/in-progress
+    color: 1d76db
+    description: Someone is actively implementing it
+
+  - name: status/blocked
+    color: b60205
+    description: Accepted, but an explicit dependency stops progress
+
+  - name: priority/p0
+    color: b60205
+    description: Critical incident or release blocker. Never auto-stale
+
+  - name: priority/p1
+    color: d93f0b
+    description: Address before normal backlog work. Never auto-stale
+
+  - name: priority/p2
+    color: fbca04
+    description: Normal planned priority
+
+  - name: priority/p3
+    color: c2e0c6
+    description: Low priority or opportunistic backlog
+
+  - name: policy/skip-issue
+    color: 5319e7
+    description: Trivial change allowed to omit a linked issue
+
+  - name: policy/do-not-merge
+    color: b60205
+    description: Explicit project hold. Keep out of the merge queue
+
+  - name: lifecycle/stale
+    color: 795548
+    description: Inactive needs-info issue. Closes as not planned if it stays quiet
+
+  - name: help wanted
+    color: 008672
+    description: Accepted, with enough context for someone outside the team
+
+  - name: good first issue
+    color: 7057ff
+    description: A narrower subset of help wanted, suitable for a first contribution

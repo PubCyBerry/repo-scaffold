@@ -12,16 +12,20 @@
 
 ### 문서 인덱스가 AGENTS.md 안에 있는 이유
 
-에이전트는 세션 시작 시 AGENTS.md 를 읽는다. 인덱스를 별도 파일로 빼면 한 번 더 읽어야 하고, 그 한 번을 건너뛰면 탐색이 추측으로 바뀐다.
+에이전트는 세션 시작 시 AGENTS.md 를 읽는다. 인덱스를 별도 파일로 빼면 한 번 더 읽어야 하고,
+그 한 번을 건너뛰면 탐색이 추측으로 바뀐다.
 디렉터리별로 묶어 `|` 로 이은 한 줄 형식은 같은 정보를 트리 형태보다 적은 토큰으로 담는다.
 
-인덱스는 **파일명만** 담는다. 설명은 각 디렉터리 `index.md` 에 있다. 두 층으로 나눠야 인덱스가 커지지 않는다.
+인덱스는 **파일명만** 담는다. 설명은 각 디렉터리 `index.md` 에 있다.
+두 층으로 나눠야 인덱스가 커지지 않는다.
 
 ### AGENTS.md 에 코드 탐색 도구를 박아 두는 이유
 
 `rg`, `fd`, `ast-grep` 선택 규칙은 규약 문서가 아니라 AGENTS.md 본문에 있다.
-에이전트는 탐색을 시작하기 전에 규약 문서를 열어 보지 않는다. 세션마다 읽는 파일에 있어야 실제로 적용된다.
-같은 이유로 글쓰기 규약은 AGENTS.md 에서 포인터 한 줄로 가리킨다. 내용은 문서에 두고 진입점만 항상 보이게 한다.
+에이전트는 탐색을 시작하기 전에 규약 문서를 열어 보지 않는다.
+세션마다 읽는 파일에 있어야 실제로 적용된다.
+같은 이유로 글쓰기 규약은 AGENTS.md 에서 포인터 한 줄로 가리킨다.
+내용은 문서에 두고 진입점만 항상 보이게 한다.
 
 ## 문서 체계
 
@@ -38,16 +42,47 @@
 
 디렉터리명과 `type` 이 1:1 인 것이 중요하다. 위치만 보고 성격을 알 수 있어야 인덱스 한 줄로 탐색이 끝난다.
 
-### 규약 문서를 8종 미리 까는 이유
+### 규약 문서를 14종 미리 까는 이유
 
 빈 `standards/` 는 채워지지 않는다. 규칙을 처음부터 쓰게 하면 아무도 안 쓴다.
-문서 작성, 글쓰기, 코드 품질, 테스트, 코드 리뷰, 커밋, 셸, GitHub Actions 는
+문서 작성, 글쓰기, 코드 품질, 테스트, 코드 리뷰, 리뷰 피드백, 커밋, 셸, 파이썬,
+GitHub Actions, 이슈 수명주기, 분류 라벨, PR 수명주기, GitHub 강제는
 저장소 종류와 무관하게 필요하다. 안 맞는 문서는 지우는 편이 없는 문서를 쓰는 것보다 싸다.
+
+파이썬 문서만 예외처럼 보이지만 아니다. 문서 검사기 자체가 파이썬 파일이라
+**모든 스캐폴딩 저장소가 파이썬 파일을 갖는다.** 언어 감지가 거르는 것은 `pyproject.toml`
+같은 도구 설정뿐이다.
+
+리뷰 규약을 둘로 나눈 것도 검색 때문이다. `code-review.md` 는 리뷰를 **수행하는** 순서이고
+`review-feedback.md` 는 받은 지적을 **분류하고 처리하는** 절차다. 읽는 시점이 다르다.
 
 글쓰기 규약을 문서 작성 규약에서 떼어낸 것은 검색 때문이다.
 `documentation.md` 의 `scope` 는 `docs/**` 라 보고서나 코드 주석을 쓰는 상황에는 걸리지 않는다.
-`writing-style.md` 는 `scope` 가 전체이고 `read_when` 이 "보고서", "커밋 메시지", "코드 주석" 을 직접 부른다.
-같은 내용이라도 언제 읽어야 하는지가 다르면 문서를 나눈다.
+`writing-style.md` 는 `scope` 가 전체이고 `read_when` 이 "보고서", "커밋 메시지",
+"코드 주석" 을 직접 부른다. 같은 내용이라도 언제 읽어야 하는지가 다르면 문서를 나눈다.
+
+## 명령 레이어
+
+| 파일 | 막는 실패 |
+| --- | --- |
+| `Justfile` | 무엇을 돌려야 하는지가 사람마다 다르다. 에이전트는 다섯 개를 외우지 못하고 셋만 돌린 뒤 끝났다고 보고한다. 공개 API 를 하나로 줄여 `just verify` 하나가 Definition of Done 이 된다 |
+| `scripts/run-all.sh` | just 는 레시피 줄마다 셸을 새로 띄우고 **첫 실패에서 멈춘다.** 그러면 세 줄짜리 `lint` 가 첫 지적만 보여주고, 전부 돌려 집계하는 이 저장소의 관용이 깨진다 |
+| `tools.txt` | 도구 버전이 사람마다 다르다. 어제 통과한 것이 오늘 실패하는 이유를 아무도 못 찾는다 |
+| `scripts/bootstrap.sh` | 설치 절차가 README 산문에만 있으면 사람마다 다른 상태가 된다. 특히 훅 세 종류 중 하나를 빠뜨린 채 몇 달이 간다 |
+| `scripts/doctor.sh` | 무엇이 없어서 SKIP 이 났는지 스스로 물어봐야 한다. 진단이 없으면 SKIP 을 통과로 읽는다 |
+| `scripts/fmt.sh`, `scripts/fix.sh` | 파일을 바꾸는 명령과 안 바꾸는 명령이 섞인다. 훅이 형식을 고쳐버리면 커밋된 내용이 사람이 본 내용과 달라진다 |
+| `package.json`, `commitlint.config.mjs` | 커밋 메시지 규격이 문서에만 있고 아무도 강제하지 않는다 |
+| `pyproject.toml` | ruff 와 mypy 한도가 사람마다 다르다. 한도는 `code-quality.md` 의 hard limit 을 기계로 옮긴 것이지 발명한 것이 아니다 |
+
+### 훅 entry 에 `just` 를 넣지 않는 이유
+
+Git 은 prek 를 부르고 prek 는 `tests/*.sh` 를 직접 부른다. 훅 `entry:` 에 `just` 가 들어가면
+`prek → just → prek` 순환이 된다. 규약을 주석으로만 두면 다음 사람이 깨므로
+`tests/check-hooks.sh` 가 `.pre-commit-config.yaml` 의 `entry:` 를 기계로 검사한다.
+
+같은 이유로 `just verify` 는 prek 를 거치지 않는다. `prek install` 을 안 한 새 클론에서도
+Definition of Done 이 돌아야 한다. prek 를 부르는 것은 `check` 계열 둘뿐이다.
+`just check` 가 훅 전체이고 `just check-fast` 가 `slow` 그룹을 뺀 것이다.
 
 ## 검증
 
@@ -56,15 +91,34 @@
 | `scripts/gen-doc-index.sh` | 인덱스를 손으로 갱신하면 반드시 낡는다. 낡은 인덱스는 없는 것보다 나쁘다. 에이전트가 그것을 사실로 믿는다 |
 | `tests/check-docs.sh` | front matter 가 서서히 빠진다. 링크가 조용히 깨진다. 규약 문서만 있고 지켜지지 않는 상태가 된다 |
 | `tests/check-docs-metadata.sh` | 규약에 없는 키가 오타로 들어가도 아무도 모른다. 문서가 서술하는 코드가 바뀌어도 문서는 그대로 남아 읽는 사람을 속인다 |
+| `schemas/docs-frontmatter.schema.json` | front matter 계약이 검사 스크립트의 정규식 안에만 있다. 기계가 읽을 계약이 없으면 다른 도구가 같은 규약을 재구현한다 |
+| `scripts/docs_freshness.py` | 문서가 시간이 지나 낡은 것과 서술 대상이 바뀌어 낡은 것을 구분하지 못한다. 둘은 조치가 다르다 |
+| `scripts/docs_graph.py` | `related` 가 없는 id 를 가리키고, 아무도 링크하지 않는 고아 문서가 남는다 |
 | `tests/check-markdown.sh` | 제목 구조와 줄 길이가 문서마다 갈린다. 링크 대상과 앵커가 조용히 깨진다 |
 | `tests/check-prose.sh` | 같은 것을 두 이름으로 부르고 문체가 문서마다 갈린다. 리뷰로는 매번 다시 지적해야 한다 |
 | `tests/check-shell.sh` | 셸 스크립트가 조용히 실패한다. 인용 누락과 미검사 exit code 는 리뷰로 잡히지 않는다 |
+| `tests/check-python.sh` | 복잡도와 인자 개수 한도가 문서에만 있다. 리뷰어가 매번 손으로 센다 |
+| `tests/run-tests.sh` | 테스트 갈래마다 실행 방법이 달라진다. 훅과 CI 와 사람이 서로 다른 것을 돌린다 |
+| `tests/check-yaml.sh` | YAML 형식이 파일마다 갈리고, 워크플로의 키 오타는 push 한 뒤 GitHub 이 알려준다 |
 | `tests/check-workflows.sh` | 워크플로가 저장소 자격 증명을 들고 아무도 안 보는 머신에서 돈다. 태그 고정은 업스트림이 태그를 옮기면 무너진다 |
+| `tests/check-hooks.sh` | 훅이 `just` 를 불러 순환이 되거나, `default_install_hook_types` 에 없는 스테이지를 선언해 그 훅이 영원히 안 돈다 |
 | `tests/check-env.sh` | 키를 추가한 사람만 돌고 다른 사람 환경에서 실행이 깨진다. 원인이 `.env` 라는 것을 찾는 데 시간이 든다 |
 | `tests/check-secrets.sh` | 토큰이 커밋에 들어간다. 커밋에 한 번 들어간 값은 이력에 영구히 남는다. 되돌리기가 아니라 폐기가 유일한 대응이다 |
 | `tests/check-commit-msg.sh` | 커밋 제목이 사람마다 다른 형식이 된다. 이력에서 무엇이 기능이고 무엇이 수정인지 기계로 고를 수 없다 |
 | `tests/check-links-external.sh` | 문서가 가리키는 바깥 페이지가 사라져도 아무도 모른다. 링크는 조용히 죽는다 |
 | `.pre-commit-config.yaml` | 검증 스크립트가 있어도 아무도 안 돌린다 |
+
+### 훅을 세 스테이지로 나누는 이유
+
+`default_install_hook_types: [pre-commit, commit-msg, pre-push]` 한 줄이 이 설계에서 가장
+조용한 실패 지점이다. 없으면 `prek install` 이 pre-commit 만 깔고 commitlint 와 pre-push
+훅 다섯이 몇 달간 한 번도 안 돈다. `tests/check-hooks.sh` 가 이 키와 실제 쓰인 `stages:` 를
+대조한다.
+
+pre-push 로 미룬 것은 느려서가 아니다. mypy, 단위 테스트, 문서 그래프, source drift 는
+**부분 검사가 틀린 답을 낸다.** 고친 파일만 봐서는 그 파일을 부르는 쪽이 깨진 것을 못 본다.
+반대로 `doc-index` 는 파일을 스테이징하므로 pre-commit 이어야 하고, `env-sync` 와
+`secret-scan` 은 `.env` 가 gitignore 대상이라 prek 가 변경을 볼 수 없어 `always_run` 이다.
 
 ### 실행기가 pre-commit 이 아니라 prek 인 이유
 
@@ -75,10 +129,16 @@ prek 은 런타임 의존이 없는 단일 바이너리이고 `.pre-commit-confi
 
 ### 도구가 없을 때 로컬에서 SKIP 하는 이유
 
-`shellcheck`, `shfmt`, `actionlint`, `zizmor` 는 저장소가 배포하는 파일이 아니라 각자 설치하는 도구다.
+`shellcheck`, `shfmt`, `actionlint`, `zizmor`, `rumdl`, `vale`, `yamllint`, `check-jsonschema`,
+`ruff`, `mypy` 는 저장소가 배포하는 파일이 아니라 각자 설치하는 도구다.
 없다고 커밋을 막으면 그 사람은 `--no-verify` 를 배우고, 그다음부터 모든 훅이 무력화된다.
 그래서 로컬에서는 SKIP 으로 보이게만 하고 `CI=true` 인 환경에서 FAIL 로 막는다.
 막는 지점을 커밋에서 머지로 옮긴 것이지, 검사를 포기한 것이 아니다.
+
+버전은 `tools.txt` 가 갖고 `scripts/doctor.sh` 가 `uv tool list` 와 대조한다.
+**실행 파일의 `--version` 과 대조하지 않는다.** `shellcheck-py==0.11.0.1` 이 까는 바이너리는
+자기 버전을 `0.11.0` 이라 답해서 영구 오탐이 된다. uv 밖에서 깐 도구는 고정이 안 걸리고
+`doctor.sh` 가 경로만 보고한다. CI 는 전부 uv 로 까므로 CI 는 고정된다.
 
 ### `shfmt` 에 형식 플래그를 주지 않는 이유
 
@@ -145,7 +205,25 @@ rumdl 의 cross-file 앵커 검사(MD051)는 링크 대상을 링크가 있는 �
 pre-commit 프레임워크 규약이다. 훅이 파일을 고쳤으면 커밋 내용이 사용자가 확인한 것과 달라진다.
 조용히 통과시키면 무엇이 커밋됐는지 모르게 된다. 그대로 다시 커밋하면 된다.
 
-## 파일 형식
+## GitHub
+
+| 파일 | 막는 실패 |
+| --- | --- |
+| `.github/workflows/{quality,test,security,docs-health}.yml` | 훅을 안 깐 사람과 `--no-verify` 를 쓴 사람의 변경이 아무 검사도 없이 머지된다. CI 는 훅을 신뢰하지 않고 독립 재검증한다 |
+| `.github/workflows/pr-policy.yml` | squash 머지가 **PR 제목으로 커밋을 합성**하므로 commitlint 가 그 문자열을 영원히 못 본다. 그 구멍을 PR 제목 재검사로 막는다 |
+| `.github/workflows/stale-needs-info.yml` | 정보를 기다리는 이슈가 영원히 열려 있고, 무엇이 살아 있는 작업인지 목록만 봐서는 알 수 없다 |
+| `.github/labels.yml` | 라벨이 없으면 **Issue Form 이 라벨을 조용히 버린다.** 수명주기가 아예 시작되지 않고 아무 경고도 없다 |
+| `.github/ISSUE_TEMPLATE/` | 이슈에 재현 절차와 범위가 빠진 채 들어온다. 되묻는 왕복이 기본값이 된다 |
+| `.github/pull_request_template.md` | PR 본문이 사람마다 다르다. 리뷰어가 무엇을 봐야 하는지 매번 물어본다 |
+| `.github/CODEOWNERS.example` | 리뷰 요청이 아무에게도 안 간다. 예제로만 까는 것은 실제 핸들을 스크립트가 알 수 없기 때문이다 |
+| `.github/rulesets/` | 규칙이 저장소 설정 화면 안에만 있어 이력도 리뷰도 없다. solo 와 team 두 벌인 이유는 원본 team 설정이 **1인 저장소에서 본인 PR 을 영원히 못 머지하게** 만들기 때문이다 |
+| `renovate.json` | 의존성이 고정된 채 썩는다. Dependabot 은 Alerts 만 켜고 갱신 PR 은 Renovate 하나가 낸다. 둘 다 켜면 같은 갱신에 PR 이 두 개 온다 |
+
+룰셋과 CODEOWNERS 와 라벨은 **원격을 바꾸는 일**이라 스캐폴딩이 직접 하지 않는다.
+`scripts/apply-github-*.sh` 는 인자 없이 부르면 dry-run 이고 `--apply` 를 줘야 실제로 바꾼다.
+잘못 걸면 기본 브랜치가 잠기는데, 그 복구는 사람만 할 수 있다.
+
+## 파일 형식과 도구 설정
 
 | 파일 | 막는 실패 |
 | --- | --- |
@@ -154,6 +232,27 @@ pre-commit 프레임워크 규약이다. 훅이 파일을 고쳤으면 커밋 �
 | `.gitignore` | `.env` 가 커밋된다. 빌드 산출물이 diff 를 덮는다 |
 | `.env.example` | 어떤 환경변수가 필요한지 아무도 모른다. 새로 합류한 사람이 실행에 실패한다 |
 | `SECURITY.md` | 자격 증명 취급 판단이 사람마다 다르다. 에이전트도 근거 없이 추측한다 |
+| `.shellcheckrc` | 셸 검사 강도가 사람마다 다르다. CI 에서만 나는 지적이 생긴다 |
+| `.yamllint.yaml` | YAML 형식 기준이 없어 들여쓰기와 줄 길이가 파일마다 갈린다 |
+| `.rumdl.toml` | 마크다운 기준이 도구 기본값이 된다. 줄 길이 80 과 `.editorconfig` 의 100 이 어긋난다 |
+| `.vale.ini`, `styles/` | 산문 규칙이 리뷰 코멘트로만 존재한다. 같은 지적을 사람이 매번 다시 한다 |
+| `.gitleaks.toml`, `lychee.toml` | 도구는 CI 전용인데 설정이 없으면 워크플로 안에 예외 목록이 흩어져 로컬에서 재현할 수 없다 |
 
 `.env.example` 에 값을 적지 않는 것이 규칙이다. 커밋되는 파일이라 값을 적는 순간 유출이다.
 `check-env.sh` 가 `TOKEN`, `KEY`, `SECRET`, `PASSWORD` 계열 키의 값이 비어 있는지 본다.
+
+`.shellcheckrc` 에 `enable=quote-safe-variables` 를 **일부러 넣지 않았다.** 신규 템플릿은 전부
+통과하지만 기존 저장소의 셸이 SC2248 로 도배돼 첫날부터 `just lint` 가 빨개진다.
+그 상태는 규칙을 지키게 만들지 않고 검사를 끄게 만든다. 켜고 싶으면 나중에 켠다.
+
+## 알려진 한계
+
+이 설계가 못 하는 것들이다. 모르고 부딪히는 것보다 적어두는 편이 싸다.
+
+| 한계 | 무슨 일이 일어나나 |
+| --- | --- |
+| `just verify` 와 훅이 갈릴 수 있다 | `verify` 가 prek 를 우회하므로 어느 한쪽에만 있는 검사가 생길 수 있다. `just check` 로 대조한다. 자동 parity 검사는 넣지 않았다 |
+| uv 밖에서 깐 도구는 버전이 안 잡힌다 | `apt install shellcheck` 는 `uv tool list` 에 없어 `doctor.sh` 가 경로만 보고하고 통과시킨다 |
+| Windows 는 Git Bash 가 필수다 | Git for Windows 기본 설치는 `Git\cmd` 만 PATH 에 넣고 `bash.exe` 가 없다. `doctor.sh` 가 해석된 bash 를 출력한다 |
+| 폐쇄망에서 commitlint 는 SKIP 이다 | `repo: local` 의 보장은 "훅이 항상 **돈다**" 이지 "항상 **작동한다**" 가 아니다. Vale 도 같은 예외다 |
+| 한국어 맞춤법은 검사하지 않는다 | Vale 로 불가능함이 소스 수준에서 확인됐다. `writing-style.md` 가 사람용 정책으로 남는다 |

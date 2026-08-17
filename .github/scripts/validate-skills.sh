@@ -29,6 +29,26 @@ set -uo pipefail
 
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
+# yq and jq are hard requirements, not optional linters. Without this guard a broken
+# one surfaces as "SKILL.md frontmatter is not valid YAML" against a file that is
+# perfectly fine: `frontmatter | yq` fails, the pipeline's non-zero status is read as
+# a parse error, and the report blames the wrong thing.
+#
+# Each tool is executed, not merely located. `command -v` is not enough: a Windows
+# package manager can leave a shim on PATH that resolves fine and then dies with
+# "Permission denied" on exec, which is exactly the case that produced the false
+# parse error. Both tools are listed in tools.txt with source `manual`.
+broken=""
+for tool in yq jq; do
+    "$tool" --version > /dev/null 2>&1 || broken="$broken $tool"
+done
+if [ -n "$broken" ]; then
+    echo "FAIL: required tool(s) missing or not executable:$broken" >&2
+    echo "      This script needs yq (mikefarah v4) and jq. See tools.txt." >&2
+    echo "      A tool that resolves on PATH but fails to run counts as missing." >&2
+    exit 1
+fi
+
 SKILLS_DIR="${SKILLS_DIR:-skills}"
 DESCRIPTION_MAX="${DESCRIPTION_MAX:-1024}"
 

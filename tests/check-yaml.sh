@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# YAML 형식 검사와 GitHub Actions 워크플로 스키마 검사.
+#
+# 대상:
+#   1. yamllint          추적 중인 *.yml, *.yaml 전부. 기준은 .yamllint.yaml
+#   2. check-jsonschema  .github/workflows 아래 워크플로. 내장 vendor.github-workflows 스키마
+#
+# 둘로 나누는 이유는 소유 범위가 다르기 때문이다. yamllint 은 YAML 문법과 형식을 보고,
+# 스키마는 워크플로의 키 구조를 본다. 워크플로의 의미는 actionlint 이, 보안은 zizmor 가
+# 보고 그 둘은 tests/check-workflows.sh 에 있다. 같은 규칙을 두 도구에 두지 않는다.
+#
+# yamllint 은 --strict 로 부른다. 경고도 실패다.
+# 근거는 docs/standards/code-quality.md 의 zero warnings 다.
+#
+# 도구가 없으면 로컬에서는 SKIP, CI(환경변수 CI=true)에서는 FAIL 이다.
+# 로컬에서 커밋을 막으면 --no-verify 가 습관이 되므로 막지 않고, CI 에서 잡는다.
+#
+# 이 스크립트는 모든 검사를 돌려 결과를 모으므로 set -e 를 쓰지 않는다.
+# 예외 근거는 docs/standards/shell.md 에 있다.
+#
+# 사용법:
+#   bash tests/check-yaml.sh
+#
+# 종료 코드: FAIL 이 하나라도 있으면 1, 알 수 없는 옵션이면 2, 아니면 0
+
+set -uo pipefail
+
+# cd 뒤에는 상대 경로인 BASH_SOURCE 가 안 풀린다. --help 가 자기 파일을 읽으므로 먼저 절대 경로로 잡는다.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELF="$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")"
+
+CONFIG=".yamllint.yaml"
+WORKFLOW_DIR=".github/workflows"
+WORKFLOW_SCHEMA="vendor.github-workflows"
+
+case "${1:-}" in
+    -h | --help)
+        sed -n '2,/^$/p' "$SELF"
+        exit 0
+        ;;
+    "") ;;
+    *)
+        echo "알 수 없는 옵션: $1" >&2
+        exit 2
+        ;;
+esac
+
+# 스크립트 위치가 아니라 git 이 루트를 정한다. tests/ 를 옮겨도 따라온다.
+REPO_ROOT="$(git rev-parse --show-toplevel 2> /dev/null)" || {
+    echo "FAIL: git 저장소가 아니다" >&2
+    exit 1
+}
+cd "$REPO_ROOT" || exit 1
+
+pass_count=0
+fail_count=0
+skip_count=0
+
+report() {
+    # $1: 판정, $2: 대상, $3: 사유
+    case "$1" in
+        PASS) pass_count=$((pass_count + 1)) ;;
+        FAIL) fail_count=$((fail_count + 1)) ;;
+        SKIP) skip_count=$((skip_count + 1)) ;;
+    esac
+    printf '%-4s %-18s %s\n' "$1" "$2" "${3:-}"
+}
+
+# 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
+require_tool() {
+    # $1: 명령, $2: 설치 명령
+    command -v "$1" > /dev/null 2>&1 && return 0
+    if [ "${CI:-}" = "true" ]; then
+        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+    else
+        report SKIP "$1" "미설치. 설치: $2"
+    fi
+    return 1
+}
+
+FILES=()
+while IFS= read -r f; do
+    FILES[${#FILES[@]}]="$f"
+done < <(git ls-files -- '*.yml' '*.yaml' | sort)
+
+if [ "${#FILES[@]}" -eq 0 ]; then
+    echo "SKIP 추적 중인 YAML 파일이 없다"
+    exit 0
+fi
+
+WORKFLOWS=()
+while IFS= read -r f; do
+    WORKFLOWS[${#WORKFLOWS[@]}]="$f"
+done < <(git ls-files -- "$WORKFLOW_DIR/*.yml" "$WORKFLOW_DIR/*.yaml" | sort)
+
+echo "대상 YAML: ${#FILES[@]}개 (워크플로 ${#WORKFLOWS[@]}개)"
+
+echo
+echo "[1/2] yamllint"
+if require_tool yamllint "uv tool install yamllint"; then
+    # 설정 파일을 명시한다. 안 주면 yamllint 이 찾지 못했을 때 사용자 홈의 설정이나
+    # 내장 기본값(줄 길이 80)으로 조용히 떨어져서 사람마다 다른 답이 나온다.
+    YAMLLINT_ARGS=(--strict --format parsable)
+    if [ -f "$CONFIG" ]; then
+        YAMLLINT_ARGS[${#YAMLLINT_ARGS[@]}]="-c"
+        YAMLLINT_ARGS[${#YAMLLINT_ARGS[@]}]="$CONFIG"
+    else
+        report SKIP "$CONFIG" "없다. yamllint 내장 기본값으로 돈다. 기준은 저장소 것이 아니다"
+    fi
+
+    if out="$(yamllint "${YAMLLINT_ARGS[@]}" "${FILES[@]}" 2>&1)" && [ -z "$out" ]; then
+        report PASS yamllint "지적 없음"
+    else
+        printf '%s\n' "$out"
+        report FAIL yamllint "지적을 전부 고친다. 기준은 $CONFIG 다"
+    fi
+fi
+
+echo
+echo "[2/2] check-jsonschema"
+if [ "${#WORKFLOWS[@]}" -eq 0 ]; then
+    report SKIP check-jsonschema "$WORKFLOW_DIR 에 추적 중인 워크플로가 없다"
+elif require_tool check-jsonschema "uv tool install check-jsonschema"; then
+    if out="$(check-jsonschema --builtin-schema "$WORKFLOW_SCHEMA" "${WORKFLOWS[@]}" 2>&1)"; then
+        report PASS check-jsonschema "워크플로 스키마 일치"
+    else
+        printf '%s\n' "$out"
+        report FAIL check-jsonschema "워크플로 키 구조가 $WORKFLOW_SCHEMA 스키마에 어긋난다"
+    fi
+fi
+
+echo
+echo "결과: PASS $pass_count, FAIL $fail_count, SKIP $skip_count"
+
+if [ "$fail_count" -gt 0 ]; then
+    echo
+    echo "규약: docs/standards/github-actions.md" >&2
+    exit 1
+fi
+exit 0

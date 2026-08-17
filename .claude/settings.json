@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(just:*)",
+      "Bash(bash tests/check-docs.sh:*)",
+      "Bash(bash tests/check-docs-metadata.sh:*)",
+      "Bash(bash tests/check-markdown.sh:*)",
+      "Bash(bash tests/check-prose.sh:*)",
+      "Bash(bash tests/check-shell.sh:*)",
+      "Bash(bash tests/check-yaml.sh:*)",
+      "Bash(bash tests/check-workflows.sh:*)",
+      "Bash(bash tests/check-hooks.sh:*)",
+      "Bash(bash tests/check-commit-msg.sh:*)",
+      "Bash(bash tests/check-links-external.sh:*)",
+      "Bash(bash tests/check-env.sh:*)",
+      "Bash(bash tests/check-secrets.sh:*)",
+      "Bash(bash scripts/gen-doc-index.sh:*)",
+      "Bash(bash scripts/doctor.sh:*)",
+      "Bash(bash scripts/fmt.sh:*)",
+      "Bash(bash scripts/fix.sh:*)",
+      "Bash(bash scripts/run-all.sh:*)",
+      "Bash(uv run --script scripts/docs_freshness.py:*)",
+      "Bash(uv run --script scripts/docs_graph.py:*)",
+      "Bash(prek run:*)",
+      "Bash(rg:*)",
+      "Bash(fd:*)",
+      "Bash(ast-grep:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git ls-files:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/.env)"
+    ]
+  }
+}

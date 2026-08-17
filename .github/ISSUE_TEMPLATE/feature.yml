@@ -1,0 +1,86 @@
+# 기능 제안 폼. 규약은 docs/standards/issue-lifecycle.md 에 있다.
+#
+# labels 의 이름은 .github/labels.yml 에 있어야 한다. 없으면 조용히 버려진다.
+
+name: Feature request
+description: Propose a new capability or an externally meaningful enhancement
+title: ""
+labels:
+  - "kind/feature"
+  - "status/needs-triage"
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What concrete problem or limitation should be solved?
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why is solving this useful, and for whom?
+    validations:
+      required: true
+
+  - type: textarea
+    id: desired-outcome
+    attributes:
+      label: Desired outcome
+      description: Describe the observable result, not only a preferred implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What should be included?
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: What is intentionally outside this proposal?
+      placeholder: N/A if there are no meaningful non-goals.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What must be true for this issue to count as completed?
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Alternatives, workarounds, or prior approaches.
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Link relevant documents, decision records, issues, or examples.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched existing issues and discussions for an equivalent proposal.
+          required: true
