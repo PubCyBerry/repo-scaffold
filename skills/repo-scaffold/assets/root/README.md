@@ -168,8 +168,9 @@ push 를 막는다. 시간이 흘러 낡은 것은 경고만 하고 막지 않�
 Node 는 도구 의존성이지 소스 언어가 아니므로 언어 감지와 무관하게 항상 배치한다.
 훅은 `node_modules/.bin/commitlint` 을 직접 부른다. `npx` 는 훅 안에서 네트워크를 타므로 쓰지 않는다.
 `node_modules` 는 gitignore 대상이라 링크된 worktree 에는 없다. 그래서 현재 worktree 에서 못 찾으면
-주 저장소의 것을 `--config` 와 함께 부른다. 양쪽 모두에 없어야 형식 검사가 SKIP 되고,
-그때도 제목 표기 검사는 그대로 돈다.
+주 저장소의 것을 `--config` 와 함께 부른다. 다만 `commitlint` 은 `extends` 를 설정 파일이 있는
+디렉터리에서 풀기 때문에, 두 설정 파일의 내용이 같을 때만 빌려 쓴다. 다르면 주 저장소 규칙으로
+통과시키지 않고 이유를 적어 로컬 SKIP, CI FAIL 로 남긴다. 그때도 제목 표기 검사는 그대로 돈다.
 훅은 커밋 한 건을 보고 CI 는 `just commit-range "<base>..HEAD"` 로 브랜치 커밋 전부를 다시 본다.
 `prek run --all-files` 는 `commit-msg` 스테이지 훅을 돌리지 않으므로 CI 검사가 따로 필요하다.
 

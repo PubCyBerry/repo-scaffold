@@ -197,8 +197,18 @@ Two agents in one directory overwrite each other's edits and stage each other's 
 only against the current working directory would report SKIP in every worktree, which is the
 one setup this section prescribes. [tests/check-commit-msg.sh](../../tests/check-commit-msg.sh)
 falls back to the main working tree's `node_modules/.bin/commitlint` and passes that tree's
-configuration file with `--config`, because commitlint resolves `extends` from the current
-directory and would otherwise fail to load `@commitlint/config-conventional`.
+configuration file with `--config`. The flag is required: `@commitlint/resolve-extends`
+resolves `extends` from the directory holding the configuration file, so without it the run
+dies with `Cannot find module "@commitlint/config-conventional"`.
+
+That same resolution rule caps what the fallback can do. The worktree's own configuration
+cannot be used, because it sits in a directory with no `node_modules`, and the main tree's
+configuration carries the main tree's rules rather than the branch's. So the fallback runs
+only when the two configuration files are byte-identical, and the run says which file it
+used. When they differ, when either tree has no configuration file, or when the rules live in
+`package.json` where `--config` cannot reach them, the check reports its reason and declines:
+SKIP locally, FAIL under CI. Passing a branch that changed the rules by applying the old rules
+would be worse than not checking it. Run `npm ci` in the worktree to get the full check back.
 
 ### Pull requests
 

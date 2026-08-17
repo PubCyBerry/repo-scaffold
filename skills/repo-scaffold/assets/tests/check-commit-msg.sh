@@ -20,8 +20,20 @@
 # node_modules 는 gitignore 대상이라 링크된 git worktree 에는 없다. 그런데 이 저장소는
 # 병렬 작업에 worktree 를 쓰라고 문서에 적어 두었다. 그래서 현재 worktree 에 없으면
 # 주 저장소의 node_modules 를 찾아 쓴다. 그때는 --config 도 함께 넘긴다. 안 넘기면
-# commitlint 가 extends 를 현재 디렉터리 기준으로 풀어 config-conventional 을 못 찾는다.
-# 양쪽 모두에 없으면 로컬에서는 SKIP, CI(환경변수 CI=true)에서는 FAIL 이다.
+# commitlint 가 extends 를 풀지 못하고 MODULE_NOT_FOUND 로 죽는다.
+#
+# 폴백에는 조건이 하나 더 있다. @commitlint/resolve-extends 는 extends 를 **설정 파일이
+# 있는 디렉터리** 기준으로 푼다(실측). 그래서 이 worktree 의 설정을 넘기면 node_modules
+# 가 없는 이 디렉터리에서 풀려 실패하고, 주 저장소의 설정을 넘기면 이 브랜치가 선언한
+# 규칙이 아니라 주 저장소의 규칙이 걸린다. 둘 다 틀렸다.
+# 그래서 두 설정 파일의 내용이 같을 때만 폴백을 쓴다. 다르면 판정을 남기고 검사하지
+# 않는다. 브랜치가 규칙을 고쳤는데 옛 규칙으로 통과시키는 것이 가장 나쁜 결과다.
+#
+# 판정은 셋으로 나눈다. 셋을 하나로 뭉치면 무엇이 없는지 알 수 없다.
+#   실행 파일 없음     양쪽 어디에도 node_modules 가 없다
+#   설정 없음          실행 파일은 있는데 commitlint 설정 파일이 없다
+#   설정 불일치        이 worktree 의 설정이 주 저장소의 것과 다르다
+# 셋 다 로컬에서는 SKIP, CI(환경변수 CI=true)에서는 FAIL 이다.
 # 폐쇄망에서는 이 단계가 계속 SKIP 이다. 훅이 도는 것과 훅이 작동하는 것은 다르다.
 #
 # notation 단계는 도구를 쓰지 않는다. 그래서 node_modules 가 없어도 돈다.
@@ -51,13 +63,34 @@ PHASES="$ALL_PHASES"
 MSG_FILE=""
 RANGE=""
 
-COMMITLINT="node_modules/.bin/commitlint"
+COMMITLINT_REL="node_modules/.bin/commitlint"
+COMMITLINT=""
 COMMITLINT_ARGS=()
 INSTALL_HINT="npm ci (또는 just bootstrap)"
 
-# 주 저장소에서 찾아볼 설정 파일 이름. commitlint 가 스스로 찾는 이름 중 이 스킬이
-# 배포하는 것과 흔한 변형만 본다. 못 찾으면 폴백을 쓰지 않는다.
-COMMITLINT_CONFIGS="commitlint.config.mjs commitlint.config.js commitlint.config.cjs"
+# 폴백이 막힌 이유. 비어 있으면 막히지 않은 것이다. 판정이름|사유 꼴이다.
+COMMITLINT_BLOCKED=""
+# 폴백이 실제로 걸렸을 때 쓴 설정 파일. 어느 규칙이 돌았는지 출력에 남긴다.
+COMMITLINT_FALLBACK=""
+
+# commitlint 이 스스로 찾는 설정 파일 이름 전부다. 목록이 좁으면 이름을 바꿔 쓰는
+# 저장소에서 폴백이 조용히 꺼진다. package.json 의 commitlint 키는 따로 본다.
+COMMITLINT_CONFIGS="
+.commitlintrc
+.commitlintrc.json
+.commitlintrc.yaml
+.commitlintrc.yml
+.commitlintrc.js
+.commitlintrc.cjs
+.commitlintrc.mjs
+.commitlintrc.ts
+.commitlintrc.cts
+commitlint.config.js
+commitlint.config.cjs
+commitlint.config.mjs
+commitlint.config.ts
+commitlint.config.cts
+"
 
 # 제목에서 금지하는 문자. 이름|문자 쌍이다.
 # 목록은 styles/Project/Punctuation.yml 과 같은 것이고 원본은
@@ -154,23 +187,57 @@ REPO_ROOT="$(git rev-parse --show-toplevel 2> /dev/null)" || {
 }
 cd "$REPO_ROOT" || exit 1
 
+# commitlint 설정 파일 하나를 찾아 경로를 낸다. 없으면 1 이다.
+# package.json 의 commitlint 키도 설정이지만 --config 로 넘길 수 없어 따로 표시한다.
+find_commitlint_config() {
+    # $1: 루트 디렉터리
+    local root="$1" name
+    for name in $COMMITLINT_CONFIGS; do
+        if [ -f "$root/$name" ]; then
+            printf '%s' "$root/$name"
+            return 0
+        fi
+    done
+    if [ -f "$root/package.json" ] && grep -q '"commitlint"[[:space:]]*:' "$root/package.json"; then
+        printf 'package.json'
+        return 0
+    fi
+    return 1
+}
+
 # 링크된 worktree 에는 node_modules 가 없다. 주 저장소의 것을 찾아 쓴다.
 # --git-common-dir 은 worktree 가 공유하는 .git 을 가리키고 그 부모가 주 저장소 루트다.
-if [ ! -x "$COMMITLINT" ]; then
+if [ -x "$COMMITLINT_REL" ]; then
+    # 이 worktree 가 자기 설치를 갖고 있다. 설정도 자기 것을 쓰므로 --config 가 필요 없다.
+    COMMITLINT="$COMMITLINT_REL"
+else
     MAIN_ROOT="$(git rev-parse --path-format=absolute --git-common-dir 2> /dev/null)"
     MAIN_ROOT="$(dirname "${MAIN_ROOT:-.}")"
-    if [ -x "$MAIN_ROOT/node_modules/.bin/commitlint" ]; then
-        for config_name in $COMMITLINT_CONFIGS; do
-            [ -f "$MAIN_ROOT/$config_name" ] || continue
-            main_config="$MAIN_ROOT/$config_name"
+    MAIN_BIN="$MAIN_ROOT/$COMMITLINT_REL"
+
+    if [ ! -x "$MAIN_BIN" ]; then
+        COMMITLINT_BLOCKED="binary|이 저장소와 주 저장소 어디에도 없다. 설치: $INSTALL_HINT"
+    else
+        LOCAL_CONFIG="$(find_commitlint_config .)" || LOCAL_CONFIG=""
+        MAIN_CONFIG="$(find_commitlint_config "$MAIN_ROOT")" || MAIN_CONFIG=""
+
+        if [ -z "$LOCAL_CONFIG" ]; then
+            COMMITLINT_BLOCKED="config|이 저장소에 commitlint 설정 파일이 없다. 규칙이 저장소에 있어야 한다"
+        elif [ -z "$MAIN_CONFIG" ]; then
+            COMMITLINT_BLOCKED="config|주 저장소에 commitlint 설정 파일이 없다. 실행 파일은 있다"
+        elif [ "$LOCAL_CONFIG" = "package.json" ] || [ "$MAIN_CONFIG" = "package.json" ]; then
+            COMMITLINT_BLOCKED="config|설정이 package.json 안에 있어 --config 로 넘길 수 없다. 이 worktree 에 $INSTALL_HINT 를 돌린다"
+        elif ! cmp -s "$LOCAL_CONFIG" "$MAIN_CONFIG"; then
+            COMMITLINT_BLOCKED="mismatch|이 worktree 의 설정이 주 저장소와 다르다. 주 저장소 규칙으로 통과시키지 않는다. 이 worktree 에 $INSTALL_HINT 를 돌린다"
+        else
             # node 는 Git Bash 의 /c/... 형식 경로를 이해하지 못한다.
             if command -v cygpath > /dev/null 2>&1; then
-                main_config="$(cygpath -m "$main_config")"
+                MAIN_CONFIG="$(cygpath -m "$MAIN_CONFIG")"
             fi
-            COMMITLINT="$MAIN_ROOT/node_modules/.bin/commitlint"
-            COMMITLINT_ARGS=(--config "$main_config")
-            break
-        done
+            COMMITLINT="$MAIN_BIN"
+            COMMITLINT_ARGS=(--config "$MAIN_CONFIG")
+            COMMITLINT_FALLBACK="$MAIN_CONFIG"
+        fi
     fi
 fi
 
@@ -285,12 +352,18 @@ if [ -n "$RANGE" ]; then
 
     echo "검사 범위: $RANGE (커밋 ${#TARGET_FILES[@]}개)"
     if [ "${#TARGET_FILES[@]}" -eq 0 ]; then
-        echo "SKIP 범위 안에 검사할 커밋이 없다"
+        # 판정을 집계에 넣는다. 직접 출력하면 결과 줄에 안 잡혀서 아무도 못 본다.
+        # --no-merges 를 쓰므로 병합 커밋만 있는 범위도 여기로 온다.
+        report SKIP range "범위 안에 검사할 커밋이 없다"
+        echo
+        echo "결과: PASS $pass_count, FAIL $fail_count, SKIP $skip_count"
         exit 0
     fi
 else
     if [ ! -f "$MSG_FILE" ]; then
-        echo "SKIP 검사할 커밋 메시지가 없다: $MSG_FILE"
+        report SKIP "$(basename "$MSG_FILE")" "검사할 커밋 메시지가 없다. 지금 커밋 중이 아니다"
+        echo
+        echo "결과: PASS $pass_count, FAIL $fail_count, SKIP $skip_count"
         exit 0
     fi
     TARGET_FILES[0]="$MSG_FILE"
@@ -302,11 +375,15 @@ fi
 
 if phase_on conventional; then
     banner "commitlint"
-    if [ ! -x "$COMMITLINT" ]; then
-        missing_tool commitlint "이 저장소와 주 저장소 어디에도 없다. 설치: $INSTALL_HINT"
+    if [ -n "$COMMITLINT_BLOCKED" ]; then
+        missing_tool "commitlint(${COMMITLINT_BLOCKED%%|*})" "${COMMITLINT_BLOCKED#*|}"
     elif ! command -v node > /dev/null 2>&1; then
         missing_tool node "미설치. commitlint 를 실행할 수 없다"
     else
+        if [ -n "$COMMITLINT_FALLBACK" ]; then
+            echo "주 저장소의 설치를 쓴다: $COMMITLINT"
+            echo "설정: $COMMITLINT_FALLBACK (이 worktree 의 설정과 내용이 같다)"
+        fi
         index=0
         while [ "$index" -lt "${#TARGET_FILES[@]}" ]; do
             label="$(target_label "$index" commitlint)"

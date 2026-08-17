@@ -418,9 +418,20 @@ git_commit -m 'chore: seed'
 
 # commitlint 과 node 를 흉내 낸다. 이 검사가 보는 것은 경로 해석이지 commitlint 판정이 아니다.
 mkdir -p "$REPO/node_modules/.bin" "$TMP_ROOT/wt-bin"
+# --config 이 없으면 실패한다. 진짜 commitlint 이 그때 MODULE_NOT_FOUND 로 죽는 것과
+# 같은 자리다. 인자를 grep 하는 것만으로는 그 회귀를 못 잡는다.
 cat > "$REPO/node_modules/.bin/commitlint" << 'STUB'
 #!/usr/bin/env bash
-printf '%s\n' "$@" > "$COMMITLINT_ARGV"
+printf '%s\n' "$@" > "${COMMITLINT_ARGV:-/dev/null}"
+if [ "${COMMITLINT_STUB_NEEDS_CONFIG:-0}" -eq 1 ]; then
+    case " $* " in
+        *" --config "*) ;;
+        *)
+            echo 'Error: Cannot find module "@commitlint/config-conventional"' >&2
+            exit 1
+            ;;
+    esac
+fi
 exit 0
 STUB
 chmod +x "$REPO/node_modules/.bin/commitlint"
@@ -428,10 +439,20 @@ printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$TMP_ROOT/wt-bin/node"
 chmod +x "$TMP_ROOT/wt-bin/node"
 
 git -C "$REPO" worktree add -q "$TMP_ROOT/linked-wt" -b smoke-worktree
-if ! (cd "$TMP_ROOT/linked-wt" \
-    && COMMITLINT_ARGV="$TMP_ROOT/commitlint.argv" PATH="$TMP_ROOT/wt-bin:$PATH" \
-        bash tests/check-commit-msg.sh "$TMP_ROOT/msg.good" --only conventional) \
-    > "$TMP_ROOT/worktree-conventional.log" 2>&1; then
+
+# worktree 안에서 스크립트를 돌린다. node 와 commitlint 은 흉내 낸 것을 쓴다.
+run_in_worktree() {
+    # $1: 로그 이름, $2...: 스크립트 인자
+    local label="$1"
+    shift
+    (cd "$TMP_ROOT/linked-wt" \
+        && COMMITLINT_ARGV="$TMP_ROOT/commitlint.argv" \
+            COMMITLINT_STUB_NEEDS_CONFIG=1 \
+            PATH="$TMP_ROOT/wt-bin:$PATH" \
+            bash tests/check-commit-msg.sh "$@") > "$TMP_ROOT/$label.log" 2>&1
+}
+
+if ! run_in_worktree worktree-conventional "$TMP_ROOT/msg.good" --only conventional; then
     cat "$TMP_ROOT/worktree-conventional.log"
     fail "링크된 worktree 에서 commitlint 단계가 실패함"
 fi
@@ -443,6 +464,33 @@ grep -Fqx -- '--config' "$TMP_ROOT/commitlint.argv" \
     || fail "주 저장소의 commitlint 설정을 --config 로 넘기지 않음"
 grep -Fq 'commitlint.config.mjs' "$TMP_ROOT/commitlint.argv" \
     || fail "--config 값이 주 저장소의 설정 파일이 아님"
+
+# 브랜치가 규칙을 고쳤으면 주 저장소의 규칙으로 통과시키면 안 된다. commitlint 은
+# extends 를 설정 파일이 있는 디렉터리에서 풀기 때문에 이 worktree 의 설정을 넘길 수
+# 없고, 주 저장소의 설정을 넘기면 브랜치가 선언한 규칙이 아니다. 그래서 검사하지 않는다.
+cp "$TMP_ROOT/linked-wt/commitlint.config.mjs" "$TMP_ROOT/wt-config.orig"
+printf '%s\n' '// 브랜치가 규칙을 고쳤다' >> "$TMP_ROOT/linked-wt/commitlint.config.mjs"
+if ! CI=false run_in_worktree worktree-mismatch-local "$TMP_ROOT/msg.good" --only conventional; then
+    cat "$TMP_ROOT/worktree-mismatch-local.log"
+    fail "설정 불일치를 로컬에서 SKIP 으로 넘기지 못함"
+fi
+grep -q 'commitlint(mismatch)' "$TMP_ROOT/worktree-mismatch-local.log" \
+    || fail "설정 불일치를 그 이유로 보고하지 않음"
+if CI=true run_in_worktree worktree-mismatch-ci "$TMP_ROOT/msg.good" --only conventional; then
+    cat "$TMP_ROOT/worktree-mismatch-ci.log"
+    fail "설정 불일치를 CI 에서 FAIL 로 올리지 못함"
+fi
+cp "$TMP_ROOT/wt-config.orig" "$TMP_ROOT/linked-wt/commitlint.config.mjs"
+
+# 주 저장소에 설치는 있는데 설정이 없는 상태. 실행 파일 미설치와 다른 판정이어야 한다.
+mv "$REPO/commitlint.config.mjs" "$TMP_ROOT/main-config.orig"
+if CI=true run_in_worktree worktree-noconfig "$TMP_ROOT/msg.good" --only conventional; then
+    cat "$TMP_ROOT/worktree-noconfig.log"
+    fail "설정 파일 없음을 CI 에서 FAIL 로 올리지 못함"
+fi
+grep -q 'commitlint(config)' "$TMP_ROOT/worktree-noconfig.log" \
+    || fail "설정 파일 없음을 실행 파일 미설치와 구분해 보고하지 않음"
+mv "$TMP_ROOT/main-config.orig" "$REPO/commitlint.config.mjs"
 
 # CI 범위 모드. 훅이 아니라 CI 가 브랜치 커밋 전부를 다시 보는 경로다.
 git_commit --allow-empty -m 'feat(docs): 셸·YAML 설정 정리'
@@ -460,5 +508,26 @@ if ! (cd "$REPO" && bash tests/check-commit-msg.sh --range HEAD~1..HEAD --only n
     cat "$TMP_ROOT/commit-range-good.log"
     fail "범위 모드가 올바른 커밋 제목을 막음"
 fi
+
+# 범위 모드의 conventional 단계. 커밋마다 검사기를 부르는지 본다.
+if ! (cd "$REPO" && COMMITLINT_ARGV="$TMP_ROOT/commitlint.argv" PATH="$TMP_ROOT/wt-bin:$PATH" \
+    bash tests/check-commit-msg.sh --range HEAD~2..HEAD --only conventional) \
+    > "$TMP_ROOT/commit-range-conventional.log" 2>&1; then
+    cat "$TMP_ROOT/commit-range-conventional.log"
+    fail "범위 모드의 commitlint 단계가 실패함"
+fi
+if [ "$(grep -c '^PASS ' "$TMP_ROOT/commit-range-conventional.log")" -ne 2 ]; then
+    cat "$TMP_ROOT/commit-range-conventional.log"
+    fail "범위 모드가 커밋마다 commitlint 을 부르지 않음"
+fi
+
+# 빈 범위는 집계에 잡히는 SKIP 이어야 한다. 직접 출력하면 결과 줄에 안 나온다.
+if ! (cd "$REPO" && bash tests/check-commit-msg.sh --range HEAD..HEAD --only notation) \
+    > "$TMP_ROOT/commit-range-empty.log" 2>&1; then
+    cat "$TMP_ROOT/commit-range-empty.log"
+    fail "빈 범위를 통과시키지 못함"
+fi
+grep -q 'SKIP 1' "$TMP_ROOT/commit-range-empty.log" \
+    || fail "빈 범위 SKIP 이 결과 집계에 잡히지 않음"
 
 echo "PASS repo-scaffold smoke"

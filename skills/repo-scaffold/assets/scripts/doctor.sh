@@ -202,9 +202,45 @@ fi
 
 # Node 는 tools.txt 밖이다. uv 로 깔리지 않고 commitlint 만 쓴다.
 # node_modules 는 gitignore 대상이라 링크된 worktree 에는 없다. 주 저장소의 것도 함께 본다.
+#
+# 판정 조건은 tests/check-commit-msg.sh 의 것과 같아야 한다. 이 스크립트가 "주 저장소의
+# 것을 쓴다" 고 말하는데 검사기는 SKIP 을 내면, 죽은 게이트와 산 게이트를 구분하려고
+# 만든 보고가 정반대를 말하게 된다. 그래서 설정 파일 조건까지 여기서 같이 본다.
 COMMITLINT_BIN="node_modules/.bin/commitlint"
+COMMITLINT_CONFIGS="
+.commitlintrc
+.commitlintrc.json
+.commitlintrc.yaml
+.commitlintrc.yml
+.commitlintrc.js
+.commitlintrc.cjs
+.commitlintrc.mjs
+.commitlintrc.ts
+.commitlintrc.cts
+commitlint.config.js
+commitlint.config.cjs
+commitlint.config.mjs
+commitlint.config.ts
+commitlint.config.cts
+"
 MAIN_ROOT="$(git rev-parse --path-format=absolute --git-common-dir 2> /dev/null)"
 MAIN_ROOT="$(dirname "${MAIN_ROOT:-.}")"
+
+find_commitlint_config() {
+    # $1: 루트 디렉터리. 찾으면 경로를 내고 0, 없으면 1
+    local root="$1" name
+    for name in $COMMITLINT_CONFIGS; do
+        if [ -f "$root/$name" ]; then
+            printf '%s' "$root/$name"
+            return 0
+        fi
+    done
+    if [ -f "$root/package.json" ] && grep -q '"commitlint"[[:space:]]*:' "$root/package.json"; then
+        printf 'package.json'
+        return 0
+    fi
+    return 1
+}
 
 if command -v node > /dev/null 2>&1; then
     report PASS node "$(node --version 2>&1 | head -1) ($(command -v node))"
@@ -218,12 +254,21 @@ else
     missing_tool npm "미설치. npm ci 로 node_modules 를 만들 수 없다"
 fi
 
+LOCAL_CONFIG="$(find_commitlint_config .)" || LOCAL_CONFIG=""
+MAIN_CONFIG="$(find_commitlint_config "$MAIN_ROOT")" || MAIN_CONFIG=""
+
 if [ -x "$COMMITLINT_BIN" ]; then
     report PASS commitlint "$COMMITLINT_BIN"
-elif [ -x "$MAIN_ROOT/$COMMITLINT_BIN" ]; then
-    report NOTE commitlint "이 worktree 에는 없다. 주 저장소의 것을 쓴다: $MAIN_ROOT/$COMMITLINT_BIN"
-else
+elif [ ! -x "$MAIN_ROOT/$COMMITLINT_BIN" ]; then
     missing_tool commitlint "미설치. npm ci (또는 bash scripts/bootstrap.sh) 로 깐다"
+elif [ -z "$LOCAL_CONFIG" ] || [ -z "$MAIN_CONFIG" ]; then
+    missing_tool commitlint "주 저장소에 설치는 있으나 설정 파일을 못 찾아 쓸 수 없다"
+elif [ "$LOCAL_CONFIG" = "package.json" ] || [ "$MAIN_CONFIG" = "package.json" ]; then
+    missing_tool commitlint "설정이 package.json 안에 있어 주 저장소의 설치를 빌려 쓸 수 없다"
+elif ! cmp -s "$LOCAL_CONFIG" "$MAIN_CONFIG"; then
+    missing_tool commitlint "이 worktree 의 설정이 주 저장소와 달라 빌려 쓰지 않는다. npm ci 를 여기서 돌린다"
+else
+    report NOTE commitlint "이 worktree 에는 없다. 주 저장소의 것을 쓴다: $MAIN_ROOT/$COMMITLINT_BIN"
 fi
 
 # --- 4. git 훅 ----------------------------------------------------------------
