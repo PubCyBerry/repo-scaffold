@@ -156,6 +156,7 @@ run_self_check check-docs-metadata.sh
 run_self_check check-markdown.sh
 run_self_check check-prose.sh
 run_self_check check-shell.sh
+run_self_check check-yaml.sh
 run_self_check check-workflows.sh
 run_self_check check-hooks.sh
 run_self_check check-env.sh

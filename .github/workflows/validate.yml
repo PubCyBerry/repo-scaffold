@@ -27,11 +27,23 @@
 # A scaffolded repository without pyproject.toml gives ruff its default
 # line length of 88, so the shipped Python is written to format identically
 # at 88 and at the repository standard of 100.
+#
+# rust-just is installed so the smoke tests stop skipping their Justfile
+# assertions. Without it they never prove that a rendered Justfile parses.
+#
+# The Windows leg runs the smoke tests only. The skill targets Git Bash on
+# Windows, and until this job existed nothing outside a contributor's laptop
+# ever ran the scaffolding there. The lint tools do not need a second platform;
+# the scaffolding does.
+#
+# merge_group is required because a branch ruleset with a merge queue stalls on
+# any required check that never reports inside the queue.
 
 name: Validate
 
 on:
   pull_request:
+  merge_group:
   push:
     branches: [main]
   workflow_dispatch:
@@ -54,6 +66,7 @@ env:
   CHECK_JSONSCHEMA_VERSION: 0.38.0
   RUFF_VERSION: 0.16.3
   MYPY_VERSION: 2.3.1
+  RUST_JUST_VERSION: 1.58.0
 
 jobs:
   validate:
@@ -88,6 +101,7 @@ jobs:
           uv tool install "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}"
           uv tool install "ruff==${RUFF_VERSION}"
           uv tool install "mypy==${MYPY_VERSION}"
+          uv tool install "rust-just==${RUST_JUST_VERSION}"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: shellcheck
@@ -119,6 +133,52 @@ jobs:
 
       - name: Validate skill contract
         run: bash .github/scripts/validate-skills.sh
+
+      - name: Run skill smoke tests
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          found=0
+          for script in skills/*/tests/*.sh; do
+            found=1
+            echo "── $script"
+            bash "$script"
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "No smoke tests found — skipping."
+          fi
+
+  smoke-windows:
+    name: smoke (windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d  # v10.0.1
+
+      - name: Install lint tools
+        run: |
+          set -euo pipefail
+          uv tool install "shellcheck-py==${SHELLCHECK_VERSION}"
+          uv tool install "shfmt-py==${SHFMT_VERSION}"
+          uv tool install "actionlint-py==${ACTIONLINT_VERSION}"
+          uv tool install "zizmor==${ZIZMOR_VERSION}"
+          uv tool install "rumdl==${RUMDL_VERSION}"
+          uv tool install "vale==${VALE_VERSION}"
+          uv tool install "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}"
+          uv tool install "ruff==${RUFF_VERSION}"
+          uv tool install "mypy==${MYPY_VERSION}"
+          uv tool install "rust-just==${RUST_JUST_VERSION}"
+          # $HOME/.local/bin is an MSYS path here, and the runner resolves
+          # GITHUB_PATH entries natively. Ask uv for the path it actually used.
+          uv tool dir --bin >> "$GITHUB_PATH"
 
       - name: Run skill smoke tests
         run: |
