@@ -261,7 +261,7 @@ if [ -n "$JUST_BIN" ]; then
         fail "렌더된 Justfile 을 just 가 파싱하지 못함"
     fi
     summary=" $(tr '\n' ' ' < "$TMP_ROOT/just-summary.log") "
-    for recipe in bootstrap doctor fmt fix lint lint-python type markdown prose docs links-internal links-external hooks labels-check security test test-unit verify check; do
+    for recipe in bootstrap doctor fmt fix lint lint-python type markdown prose docs links-internal links-external hooks commit-range labels-check security test test-unit verify check; do
         case "$summary" in
             *" $recipe "*) ;;
             *) fail "just --summary 에 $recipe 레시피가 없음" ;;
@@ -400,6 +400,65 @@ if command -v uv > /dev/null 2>&1; then
     fi
 else
     echo "SKIP uv 를 찾을 수 없어 문서 수명주기 검사기 확인을 건너뜀"
+fi
+
+# commitlint 이 링크된 git worktree 에서 실제로 도는지 본다.
+# node_modules 는 gitignore 대상이라 링크된 worktree 에 체크아웃되지 않는다. 주 저장소의
+# 것을 못 찾으면 형식 검사가 조용히 SKIP 되고, 이 저장소가 문서로 지시하는 병렬 작업
+# 방식이 곧 커밋 규약이 아무 데서도 걸리지 않는 방식이 된다.
+new_repo worktree-commitlint
+bash "$SCAFFOLD" --target "$REPO" > "$TMP_ROOT/worktree-scaffold.log"
+git_commit() {
+    # $1...: git commit 인자. 훅은 이 저장소에 깔려 있지 않지만 명시해 둔다.
+    git -C "$REPO" -c user.name=smoke -c user.email=smoke@example.invalid \
+        commit -q --no-verify "$@"
+}
+git -C "$REPO" add -A
+git_commit -m 'chore: seed'
+
+# commitlint 과 node 를 흉내 낸다. 이 검사가 보는 것은 경로 해석이지 commitlint 판정이 아니다.
+mkdir -p "$REPO/node_modules/.bin" "$TMP_ROOT/wt-bin"
+cat > "$REPO/node_modules/.bin/commitlint" << 'STUB'
+#!/usr/bin/env bash
+printf '%s\n' "$@" > "$COMMITLINT_ARGV"
+exit 0
+STUB
+chmod +x "$REPO/node_modules/.bin/commitlint"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$TMP_ROOT/wt-bin/node"
+chmod +x "$TMP_ROOT/wt-bin/node"
+
+git -C "$REPO" worktree add -q "$TMP_ROOT/linked-wt" -b smoke-worktree
+if ! (cd "$TMP_ROOT/linked-wt" \
+    && COMMITLINT_ARGV="$TMP_ROOT/commitlint.argv" PATH="$TMP_ROOT/wt-bin:$PATH" \
+        bash tests/check-commit-msg.sh "$TMP_ROOT/msg.good" --only conventional) \
+    > "$TMP_ROOT/worktree-conventional.log" 2>&1; then
+    cat "$TMP_ROOT/worktree-conventional.log"
+    fail "링크된 worktree 에서 commitlint 단계가 실패함"
+fi
+if ! grep -q '^PASS commitlint' "$TMP_ROOT/worktree-conventional.log"; then
+    cat "$TMP_ROOT/worktree-conventional.log"
+    fail "링크된 worktree 에서 commitlint 이 SKIP 됨"
+fi
+grep -Fqx -- '--config' "$TMP_ROOT/commitlint.argv" \
+    || fail "주 저장소의 commitlint 설정을 --config 로 넘기지 않음"
+grep -Fq 'commitlint.config.mjs' "$TMP_ROOT/commitlint.argv" \
+    || fail "--config 값이 주 저장소의 설정 파일이 아님"
+
+# CI 범위 모드. 훅이 아니라 CI 가 브랜치 커밋 전부를 다시 보는 경로다.
+git_commit --allow-empty -m 'feat(docs): 셸·YAML 설정 정리'
+if (cd "$REPO" && bash tests/check-commit-msg.sh --range HEAD~1..HEAD --only notation) \
+    > "$TMP_ROOT/commit-range-bad.log" 2>&1; then
+    cat "$TMP_ROOT/commit-range-bad.log"
+    fail "범위 안의 잘못된 커밋 제목을 FAIL 로 잡지 못함"
+fi
+grep -q '^FAIL interpunct' "$TMP_ROOT/commit-range-bad.log" \
+    || fail "범위 모드가 금지 문자를 그 이유로 지적하지 않음"
+
+git_commit --allow-empty -m 'feat(docs): 셸과 YAML 설정 정리'
+if ! (cd "$REPO" && bash tests/check-commit-msg.sh --range HEAD~1..HEAD --only notation) \
+    > "$TMP_ROOT/commit-range-good.log" 2>&1; then
+    cat "$TMP_ROOT/commit-range-good.log"
+    fail "범위 모드가 올바른 커밋 제목을 막음"
 fi
 
 echo "PASS repo-scaffold smoke"
