@@ -9,6 +9,9 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
+# 줄 길이 100 은 .rumdl.toml, pyproject.toml, commitlint.config.mjs 와 같은 값이다.
+# 편집기가 이 값을 읽어 안내선을 그린다. 강제는 각 도구가 한다.
+max_line_length = 100
 
 [*.{md,mdx}]
 # 마크다운은 줄 끝 공백 두 개가 줄바꿈이라 자르지 않는다.

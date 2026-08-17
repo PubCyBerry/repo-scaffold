@@ -40,7 +40,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: security-${{ github.ref }}
+  # 트리거를 키에 넣는다. schedule 과 push 는 둘 다 github.ref 가 refs/heads/main 이라
+  # 이름과 ref 만으로 묶으면 주간 예약 실행과 push 실행이 서로를 취소한다.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
