@@ -71,7 +71,7 @@ env:
   # detect it. The pins above are still duplicates of tools.txt entries. They
   # agree today, and nothing checks that they keep agreeing; moving them here one
   # at a time is a separate change.
-  TOOLS_FILE: skills/repo-scaffold/assets/root/tools.txt
+  TOOLS_FILE: tools.txt
 
 jobs:
   validate:

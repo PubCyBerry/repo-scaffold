@@ -108,6 +108,13 @@ links-external:
 hooks:
     bash tests/check-hooks.sh
 
+# 브랜치 커밋 메시지 규약. 인자는 base..head 형태의 리비전 범위다.
+# commit-msg 훅은 커밋마다 한 건을 보고 CI 는 PR 범위를 한 번에 본다.
+# --no-verify 로 넘어간 커밋과 node_modules 가 없던 클론에서 넘어간 커밋이 여기서 걸린다.
+# 전체 이력이 필요하므로 CI 는 checkout 에 fetch-depth: 0 을 준다.
+commit-range range:
+    bash tests/check-commit-msg.sh --range "$1"
+
 # 워크플로 문법과 보안 감사.
 workflow-check:
     bash tests/check-workflows.sh

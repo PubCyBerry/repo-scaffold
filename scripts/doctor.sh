@@ -4,8 +4,12 @@
 # 검사 대상:
 #   1. 실행 환경    bash, git, 저장소 루트
 #   2. 명령 레이어  just, Justfile 파싱, 남은 치환 자리표시자
-#   3. 도구         tools.txt 와 uv tool list 대조
+#   3. 도구         tools.txt 와 uv tool list 대조, 그리고 Node 와 commitlint
 #   4. git 훅       설치된 훅 파일
+#
+# Node 는 tools.txt 에 없다. uv 채널 밖이고 commitlint 하나를 위한 도구 의존성이다.
+# 그래서 없으면 commit-msg 훅의 형식 검사가 조용히 SKIP 된다. 여기서 보고하지 않으면
+# 그 SKIP 이 불편한 정도가 아니라 보이지 않는 것이 된다.
 #
 # 버전 대조는 uv tool list 로 한다. 실행 파일의 --version 과 대조하지 않는다.
 # 예를 들어 shellcheck-py==0.11.0.1 이 까는 실행 파일은 자기 버전을 0.11.0 이라고 답한다.
@@ -194,6 +198,77 @@ else
             report FAIL "$binary" "$pkg 가 $have. tools.txt 는 $want. bash scripts/bootstrap.sh 로 맞춘다"
         fi
     done < "$TOOLS_FILE"
+fi
+
+# Node 는 tools.txt 밖이다. uv 로 깔리지 않고 commitlint 만 쓴다.
+# node_modules 는 gitignore 대상이라 링크된 worktree 에는 없다. 주 저장소의 것도 함께 본다.
+#
+# 판정 조건은 tests/check-commit-msg.sh 의 것과 같아야 한다. 이 스크립트가 "주 저장소의
+# 것을 쓴다" 고 말하는데 검사기는 SKIP 을 내면, 죽은 게이트와 산 게이트를 구분하려고
+# 만든 보고가 정반대를 말하게 된다. 그래서 설정 파일 조건까지 여기서 같이 본다.
+COMMITLINT_BIN="node_modules/.bin/commitlint"
+COMMITLINT_CONFIGS="
+.commitlintrc
+.commitlintrc.json
+.commitlintrc.yaml
+.commitlintrc.yml
+.commitlintrc.js
+.commitlintrc.cjs
+.commitlintrc.mjs
+.commitlintrc.ts
+.commitlintrc.cts
+commitlint.config.js
+commitlint.config.cjs
+commitlint.config.mjs
+commitlint.config.ts
+commitlint.config.cts
+"
+MAIN_ROOT="$(git rev-parse --path-format=absolute --git-common-dir 2> /dev/null)"
+MAIN_ROOT="$(dirname "${MAIN_ROOT:-.}")"
+
+find_commitlint_config() {
+    # $1: 루트 디렉터리. 찾으면 경로를 내고 0, 없으면 1
+    local root="$1" name
+    for name in $COMMITLINT_CONFIGS; do
+        if [ -f "$root/$name" ]; then
+            printf '%s' "$root/$name"
+            return 0
+        fi
+    done
+    if [ -f "$root/package.json" ] && grep -q '"commitlint"[[:space:]]*:' "$root/package.json"; then
+        printf 'package.json'
+        return 0
+    fi
+    return 1
+}
+
+if command -v node > /dev/null 2>&1; then
+    report PASS node "$(node --version 2>&1 | head -1) ($(command -v node))"
+else
+    missing_tool node "미설치. commitlint 를 실행할 수 없다. 커밋 메시지 형식 검사가 SKIP 된다"
+fi
+
+if command -v npm > /dev/null 2>&1; then
+    report PASS npm "$(npm --version 2>&1 | head -1)"
+else
+    missing_tool npm "미설치. npm ci 로 node_modules 를 만들 수 없다"
+fi
+
+LOCAL_CONFIG="$(find_commitlint_config .)" || LOCAL_CONFIG=""
+MAIN_CONFIG="$(find_commitlint_config "$MAIN_ROOT")" || MAIN_CONFIG=""
+
+if [ -x "$COMMITLINT_BIN" ]; then
+    report PASS commitlint "$COMMITLINT_BIN"
+elif [ ! -x "$MAIN_ROOT/$COMMITLINT_BIN" ]; then
+    missing_tool commitlint "미설치. npm ci (또는 bash scripts/bootstrap.sh) 로 깐다"
+elif [ -z "$LOCAL_CONFIG" ] || [ -z "$MAIN_CONFIG" ]; then
+    missing_tool commitlint "주 저장소에 설치는 있으나 설정 파일을 못 찾아 쓸 수 없다"
+elif [ "$LOCAL_CONFIG" = "package.json" ] || [ "$MAIN_CONFIG" = "package.json" ]; then
+    missing_tool commitlint "설정이 package.json 안에 있어 주 저장소의 설치를 빌려 쓸 수 없다"
+elif ! cmp -s "$LOCAL_CONFIG" "$MAIN_CONFIG"; then
+    missing_tool commitlint "이 worktree 의 설정이 주 저장소와 달라 빌려 쓰지 않는다. npm ci 를 여기서 돌린다"
+else
+    report NOTE commitlint "이 worktree 에는 없다. 주 저장소의 것을 쓴다: $MAIN_ROOT/$COMMITLINT_BIN"
 fi
 
 # --- 4. git 훅 ----------------------------------------------------------------
