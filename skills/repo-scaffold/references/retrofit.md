@@ -259,7 +259,7 @@ bash scripts/apply-github-labels.sh --apply    # 실제로 만든다
 
 | 예제 | 쓸 곳 |
 | --- | --- |
-| `default-branch.solo.example.json` | 1인 저장소. 승인 0건이고 관리자 우회를 남긴다 |
+| `default-branch.example.json` | 기본값. 1인 저장소를 가정한다. 승인 0건이고 관리자 우회를 남긴다 |
 | `default-branch.team.example.json` | 리뷰어가 둘 이상. 승인 1건 + 코드 소유자 승인 |
 
 1인 저장소에 team 예제를 걸면 **본인 PR 을 영원히 머지하지 못한다.** 승인 1건과 코드 소유자
@@ -294,7 +294,7 @@ Vale 은 산문 정책 검사기이자 용어 검사기다. 문법 검사기도,
 | 용어 규칙이 팀 용어와 다르다 | `styles/Korean/Terminology.yml` 의 `swap` 을 팀 용어로 갈아끼운다. 이 파일은 출발점이지 정답이 아니다 |
 | 오탐이 난다 | 그 규칙의 `level` 을 `warning` 으로 내린다. warning 은 종료 코드에 반영되지 않아 커밋을 막지 않는다 |
 | 초록인데 아무것도 안 잡히는 것 같다 | 한국어 규칙에 `nonword: true` 나 `raw:` 가 있는지 본다. 없으면 ASCII 낱말 경계 탓에 조용히 아무것도 검사하지 않는다 |
-| `미설치` 인데 SKIP | Vale 은 첫 실행에 네트워크로 실행 파일을 받는다. 폐쇄망이면 로컬 SKIP 이고 CI 에서 FAIL 이다 |
+| `미설치` 인데 SKIP | Vale 은 첫 실행에 네트워크로 실행 파일을 받는다. 받기 전에는 로컬 SKIP 이고 CI 에서 FAIL 이다 |
 
 ## check-shell.sh FAIL 대처
 

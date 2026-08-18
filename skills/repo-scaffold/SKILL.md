@@ -116,7 +116,7 @@ bash "$SKILL_DIR/assets/scaffold.sh" \
 
 | 덩어리 | 내용 |
 | --- | --- |
-| 명령 레이어 | `Justfile`, `tools.txt`, `scripts/` 의 bootstrap, doctor, fmt, fix, run-all |
+| 명령 레이어 | `Justfile`, `tools.txt`, `scripts/` 의 bootstrap, doctor, tool-help, fmt, fix, run-all |
 | 검증 | `tests/check-*.sh` 13종, `run-tests.sh`, `.pre-commit-config.yaml`, `schemas/` |
 | 문서 | `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/` 계층과 규약 문서 14종 |
 | 도구 설정 | `.rumdl.toml`, `.vale.ini`, `styles/`, `.shellcheckrc`, `.yamllint.yaml` 등 |
@@ -159,6 +159,7 @@ FAIL 이 나오면 그 자리에서 고친다. 스캐폴딩 직후 FAIL 은 대�
 
 도구가 없으면 그 단계는 SKIP 이다. 조용히 통과한 것이 아니다.
 환경변수 `CI=true` 이면 같은 상황이 FAIL 이다. 막는 지점을 커밋에서 머지로 옮긴 것이다.
+SKIP 줄 아래에 그 도구의 문서 주소와 설치 명령이 함께 나온다. `scripts/tool-help.sh` 가 낸다.
 
 ## 5. 손으로 마무리할 것
 
@@ -182,7 +183,7 @@ FAIL 이 나오면 그 자리에서 고친다. 스캐폴딩 직후 FAIL 은 대�
 | --- | --- |
 | `scripts/apply-github-labels.sh --apply` | 라벨이 없으면 Issue Form 이 라벨을 조용히 버린다. **가장 먼저 한다** |
 | `.github/CODEOWNERS.example` → `CODEOWNERS` | 실제 핸들과 팀 이름은 스크립트가 알 수 없다 |
-| `.github/rulesets/` 적용 | 잘못 걸면 기본 브랜치가 잠긴다. 1인 저장소는 solo 예제를 쓴다 |
+| `.github/rulesets/` 적용 | 잘못 걸면 기본 브랜치가 잠긴다. 기본 예제가 1인 저장소용이고 승인자가 둘 이상일 때만 team 예제를 쓴다 |
 | required check 이름 확인 | 워크플로 잡 이름은 `quality` `tests` `docs` `security` `pr-policy` 다 |
 
 ## 6. 훅은 세 스테이지로 갈린다

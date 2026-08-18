@@ -66,13 +66,14 @@ report() {
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 명령
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -89,10 +90,11 @@ require_py_tool() {
     # $1: 명령
     "${PY_RUNNER[@]}" "$1" --version > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: uv sync"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: uv sync"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -105,7 +107,7 @@ done < <(git ls-files -- '*.sh' '*.bash' | sort)
 
 if [ "${#SHELL_FILES[@]}" -eq 0 ]; then
     report SKIP shfmt "추적 중인 셸 스크립트가 없다"
-elif require_tool shfmt "uv tool install shfmt-py"; then
+elif require_tool shfmt; then
     # -w 는 모드 플래그라 .editorconfig 를 무시하지 않는다. 형식 플래그를 주면 안 된다.
     if out="$(shfmt -w "${SHELL_FILES[@]}" 2>&1)"; then
         report PASS shfmt "${#SHELL_FILES[@]}개 정리"
@@ -146,7 +148,7 @@ if [ "${#DOC_FILES[@]}" -eq 0 ]; then
     report SKIP rumdl "추적 중인 마크다운 문서가 없다"
 elif [ ! -f ".rumdl.toml" ]; then
     report SKIP rumdl ".rumdl.toml 이 없다. 규칙 설정이 저장소에 있어야 한다"
-elif require_tool rumdl "uv tool install rumdl"; then
+elif require_tool rumdl; then
     # rumdl fmt 는 고칠 것이 있든 없든 0 으로 끝난다. 종료 코드로 판정하지 않는다.
     if out="$(rumdl fmt . 2>&1)"; then
         report PASS rumdl "${#DOC_FILES[@]}개 문서 정리"

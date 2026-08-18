@@ -144,7 +144,8 @@ approval, code owner review required for owned paths, stale approvals dismissed 
 reviewable commits, and conversation resolution required.
 
 For a one-person repository, that baseline makes every self-authored pull request unmergeable.
-Ship the solo ruleset instead, and move to the team one when a second reviewer exists.
+The default ruleset ships without it, and the team ruleset is adopted when a second reviewer
+exists.
 
 ### Force-push boundary
 
@@ -197,10 +198,11 @@ longer reports under that name.
 
 ### Two ruleset examples
 
-Both files under [rulesets](../../.github/rulesets/default-branch.solo.example.json) are
-API-shaped starting points, not configuration this repository applies on its own.
+Both files under [rulesets](../../.github/rulesets/default-branch.example.json) are
+API-shaped starting points, not configuration this repository applies on its own. The default
+one assumes a single maintainer, which is the common case for a repository on its first day.
 
-| | Solo | Team |
+| | Default | Team |
 | --- | --- | --- |
 | Required approvals | 0 | 1 |
 | Code owner review | Not required | Required |
@@ -208,11 +210,12 @@ API-shaped starting points, not configuration this repository applies on its own
 | Merge queue | Off | On |
 | Everything else | Same | Same |
 
-The solo example exists because the team baseline locks a single owner out of their own
-repository: with no second account, one required approval can never be satisfied, and a code
-owner cannot approve their own pull request. Deletion protection, force-push protection, linear
-history, squash-only merge, and the required checks all still apply in the solo example, so the
-only thing given up is the second pair of eyes that does not exist yet.
+The default example is the one without a review requirement because the team baseline locks a
+single owner out of their own repository: with no second account, one required approval can
+never be satisfied, and a code owner cannot approve their own pull request. Deletion protection,
+force-push protection, linear history, squash-only merge, and the required checks all still
+apply in the default example, so the only thing given up is the second pair of eyes that does
+not exist yet.
 
 ### Adopting a ruleset
 

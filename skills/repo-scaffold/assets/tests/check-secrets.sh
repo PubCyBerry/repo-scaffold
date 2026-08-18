@@ -155,6 +155,7 @@ if [ ! -f "$GITLEAKS_CONFIG" ]; then
     fi
 elif ! command -v gitleaks > /dev/null 2>&1; then
     echo "SKIP gitleaks 미설치. CI 전용 도구다. 패턴 스캔만 돌았다"
+    bash scripts/tool-help.sh gitleaks
 else
     if [ "$MODE" = "staged" ]; then
         GITLEAKS_ARGS=(git --staged)

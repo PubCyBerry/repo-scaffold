@@ -94,17 +94,18 @@ report() {
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 안내
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
-if ! require_tool gh "https://cli.github.com 의 안내를 따른다"; then
+if ! require_tool gh; then
     echo
     echo "결과: PASS $pass_count, FAIL $fail_count, SKIP $skip_count"
     [ "$fail_count" -gt 0 ] && exit 1
@@ -191,7 +192,8 @@ fi
 
 echo
 echo "브랜치 룰셋은 이 스크립트가 적용하지 않는다."
-echo "  .github/rulesets 의 solo 와 team 예제를 읽고 손으로 적용한다."
+echo "  .github/rulesets/default-branch.example.json 이 기본이다. 1 인 저장소를 가정한다."
+echo "  승인자가 둘 이상이면 default-branch.team.example.json 을 쓴다."
 echo "  절차: docs/guides/github-governance-setup.md"
 
 echo

@@ -105,13 +105,14 @@ report() {
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 명령
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -150,7 +151,7 @@ echo "대상 워크플로: ${#FILES[@]}개"
 
 if phase_on actionlint; then
     banner actionlint
-    if require_tool actionlint "uv tool install actionlint-py"; then
+    if require_tool actionlint; then
         if out="$(actionlint -no-color "${FILES[@]}" 2>&1)"; then
             report PASS actionlint "지적 없음"
         else
@@ -162,7 +163,7 @@ fi
 
 if phase_on zizmor; then
     banner zizmor
-    if require_tool zizmor "uv tool install zizmor"; then
+    if require_tool zizmor; then
         ZIZMOR_ARGS=(--no-progress --persona=regular)
         if [ -z "${GH_TOKEN:-}${GITHUB_TOKEN:-}" ]; then
             ZIZMOR_ARGS[${#ZIZMOR_ARGS[@]}]="--offline"

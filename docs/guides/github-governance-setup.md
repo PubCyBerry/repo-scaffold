@@ -50,9 +50,10 @@ gh auth status
 Install it from [cli.github.com](https://cli.github.com) if it is missing. The scripts report the
 install command rather than guessing a package manager.
 
-- A decision about which ruleset applies: solo or team. That is a fact about how many people can
-  approve a pull request, and it cannot be deferred, because the wrong answer locks the
-  repository.
+- A decision about which ruleset applies. The default fits a repository with one maintainer.
+  Pick the team ruleset only when a second account can approve a pull request. That is a fact
+  about how many people can approve, and it cannot be deferred, because the wrong answer locks
+  the repository.
 
 ## Procedure
 
@@ -114,7 +115,7 @@ here on, the title is the default branch history.
 
 | File | Use when |
 | --- | --- |
-| [default-branch.solo.example.json](../../.github/rulesets/default-branch.solo.example.json) | One person can approve |
+| [default-branch.example.json](../../.github/rulesets/default-branch.example.json) | One person can approve. This is the default |
 | [default-branch.team.example.json](../../.github/rulesets/default-branch.team.example.json) | Two or more can approve |
 
 Before applying either one:
@@ -123,7 +124,7 @@ Before applying either one:
 2. Run each of those jobs at least once so GitHub recognizes the name.
 3. Confirm CODEOWNERS can approve the paths the ruleset covers.
 4. Confirm the repository plan supports the merge queue. A private repository needs a Team or
-   Enterprise plan; the solo example leaves the queue off for that reason.
+   Enterprise plan; the default example leaves the queue off for that reason.
 
 ### 7. Apply the ruleset
 
@@ -131,7 +132,7 @@ Before applying either one:
 gh api --method POST \
   -H "Accept: application/vnd.github+json" \
   "repos/OWNER/REPO/rulesets" \
-  --input .github/rulesets/default-branch.solo.example.json
+  --input .github/rulesets/default-branch.example.json
 ```
 
 Do this by hand. No script in this repository applies a ruleset, because getting it wrong locks
@@ -165,7 +166,7 @@ gh api "repos/OWNER/REPO/rulesets"
 | A new issue arrives with no labels | The labels do not exist yet | Run the label script, then reopen the issue |
 | The stale workflow is green but does nothing | `status/needs-info` does not exist | Run the label script |
 | A trivial pull request cannot be merged | `policy/skip-issue` does not exist | Run the label script, then apply the label |
-| The owner cannot merge their own pull request | The team ruleset is applied to a solo repository | Switch to the solo ruleset |
+| The owner cannot merge their own pull request | The team ruleset is applied to a repository with one maintainer | Switch to the default ruleset |
 | `gh` reports 403 on the ruleset call | The token lacks admin permission | Re-authenticate with an admin account |
 
 ## Related documents

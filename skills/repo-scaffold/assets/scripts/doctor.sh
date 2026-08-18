@@ -68,12 +68,13 @@ report() {
 
 # 도구가 없을 때의 판정. CI 에서는 없는 것이 FAIL 이다.
 missing_tool() {
-    # $1: 이름, $2: 사유
+    # $1: 이름, $2: 사유, $3: 설치 안내를 찾을 도구 이름(기본값 $1)
     if [ "${CI:-}" = "true" ]; then
         report FAIL "$1" "$2"
     else
         report SKIP "$1" "$2"
     fi
+    bash scripts/tool-help.sh "${3:-$1}"
 }
 
 # --- 1. 실행 환경 -------------------------------------------------------------
@@ -126,13 +127,13 @@ if just_version="$("$JUST_BIN" --version 2>&1)"; then
         report FAIL "just --summary" "Justfile 파싱 실패"
     fi
 else
-    missing_tool just "미설치. 설치: uv tool install rust-just"
+    missing_tool just "미설치"
 fi
 
 if command -v prek > /dev/null 2>&1; then
     report PASS prek "$(prek --version 2>&1 | head -1)"
 else
-    missing_tool prek "미설치. 설치: uv tool install prek"
+    missing_tool prek "미설치"
 fi
 
 # --- 3. 도구 ------------------------------------------------------------------
@@ -144,7 +145,7 @@ echo "[3/4] 도구 (tools.txt)"
 : > "$TMP_DIR/installed"
 
 if ! command -v uv > /dev/null 2>&1; then
-    missing_tool uv "미설치. https://docs.astral.sh/uv 를 본다"
+    missing_tool uv "미설치"
 elif ! uv tool list > "$TMP_DIR/uv-tools" 2>&1; then
     cat "$TMP_DIR/uv-tools"
     report FAIL uv "uv tool list 실패"
@@ -179,7 +180,7 @@ else
             elif command -v "$binary" > /dev/null 2>&1; then
                 report FAIL "$binary" "PATH 에 있지만 실행되지 않는다: $(command -v "$binary")"
             else
-                missing_tool "$binary" "미설치. 출처 $source. 손으로 설치한다 ($spec)"
+                missing_tool "$binary" "미설치. 출처 $source"
             fi
             continue
         fi
@@ -190,7 +191,7 @@ else
             if command -v "$binary" > /dev/null 2>&1; then
                 report NOTE "$binary" "uv 밖에서 설치됨. 버전이 고정되지 않는다: $(command -v "$binary")"
             else
-                missing_tool "$binary" "미설치. 설치: uv tool install $spec"
+                missing_tool "$binary" "미설치"
             fi
         elif [ "$have" = "$want" ]; then
             report PASS "$binary" "$pkg $have"
@@ -245,13 +246,13 @@ find_commitlint_config() {
 if command -v node > /dev/null 2>&1; then
     report PASS node "$(node --version 2>&1 | head -1) ($(command -v node))"
 else
-    missing_tool node "미설치. commitlint 를 실행할 수 없다. 커밋 메시지 형식 검사가 SKIP 된다"
+    missing_tool node "미설치. 커밋 메시지 형식 검사가 SKIP 된다"
 fi
 
 if command -v npm > /dev/null 2>&1; then
     report PASS npm "$(npm --version 2>&1 | head -1)"
 else
-    missing_tool npm "미설치. npm ci 로 node_modules 를 만들 수 없다"
+    missing_tool npm "미설치. node_modules 를 만들 수 없다"
 fi
 
 LOCAL_CONFIG="$(find_commitlint_config .)" || LOCAL_CONFIG=""
@@ -260,7 +261,7 @@ MAIN_CONFIG="$(find_commitlint_config "$MAIN_ROOT")" || MAIN_CONFIG=""
 if [ -x "$COMMITLINT_BIN" ]; then
     report PASS commitlint "$COMMITLINT_BIN"
 elif [ ! -x "$MAIN_ROOT/$COMMITLINT_BIN" ]; then
-    missing_tool commitlint "미설치. npm ci (또는 bash scripts/bootstrap.sh) 로 깐다"
+    missing_tool commitlint "미설치"
 elif [ -z "$LOCAL_CONFIG" ] || [ -z "$MAIN_CONFIG" ]; then
     missing_tool commitlint "주 저장소에 설치는 있으나 설정 파일을 못 찾아 쓸 수 없다"
 elif [ "$LOCAL_CONFIG" = "package.json" ] || [ "$MAIN_CONFIG" = "package.json" ]; then

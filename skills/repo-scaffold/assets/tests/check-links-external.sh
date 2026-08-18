@@ -81,13 +81,14 @@ missing_config() {
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 안내
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. CI 전용 도구다. 설치: $2"
+        report SKIP "$1" "미설치. CI 전용 도구다"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -104,7 +105,7 @@ if [ "${#FILES[@]}" -eq 0 ]; then
     report SKIP lychee "추적 중인 마크다운 문서가 없다"
 elif [ ! -f "$CONFIG" ]; then
     missing_config lychee "$CONFIG 가 없다. 규칙 설정이 저장소에 있어야 한다"
-elif require_tool lychee "https://lychee.cli.rs"; then
+elif require_tool lychee; then
     # 설정은 전부 lychee.toml 이 갖는다. 명령줄로 나누면 CI 와 손으로 돌릴 때가 갈린다.
     out="$(lychee --config "$CONFIG" -- "${FILES[@]}" 2>&1)"
     status=$?

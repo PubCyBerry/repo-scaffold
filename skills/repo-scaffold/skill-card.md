@@ -64,7 +64,7 @@ staged 자격 증명을 커밋 전에 잡는 용도이며, 이미 유출된 값�
 | 훅 설치가 전역 git 설정을 건드릴 우려 | `GIT_CONFIG_GLOBAL=/dev/null` 우회를 안내하고 전역 설정은 변경하지 않는다 |
 | 린트 도구가 없으면 검사가 조용히 넘어간다 | 로컬 SKIP은 화면에 그대로 찍히고 `CI=true`에서는 FAIL이다. 막는 지점을 커밋에서 머지로 옮긴 것이다 |
 | 규약 문서 14종이 팀 규칙과 충돌할 수 있다 | 기존 저장소에서는 같은 주제의 규약이 있으면 넣지 않는다. 처리는 [references/retrofit.md](references/retrofit.md)에 있다 |
-| 룰셋 예제를 잘못 걸면 기본 브랜치가 잠긴다 | 예제로만 깔고 적용은 사람이 한다. solo와 team 두 벌로 나눠 1인 저장소가 본인 PR을 막는 설정을 받지 않게 한다 |
+| 룰셋 예제를 잘못 걸면 기본 브랜치가 잠긴다 | 예제로만 깔고 적용은 사람이 한다. 기본 예제가 1인 저장소를 가정해 본인 PR을 막는 설정을 받지 않게 하고, 승인자가 둘 이상일 때만 team 예제를 쓴다 |
 | 라벨이 없으면 Issue Form이 라벨을 조용히 버린다 | `.github/labels.yml`을 단일 출처로 두고 `apply-github-labels.sh`가 만든다. `just labels-check`가 드리프트를 검사만 한다 |
 | `just verify`와 훅이 갈릴 수 있다 | `verify`가 prek를 우회하는 대가다. `just check`로 대조한다. 자동 parity 검사는 넣지 않았다 |
 

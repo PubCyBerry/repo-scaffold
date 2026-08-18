@@ -542,6 +542,8 @@ render scripts/gen-doc-index.sh scripts/gen-doc-index.sh
 render scripts/run-all.sh scripts/run-all.sh
 render scripts/bootstrap.sh scripts/bootstrap.sh
 render scripts/doctor.sh scripts/doctor.sh
+# 도구가 없을 때 검사 스크립트가 부르는 안내다. 없으면 미설치 판정만 남고 다음 절차가 사라진다.
+render scripts/tool-help.sh scripts/tool-help.sh
 render scripts/fmt.sh scripts/fmt.sh
 render scripts/fix.sh scripts/fix.sh
 # PEP-723 인라인 메타데이터를 갖고 uv run --script 로 돈다. 대상 저장소에
@@ -647,8 +649,8 @@ render github/pull-request-template.md .github/pull_request_template.md
 # CODEOWNERS 와 룰셋은 예제로만 깐다. 실제 핸들과 잡 이름을 사람이 채워야 하고,
 # 잘못 걸면 기본 브랜치가 잠긴다.
 render github/codeowners.example .github/CODEOWNERS.example
-render github/rulesets/default-branch.solo.example.json \
-    .github/rulesets/default-branch.solo.example.json
+render github/rulesets/default-branch.example.json \
+    .github/rulesets/default-branch.example.json
 render github/rulesets/default-branch.team.example.json \
     .github/rulesets/default-branch.team.example.json
 

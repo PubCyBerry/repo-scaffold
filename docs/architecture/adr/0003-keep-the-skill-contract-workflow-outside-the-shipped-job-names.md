@@ -48,7 +48,7 @@ Keep all seven jobs. The five shipped ones stay named as the ruleset examples ex
 `validate` and `smoke (windows)` stay as they are.
 
 Anyone applying
-[the solo ruleset example](../../../.github/rulesets/default-branch.solo.example.json) here
+[the default ruleset example](../../../.github/rulesets/default-branch.example.json) here
 has to add those two names to `required_status_checks` by hand. That is a human step, in the
 same class as substituting real handles into `CODEOWNERS.example`.
 
