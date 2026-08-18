@@ -130,13 +130,14 @@ fi
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 명령
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -193,7 +194,7 @@ if phase_on schema; then
     banner "JSON Schema ($SCHEMA)"
     if [ ! -f "$SCHEMA" ]; then
         report FAIL "$SCHEMA" "없다. front matter 의 기계 계약이 저장소에 있어야 한다"
-    elif require_tool check-jsonschema "uv tool install check-jsonschema"; then
+    elif require_tool check-jsonschema; then
         EXTRACTED=0
         extract_front_matter
         # 스키마도 임시 디렉터리로 옮긴다. 검사기를 임시 디렉터리 안에서 파일 이름만 주고
@@ -222,7 +223,7 @@ run_checker() {
         report FAIL "$script" "없다. 검사기가 저장소에 있어야 한다"
         return
     fi
-    if ! require_tool uv "https://docs.astral.sh/uv 를 본다"; then
+    if ! require_tool uv; then
         return
     fi
     if out="$(uv run --script "$script" "$@" 2>&1)"; then

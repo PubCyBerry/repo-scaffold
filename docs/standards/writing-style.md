@@ -3,13 +3,14 @@ id: standard-writing-style
 title: Writing Style
 type: standard
 status: active
-summary: Language, tone, and notation rules for every written artifact
+summary: Language, tone, stateless phrasing, and notation rules for every written artifact
 scope:
   - "**"
 read_when:
   - Writing a document, report, or summary
   - Writing a commit message or a pull request description
   - Writing or reviewing a code comment
+  - Explaining why something is the way it is
   - Naming a heading, table header, status, or option
   - Choosing between an em dash, a colon, and a comma
 sources:
@@ -29,7 +30,8 @@ related:
 
 Prose written in this repository reads as one voice regardless of who or what produced it.
 
-This document covers language, tone, and notation. Document metadata and file layout are in [Documentation](documentation.md).
+This document covers language, tone, stateless phrasing, and notation. Document metadata and
+file layout are in [Documentation](documentation.md).
 
 ## Scope
 
@@ -66,6 +68,31 @@ critical, crucial, essential, significant, comprehensive, robust, elegant, seaml
 - State a limitation directly instead of softening it
 
 Headings, table headers, list labels, status names, and options are short noun phrases, not sentences.
+
+## Stateless prose
+
+Every document, comment, and instruction describes the repository as it is now. It never
+describes the change that produced it.
+
+A reader arrives with no memory of the previous version, and that reader is usually an agent
+with no way to check. Prose that leans on the change history sends them looking for a state
+that is not in the working tree.
+
+| Do not write | Write instead |
+| --- | --- |
+| The hook now runs at pre-push | The hook runs at pre-push |
+| Renamed from `check-lint.sh` | (nothing; the name is the only name) |
+| We used to call `npx`, so this calls the binary directly | `npx` resolves the version at run time, so this calls the binary directly |
+| Added in this pull request | (nothing) |
+| The old ruleset locked out solo owners | A ruleset that requires one approval locks out a solo owner |
+
+The rule covers three things a reader cannot verify: what a file was called before, what the
+behavior used to be, and when a line was added. The reason behind a decision is not history
+and belongs in the text, stated as a fact about the present.
+
+Two places record change on purpose, and they are exempt: the commit message, whose subject is
+the change, and an architecture decision record, whose `status` and `supersedes` fields are the
+mechanism for retiring a decision.
 
 ## Notation
 
@@ -143,6 +170,7 @@ still binding.
 - Does any sentence contain an em dash, an en dash, a double hyphen, or an interpunct?
 - Are there marketing adjectives or superlatives that carry no information?
 - Are all dates absolute?
+- Does any sentence describe a previous state, a rename, or the change itself?
 - Does `just prose` pass?
 
 ## Related documents

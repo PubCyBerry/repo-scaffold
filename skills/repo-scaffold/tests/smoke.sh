@@ -288,6 +288,7 @@ for script in tests/check-docs.sh tests/check-docs-metadata.sh tests/check-markd
     tests/check-python.sh tests/run-tests.sh \
     scripts/gen-doc-index.sh \
     scripts/run-all.sh scripts/bootstrap.sh scripts/doctor.sh scripts/fmt.sh scripts/fix.sh \
+    scripts/tool-help.sh \
     scripts/apply-github-labels.sh scripts/apply-github-repository-settings.sh; do
     log="$TMP_ROOT/help-$(basename "$script").log"
     if ! (cd "$REPO/docs" && bash "../$script" --help) > "$log" 2>&1; then

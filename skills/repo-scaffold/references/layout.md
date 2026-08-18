@@ -70,6 +70,7 @@ GitHub Actions, 이슈 수명주기, 분류 라벨, PR 수명주기, GitHub 강�
 | `tools.txt` | 도구 버전이 사람마다 다르다. 어제 통과한 것이 오늘 실패하는 이유를 아무도 못 찾는다 |
 | `scripts/bootstrap.sh` | 설치 절차가 README 산문에만 있으면 사람마다 다른 상태가 된다. 특히 훅 세 종류 중 하나를 빠뜨린 채 몇 달이 간다 |
 | `scripts/doctor.sh` | 무엇이 없어서 SKIP 이 났는지 스스로 물어봐야 한다. 진단이 없으면 SKIP 을 통과로 읽는다 |
+| `scripts/tool-help.sh` | 미설치 판정만 나오고 다음 절차가 없다. 사람마다 다른 경로로 도구를 깔아 `tools.txt` 의 고정이 무너진다 |
 | `scripts/fmt.sh`, `scripts/fix.sh` | 파일을 바꾸는 명령과 안 바꾸는 명령이 섞인다. 훅이 형식을 고쳐버리면 커밋된 내용이 사람이 본 내용과 달라진다 |
 | `package.json`, `commitlint.config.mjs` | 커밋 메시지 규격이 문서에만 있고 아무도 강제하지 않는다 |
 | `pyproject.toml` | ruff 와 mypy 한도가 사람마다 다르다. 한도는 `code-quality.md` 의 hard limit 을 기계로 옮긴 것이지 발명한 것이 아니다 |
@@ -127,6 +128,17 @@ pre-commit 은 파이썬 런타임과 가상환경을 요구한다. 그래서 �
 prek 은 런타임 의존이 없는 단일 바이너리이고 `.pre-commit-config.yaml` 을 그대로 읽는다.
 설정을 바꾸지 않고 실행기만 갈아 끼울 수 있다.
 
+### 미설치 판정에 문서 주소와 설치 명령을 함께 내는 이유
+
+판정만 내면 읽는 쪽이 도구 이름으로 검색을 시작하고, 그 검색은 매번 다른 설치 방법으로 끝난다.
+그러면 `tools.txt` 가 고정한 버전이 사람마다 갈리고 `doctor.sh` 가 NOTE 로 그것을 보고한다.
+
+`scripts/tool-help.sh` 하나가 도구 이름을 받아 문서 주소와 설치 명령 한두 줄을 낸다.
+검사 스크립트는 그것을 부르기만 한다. 안내 문구가 검사 스크립트마다 흩어지면
+같은 도구에 서로 다른 설치 명령이 붙는다.
+
+버전은 여기 적지 않고 `tools.txt` 에서 읽는다. 두 곳에 적으면 Renovate 가 한쪽만 올린다.
+
 ### 도구가 없을 때 로컬에서 SKIP 하는 이유
 
 `shellcheck`, `shfmt`, `actionlint`, `zizmor`, `rumdl`, `vale`, `yamllint`, `check-jsonschema`,
@@ -149,21 +161,21 @@ prek 은 런타임 의존이 없는 단일 바이너리이고 `.pre-commit-confi
 ### 훅을 전부 `repo: local` 로 두는 이유
 
 prek 도 pre-commit 과 마찬가지로 `repo:` 에 적힌 훅 저장소를 clone 한다.
-폐쇄망이나 프록시 환경에서 그 clone 이 실패하면 훅이 하나도 안 돌고,
-그러면 사람들이 `--no-verify` 를 습관처럼 붙인다. 저장소 안 스크립트만 부르면 외부 의존이 없다.
+커밋마다 원격을 타는 구조를 만들지 않는다. 실제로 도는 코드가 저장소 안에 있으면
+리뷰를 받고 버전이 고정되고, 훅이 실패했을 때 무엇을 읽어야 하는지가 파일 경로로 나온다.
 
 `shellcheck` 계열 도구도 같은 이유로 훅 저장소가 아니라 로컬 바이너리로 부른다.
-커밋할 때마다 clone 이 필요한 구조를 만들지 않는다.
+버전은 `tools.txt` 하나가 갖는다.
 
-URL 검사는 훅에서 뺐다. 네트워크 대기가 커밋 체감 속도를 망치면 역시 `--no-verify` 로 이어진다.
+URL 검사는 훅에서 뺐다. 네트워크 대기가 커밋 체감 속도를 망치면 `--no-verify` 로 이어진다.
 
 **Vale 은 이 보장의 예외다.** PyPI 래퍼가 첫 실행에 GitHub Releases 에서 진짜 실행 파일을 받는다.
-폐쇄망에서는 깔리지 않으므로 `repo: local` 의 보장이 "훅이 항상 **돈다**" 이지
-"훅이 항상 **작동한다**" 는 아니게 된다. `tests/check-prose.sh` 가 로컬 SKIP, CI FAIL 로 처리한다.
+그 전에는 `repo: local` 의 보장이 "훅이 항상 **돈다**" 이지 "훅이 항상 **작동한다**" 는
+아니게 된다. `tests/check-prose.sh` 가 로컬 SKIP, CI FAIL 로 처리한다.
 
-**commitlint 도 같은 예외다.** `npm ci` 가 막히면 `node_modules` 가 없고 형식 검사가 계속 SKIP 된다.
+**commitlint 도 같은 예외다.** `node_modules` 가 없으면 형식 검사가 계속 SKIP 된다.
 그래서 `tests/check-commit-msg.sh` 는 두 단계로 나뉜다. 형식은 commitlint 가 보고, 제목의 금지
-문자는 bash 가 직접 본다. 뒤쪽은 도구가 없어도 돌아서 폐쇄망에서도 규약 하나는 살아 있다.
+문자는 bash 가 직접 본다. 뒤쪽은 도구가 없어도 돌아서 규약 하나는 살아 있다.
 훅은 `node_modules/.bin/commitlint` 를 직접 부른다. `npx` 는 커밋마다 네트워크를 타고
 그때마다 무엇이 실행될지가 원격에 달려 있다.
 
@@ -216,7 +228,7 @@ pre-commit 프레임워크 규약이다. 훅이 파일을 고쳤으면 커밋 �
 | `.github/ISSUE_TEMPLATE/` | 이슈에 재현 절차와 범위가 빠진 채 들어온다. 되묻는 왕복이 기본값이 된다 |
 | `.github/pull_request_template.md` | PR 본문이 사람마다 다르다. 리뷰어가 무엇을 봐야 하는지 매번 물어본다 |
 | `.github/CODEOWNERS.example` | 리뷰 요청이 아무에게도 안 간다. 예제로만 까는 것은 실제 핸들을 스크립트가 알 수 없기 때문이다 |
-| `.github/rulesets/` | 규칙이 저장소 설정 화면 안에만 있어 이력도 리뷰도 없다. solo 와 team 두 벌인 이유는 원본 team 설정이 **1인 저장소에서 본인 PR 을 영원히 못 머지하게** 만들기 때문이다 |
+| `.github/rulesets/` | 규칙이 저장소 설정 화면 안에만 있어 이력도 리뷰도 없다. 기본 예제가 1인 저장소를 가정하는 이유는 team 설정이 **1인 저장소에서 본인 PR 을 영원히 못 머지하게** 만들기 때문이다 |
 | `renovate.json` | 의존성이 고정된 채 썩는다. Dependabot 은 Alerts 만 켜고 갱신 PR 은 Renovate 하나가 낸다. 둘 다 켜면 같은 갱신에 PR 이 두 개 온다 |
 
 룰셋과 CODEOWNERS 와 라벨은 **원격을 바꾸는 일**이라 스캐폴딩이 직접 하지 않는다.
@@ -254,5 +266,5 @@ pre-commit 프레임워크 규약이다. 훅이 파일을 고쳤으면 커밋 �
 | `just verify` 와 훅이 갈릴 수 있다 | `verify` 가 prek 를 우회하므로 어느 한쪽에만 있는 검사가 생길 수 있다. `just check` 로 대조한다. 자동 parity 검사는 넣지 않았다 |
 | uv 밖에서 깐 도구는 버전이 안 잡힌다 | `apt install shellcheck` 는 `uv tool list` 에 없어 `doctor.sh` 가 경로만 보고하고 통과시킨다 |
 | Windows 는 Git Bash 가 필수다 | Git for Windows 기본 설치는 `Git\cmd` 만 PATH 에 넣고 `bash.exe` 가 없다. `doctor.sh` 가 해석된 bash 를 출력한다 |
-| 폐쇄망에서 commitlint 는 SKIP 이다 | `repo: local` 의 보장은 "훅이 항상 **돈다**" 이지 "항상 **작동한다**" 가 아니다. Vale 도 같은 예외다 |
+| `node_modules` 가 없으면 commitlint 는 SKIP 이다 | `repo: local` 의 보장은 "훅이 항상 **돈다**" 이지 "항상 **작동한다**" 가 아니다. Vale 도 같은 예외다 |
 | 한국어 맞춤법은 검사하지 않는다 | Vale 로 불가능함이 소스 수준에서 확인됐다. `writing-style.md` 가 사람용 정책으로 남는다 |

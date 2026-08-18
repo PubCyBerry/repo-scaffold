@@ -66,13 +66,14 @@ report() {
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 명령
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -87,7 +88,7 @@ if [ "${#FILES[@]}" -eq 0 ]; then
     report SKIP rumdl "추적 중인 마크다운 문서가 없다"
 elif [ ! -f "$CONFIG" ]; then
     report SKIP rumdl "$CONFIG 가 없다. 규칙 설정이 저장소에 있어야 한다"
-elif require_tool rumdl "uv tool install rumdl"; then
+elif require_tool rumdl; then
     # 대상은 파일 목록이 아니라 저장소 전체다. MD051 이 색인을 만들려면 그래야 한다.
     if out="$(rumdl check . 2>&1)"; then
         report PASS rumdl "${#FILES[@]}개 문서, 지적 없음"

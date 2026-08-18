@@ -115,13 +115,14 @@ fi
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 명령
+    # $1: 명령
     "${RUNNER[@]}" "$1" --version > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -176,7 +177,7 @@ if [ "$have_suite" -eq 0 ]; then
     exit 0
 fi
 
-if require_tool pytest "uv sync (또는 just bootstrap)"; then
+if require_tool pytest; then
     suite_total="$(printf '%s\n' "$SUITES" | wc -w | tr -d ' ')"
     suite_index=0
     for suite in $SUITES; do

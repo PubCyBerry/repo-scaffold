@@ -1,5 +1,5 @@
 {
-  "name": "default-branch-governance-solo",
+  "name": "default-branch-governance",
   "target": "branch",
   "enforcement": "active",
   "bypass_actors": [

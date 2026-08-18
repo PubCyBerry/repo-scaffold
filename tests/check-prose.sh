@@ -12,7 +12,7 @@
 # 대상은 git 이 추적하는 마크다운뿐이다. 저장소 전체를 훑게 두면 node_modules 와
 # .venv 안의 남의 문서를 검사한다.
 #
-# Vale 은 첫 실행에 네트워크로 실행 파일을 받는다. 폐쇄망에서는 깔리지 않는다.
+# Vale 은 첫 실행에 네트워크로 실행 파일을 받는다.
 # 도구가 없으면 로컬에서는 SKIP, CI(환경변수 CI=true)에서는 FAIL 이다.
 #
 # 이 스크립트는 모든 검사를 돌려 결과를 모으므로 set -e 를 쓰지 않는다.
@@ -67,13 +67,14 @@ report() {
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 명령
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -114,7 +115,7 @@ elif [ ! -f "$CONFIG" ]; then
     report SKIP vale "$CONFIG 가 없다. 규칙 설정이 저장소에 있어야 한다"
 elif [ ! -d "$STYLES_DIR" ]; then
     report SKIP vale "$STYLES_DIR/ 가 없다. 규칙 파일이 저장소에 있어야 한다"
-elif require_tool vale "uv tool install vale"; then
+elif require_tool vale; then
     # --no-exit 를 쓰지 않는다. 위반이 있어도 0 으로 끝나 훅과 CI 가 아무것도 막지 못한다.
     out="$(vale "${FILES[@]}" 2>&1)"
     status=$?

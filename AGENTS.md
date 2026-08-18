@@ -83,6 +83,20 @@ fd --extension py --exec-batch wc -l               # 파일 목록
 [docs/standards/writing-style.md](docs/standards/writing-style.md) 를 따른다.
 언어, 어조, 표기가 거기 있다. 문서 메타데이터와 배치는 [docs/standards/documentation.md](docs/standards/documentation.md) 다.
 
+주석과 문서와 지침은 **stateless** 하게 쓴다. 지금 저장소가 어떤 상태인지만 적고
+무엇이 어떻게 바뀌었는지는 적지 않는다. "이제", "기존", "원래는", "이번에 추가",
+"~에서 이름을 바꿨다" 는 읽는 쪽이 확인할 수 없는 상태를 가리킨다.
+결정의 근거는 이력이 아니므로 현재 사실로 바꿔 적는다.
+변경 자체를 기록하는 자리는 커밋 메시지와 ADR 둘뿐이다.
+
+## 코드 작성
+
+간결하고 읽기 쉬운 코드를 쓴다. 영리한 구성보다 평범한 구성을 고른다.
+함수 하나는 한 가지만 한다. 이름은 무엇을 담고 무엇을 하는지로 짓는다.
+추상은 이미 일어난 반복에서 뽑고, 일어날 것 같은 반복에서 만들지 않는다.
+줄 수를 줄이려고 이름과 가드 절을 지우면 읽는 시간이 늘어난다.
+한도와 나머지 규칙은 [docs/standards/code-quality.md](docs/standards/code-quality.md) 에 있다.
+
 ## 작업 전 확인
 
 ```bash

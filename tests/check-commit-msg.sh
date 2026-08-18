@@ -34,7 +34,6 @@
 #   설정 없음          실행 파일은 있는데 commitlint 설정 파일이 없다
 #   설정 불일치        이 worktree 의 설정이 주 저장소의 것과 다르다
 # 셋 다 로컬에서는 SKIP, CI(환경변수 CI=true)에서는 FAIL 이다.
-# 폐쇄망에서는 이 단계가 계속 SKIP 이다. 훅이 도는 것과 훅이 작동하는 것은 다르다.
 #
 # notation 단계는 도구를 쓰지 않는다. 그래서 node_modules 가 없어도 돈다.
 # 대상은 제목 한 줄뿐이다. 본문은 도구 출력을 그대로 붙이는 자리이고 코드 블록 표시가
@@ -278,12 +277,14 @@ banner() {
 
 # 도구가 없으면 판정만 남긴다. CI 에서는 없는 것이 FAIL 이다.
 missing_tool() {
-    # $1: 이름, $2: 사유
+    # $1: 이름, $2: 사유, $3: 설치 안내를 찾을 도구 이름(기본값 $1)
     if [ "${CI:-}" = "true" ]; then
         report FAIL "$1" "$2"
     else
         report SKIP "$1" "$2"
     fi
+    # 이름에 사유가 붙는 경우가 있어 안내 대상은 $3 로 따로 받는다.
+    bash scripts/tool-help.sh "${3:-$1}"
 }
 
 # 기계가 만들거나 원문을 그대로 옮기는 제목. 표기 검사에서 뺀다.
@@ -376,7 +377,7 @@ fi
 if phase_on conventional; then
     banner "commitlint"
     if [ -n "$COMMITLINT_BLOCKED" ]; then
-        missing_tool "commitlint(${COMMITLINT_BLOCKED%%|*})" "${COMMITLINT_BLOCKED#*|}"
+        missing_tool "commitlint(${COMMITLINT_BLOCKED%%|*})" "${COMMITLINT_BLOCKED#*|}" commitlint
     elif ! command -v node > /dev/null 2>&1; then
         missing_tool node "미설치. commitlint 를 실행할 수 없다"
     else

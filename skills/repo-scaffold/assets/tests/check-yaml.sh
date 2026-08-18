@@ -87,13 +87,14 @@ missing_config() {
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 명령
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -122,7 +123,7 @@ echo
 echo "[1/3] yamllint"
 if [ "${#FILES[@]}" -eq 0 ]; then
     report SKIP yamllint "추적 중인 YAML 파일이 없다"
-elif require_tool yamllint "uv tool install yamllint"; then
+elif require_tool yamllint; then
     # 설정 파일을 명시한다. 안 주면 yamllint 이 찾지 못했을 때 사용자 홈의 설정이나
     # 내장 기본값(줄 길이 80)으로 조용히 떨어져서 사람마다 다른 답이 나온다.
     YAMLLINT_ARGS=(--strict --format parsable)
@@ -145,7 +146,7 @@ echo
 echo "[2/3] 워크플로 스키마"
 if [ "${#WORKFLOWS[@]}" -eq 0 ]; then
     report SKIP workflow-schema "$WORKFLOW_DIR 에 추적 중인 워크플로가 없다"
-elif require_tool check-jsonschema "uv tool install check-jsonschema"; then
+elif require_tool check-jsonschema; then
     if out="$(check-jsonschema --builtin-schema "$WORKFLOW_SCHEMA" "${WORKFLOWS[@]}" 2>&1)"; then
         report PASS workflow-schema "워크플로 스키마 일치"
     else
@@ -160,7 +161,7 @@ if [ "${#RENOVATE_FILES[@]}" -eq 0 ]; then
     # 파일이 사라진 것과 파일이 잘못된 것은 결과가 같다. 갱신 PR 이 0건이 되고
     # 그 상태는 갱신할 것이 없는 상태와 구분되지 않는다. CI 에서는 FAIL 이다.
     missing_config renovate-schema "추적 중인 Renovate 설정이 없다. 의존성 갱신 정책이 저장소에 있어야 한다"
-elif require_tool check-jsonschema "uv tool install check-jsonschema"; then
+elif require_tool check-jsonschema; then
     if out="$(check-jsonschema --builtin-schema "$RENOVATE_SCHEMA" "${RENOVATE_FILES[@]}" 2>&1)"; then
         report PASS renovate-schema "Renovate 설정 스키마 일치"
     else

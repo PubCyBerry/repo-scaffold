@@ -60,13 +60,14 @@ report() {
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 명령
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -84,7 +85,7 @@ echo "대상 스크립트: ${#FILES[@]}개"
 
 echo
 echo "[1/2] shellcheck"
-if require_tool shellcheck "uv tool install shellcheck-py"; then
+if require_tool shellcheck; then
     if out="$(shellcheck --format=gcc "${FILES[@]}" 2>&1)"; then
         report PASS shellcheck "지적 없음"
     else
@@ -95,7 +96,7 @@ fi
 
 echo
 echo "[2/2] shfmt"
-if require_tool shfmt "uv tool install shfmt-py"; then
+if require_tool shfmt; then
     # -l 은 모드 플래그라 .editorconfig 를 무시하지 않는다. 형식 플래그를 주면 안 된다.
     if out="$(shfmt -l "${FILES[@]}" 2>&1)" && [ -z "$out" ]; then
         report PASS shfmt "형식 일치"

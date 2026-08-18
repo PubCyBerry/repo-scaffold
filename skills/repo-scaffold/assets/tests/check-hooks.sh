@@ -208,7 +208,7 @@ else
         if [ "$repo" = "local" ]; then
             report PASS "repo: $repo" "외부 의존 없음"
         else
-            report FAIL "repo: $repo" "외부 저장소를 받는다. 폐쇄망에서 clone 이 막힌다"
+            report FAIL "repo: $repo" "외부 저장소를 받는다. 커밋마다 clone 이 필요하고 도는 코드가 저장소 밖에 있다"
         fi
     done < "$TMP_DIR/repos"
 fi

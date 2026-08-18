@@ -130,17 +130,16 @@ fi
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 명령
+    # $1: 명령
     "${RUNNER[@]}" "$1" --version > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
-
-INSTALL_HINT="uv sync (또는 just bootstrap)"
 
 FILES=()
 while IFS= read -r f; do
@@ -162,7 +161,7 @@ fi
 
 if phase_on lint; then
     banner "ruff check"
-    if require_tool ruff "$INSTALL_HINT"; then
+    if require_tool ruff; then
         if out="$("${RUNNER[@]}" ruff check --output-format=concise "${FILES[@]}" 2>&1)"; then
             report PASS "ruff check" "지적 없음"
         else
@@ -176,7 +175,7 @@ fi
 
 if phase_on format; then
     banner "ruff format"
-    if require_tool ruff "$INSTALL_HINT"; then
+    if require_tool ruff; then
         # --check 는 파일을 바꾸지 않는다. 고치는 것은 scripts/fmt.sh 의 일이다.
         # 훅이 파일을 몰래 고치면 커밋한 내용과 검사한 내용이 갈린다.
         if out="$("${RUNNER[@]}" ruff format --check "${FILES[@]}" 2>&1)"; then
@@ -192,7 +191,7 @@ fi
 
 if phase_on type; then
     banner "mypy"
-    if require_tool mypy "$INSTALL_HINT"; then
+    if require_tool mypy; then
         # 같은 이름의 .py 와 .pyi 를 같이 넘기면 mypy 가 중복 모듈로 보고 죽는다.
         # 스텁이 있으면 mypy 가 알아서 그쪽을 먼저 읽으므로 짝이 있는 .pyi 는 뺀다.
         TYPE_FILES=()

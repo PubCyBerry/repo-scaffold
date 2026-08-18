@@ -3,11 +3,12 @@ id: standard-code-quality
 title: Code Quality
 type: standard
 status: active
-summary: Size and complexity limits, zero warnings policy, comments, error handling
+summary: Simplicity, size and complexity limits, zero warnings policy, comments, error handling
 scope:
   - "**"
 read_when:
   - Writing or refactoring a function
+  - Choosing between two implementations that both work
   - Deciding whether to add a comment
   - Handling or reporting an error
   - A linter, type checker, or compiler emits a warning
@@ -22,8 +23,9 @@ related:
 
 ## Purpose
 
-Set the limits that decide when code is too large, too complex, or too quiet about failure.
-These are hard limits, not targets: crossing one is a review finding, not a discussion.
+State what readable code looks like here, and set the limits that decide when code is too
+large, too complex, or too quiet about failure. The limits are hard limits, not targets:
+crossing one is a review finding, not a discussion.
 
 ## Scope
 
@@ -31,6 +33,25 @@ All source code in this repository, in every language. Language-specific rules l
 own standard, such as [Shell](shell.md).
 
 ## Rules
+
+### Simplicity
+
+Write the plainest code that meets the requirement, and write it to be read. The next reader
+is a person or an agent that has none of the context you have right now.
+
+1. Prefer the ordinary construct over the clever one. A reader should not have to run the
+   code in their head to know what it does
+2. One function does one thing. A name that needs "and" in it describes two functions
+3. Name a thing for what it holds or what it does, not for its type or its position
+4. Extract an abstraction from repetition that already happened, never from repetition you
+   expect
+5. Delete dead code instead of commenting it out or hiding it behind a flag
+
+Short is not the same as readable. Dropping a name, a guard clause, or a blank line saves a
+line and costs a reading. Removing a branch nobody takes saves both.
+
+The hard limits below are a ceiling, not a target. Code that sits at the ceiling and is hard
+to follow is still a review finding.
 
 ### Hard limits
 
@@ -94,6 +115,9 @@ Never write one from memory unless the version was given to you.
 
 ## Checklist
 
+- Can a reader tell what the code does without running it in their head?
+- Does any function do two things that its name joins with "and"?
+- Is any abstraction there for a repetition that has not happened yet?
 - Is every function within 100 lines and complexity 8?
 - Does any function take more than 5 positional parameters?
 - Are all imports absolute?

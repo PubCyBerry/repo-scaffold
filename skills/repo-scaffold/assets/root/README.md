@@ -31,6 +31,7 @@
 ├── scripts/
 │   ├── bootstrap.sh       도구, 의존성, git 훅 설치
 │   ├── doctor.sh          환경 진단
+│   ├── tool-help.sh       도구별 문서 주소와 설치 명령
 │   ├── fmt.sh             형식 정리
 │   ├── fix.sh             자동 수정
 │   ├── run-all.sh         레시피 여러 개를 끝까지 돌리고 집계
@@ -46,7 +47,7 @@
 │   ├── pull_request_template.md  PR 필수 9개 절
 │   ├── labels.yml         라벨 정의의 단일 출처
 │   ├── CODEOWNERS.example 복사해서 실제 핸들로 바꾼다
-│   └── rulesets/          기본 브랜치 룰셋 예제. solo 와 team
+│   └── rulesets/          기본 브랜치 룰셋 예제. 기본값과 team
 ├── Justfile                 명령 인터페이스. `just verify` 가 Definition of Done
 ├── tools.txt                개발 도구와 버전의 단일 출처
 ├── package.json  package-lock.json  commitlint 하나. Node 는 도구 의존성이다
@@ -154,7 +155,7 @@ prek update --cooldown-days 7
 특히 한국어 맞춤법은 Vale 로 검사할 수 없다.
 규칙은 `styles/` 에 있고 사람이 읽는 원본은
 [docs/standards/writing-style.md](docs/standards/writing-style.md) 다.
-Vale 은 첫 실행에 네트워크로 실행 파일을 받는다. 폐쇄망에서는 로컬 SKIP 이고 CI 에서는 FAIL 이다.
+Vale 은 첫 실행에 네트워크로 실행 파일을 받는다. 받기 전에는 로컬 SKIP 이고 CI 에서는 FAIL 이다.
 
 문서 수명주기는 `scripts/docs_freshness.py` 와 `scripts/docs_graph.py` 가 본다.
 PEP-723 인라인 메타데이터를 갖고 `uv run --script` 로 돌아서 `pyproject.toml` 이 없어도 되고
@@ -210,7 +211,7 @@ stale 워크플로는 아무것도 매칭하지 못한 채 매일 초록으로 �
 `policy/skip-issue` 를 붙일 수 없어 사소한 PR 을 전부 막는다.
 
 브랜치 룰셋은 어떤 스크립트도 걸지 않는다. 잘못 걸면 기본 브랜치가 잠기고
-푸는 데 같은 관리자 권한이 필요하다. 1 인 저장소는 `solo` 예제를 쓴다.
+푸는 데 같은 관리자 권한이 필요하다. 기본 예제가 1 인 저장소용이다.
 `team` 예제는 승인 1 건과 코드 소유자 승인을 요구해서 혼자서는 아무것도 머지하지 못한다.
 
 ## 문서

@@ -88,13 +88,14 @@ report() {
 
 # 도구가 있으면 0, 없으면 판정을 남기고 1. CI 에서는 없는 것이 FAIL 이다.
 require_tool() {
-    # $1: 명령, $2: 설치 안내
+    # $1: 명령
     command -v "$1" > /dev/null 2>&1 && return 0
     if [ "${CI:-}" = "true" ]; then
-        report FAIL "$1" "미설치. CI 에서는 필수다. 설치: $2"
+        report FAIL "$1" "미설치. CI 에서는 필수다"
     else
-        report SKIP "$1" "미설치. 설치: $2"
+        report SKIP "$1" "미설치"
     fi
+    bash scripts/tool-help.sh "$1"
     return 1
 }
 
@@ -116,7 +117,7 @@ if [ ! -f "$LABEL_FILE" ]; then
     exit 0
 fi
 
-if ! require_tool gh "https://cli.github.com 의 안내를 따른다"; then
+if ! require_tool gh; then
     echo
     echo "결과: PASS $pass_count, FAIL $fail_count, SKIP $skip_count"
     [ "$fail_count" -gt 0 ] && exit 1

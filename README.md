@@ -52,7 +52,7 @@ npx skills add pubcyberry/repo-scaffold
 ├── AGENTS.md                  # 에이전트 진입점. 문서 인덱스가 자동 생성된다
 ├── docs/                      # 문서 5계층. 규약 문서 14종
 ├── tests/check-*.sh           # 검증 스크립트. 훅과 Justfile 이 직접 부른다
-├── scripts/                   # bootstrap, doctor, fmt, fix, 문서 검사기
+├── scripts/                   # bootstrap, doctor, tool-help, fmt, fix, 문서 검사기
 ├── styles/                    # Vale 규칙. Project, English, Korean
 ├── schemas/                   # front matter JSON Schema
 └── .github/
