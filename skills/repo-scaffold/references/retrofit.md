@@ -74,24 +74,39 @@ git status          # 줄바꿈만 바뀐 파일이 잔뜩 뜬다. 별도 커밋
 
 기능 변경과 같은 커밋에 넣지 않는다. diff 가 전부 줄바꿈으로 덮인다.
 
-## check-docs.sh FAIL 대처
+## 문서 검사 FAIL 대처
+
+검사기마다 보는 것이 다르다. 메시지 앞머리로 어느 검사기가 낸 것인지 가른다.
+
+`tests/check-docs.sh` 는 front matter 와 본문, 경로, 산문을 잇는 규칙을 본다.
 
 | 메시지 | 조치 |
 | --- | --- |
-| `front matter 없음` | 문서 맨 앞에 `---` 블록을 넣는다. 필수 7개는 `id title type status summary scope read_when` |
-| `필수 property 누락` | 빠진 키만 채운다. 값이 없으면 키를 넣지 않는 것이 아니라 값을 정한다 |
-| `type '...' 는 enum 밖` | `index standard guide reference generated decision` 여섯 개만 쓴다. `decision` 은 `docs/architecture/adr/` 전용이다 |
+| `H1 ... 이 title ... 과 다름` | 본문 첫 H1 제목과 front matter `title` 을 같게 맞춘다 |
 | `위치 기준 type 은 X 인데 Y` | 문서를 옮기거나 `type` 을 고친다. 디렉터리와 `type` 은 1:1이다 |
-| `status '...' 는 type '...' 에 허용되지 않음` | 규약 표를 본다. `index` 는 `active` 만 쓴다 |
-| `summary 가 개조식이 아니다` | 명사나 명사구로 끝낸다. 마침표와 서술형 종결어미를 뺀다 |
-| `H1 이 title 과 다름` | 본문 첫 H1 제목과 front matter `title` 을 같게 맞춘다 |
-| `id 중복` | 문서를 복사해 만들면 자주 난다. `<type>-<slug>` 로 새 id 를 준다 |
-| `그런 id 가 없음` | `related` 와 `supersedes` 는 파일 경로가 아니라 `id` 로 적는다 |
+| `front matter 에 title 이 없다` | 필수 키가 빠졌다. 아래 스키마 검사가 같은 것을 다시 지적한다 |
 | `저장소 안 경로는 링크로 쓴다` | 백틱을 마크다운 링크로 바꾼다. 링크 대상은 그 문서 기준 상대 경로 |
-| `저장소 루트 기준으로 쓰였다` | 옛 규약으로 쓰인 링크다. 아래 링크 규약 전환 절차를 따른다 |
-| `절대 경로는 쓰지 않는다` | `/` 로 시작하는 링크를 문서 기준 상대 경로로 고친다 |
-| `저장소 밖으로 나간다` | `../` 가 저장소 루트를 넘어간다. 오타이거나 잘못 옮긴 문서다 |
-| `대상 없음` | 파일이 옮겨졌거나 오타다. 실제 경로를 확인한다 |
+
+`tests/check-docs-metadata.sh` 는 front matter 의 값 계약과 문서 사이 관계를 본다.
+
+| 메시지 | 조치 |
+| --- | --- |
+| `front matter 가 없다` | 문서 맨 앞에 `---` 블록을 넣는다. 필수 7개는 `id title type status summary scope read_when` |
+| `'...' is a required property` | 빠진 키만 채운다. 값이 없으면 키를 넣지 않는 것이 아니라 값을 정한다 |
+| `'...' is not one of [...]` (`type`) | `index standard guide reference generated decision` 여섯 개만 쓴다. `decision` 은 `docs/architecture/adr/` 전용이다 |
+| `'...' is not one of [...]` (`status`) | 규약 표를 본다. `index` 는 `active` 만 쓴다 |
+| `does not match '[^.]$'` | `summary` 를 명사나 명사구로 끝낸다. 마침표를 뺀다 |
+| `id='...' 가 N개 문서에 있다` | 문서를 복사해 만들면 자주 난다. `<type>-<slug>` 로 새 id 를 준다 |
+| `... 를 가진 문서가 없다` | `related` 와 `supersedes` 는 파일 경로가 아니라 `id` 로 적는다 |
+| `sources[N]='...' 가 저장소에 없다` | 경로를 고치거나 그 항목을 지운다 |
+
+rumdl 은 링크 대상과 앵커를 본다.
+
+| 메시지 | 조치 |
+| --- | --- |
+| `[MD057] Relative link '...' does not exist` | 파일이 옮겨졌거나 오타다. 옛 규약의 루트 기준 링크도 여기서 걸린다. 아래 링크 규약 전환 절차를 따른다 |
+| `[MD057] Absolute link '...'` | `/` 로 시작하는 링크를 문서 기준 상대 경로로 고친다 |
+| `[MD051] ...` | 앵커가 가리키는 제목이 없다. 제목을 고쳤으면 링크도 같이 고친다 |
 
 문서가 많아 한 번에 못 고치면 `status: draft` 로 두고 넘기지 않는다.
 `status` 는 문서의 유효성이지 정리 상태가 아니다. 고칠 때까지 FAIL 을 남겨두는 편이 낫다.
@@ -139,7 +154,6 @@ PY
 돌린 뒤 확인한다. 링크 변환만 따로 커밋한다. 다른 변경과 섞으면 diff 를 읽을 수 없다.
 
 ```bash
-bash tests/check-docs.sh --only links
 rumdl check .
 ```
 
@@ -186,7 +200,7 @@ bash tests/check-docs-metadata.sh --only time     # WARN 만 낸다. 종료 코�
 옛 기록의 `status` 를 `superseded` 로 바꾼 뒤 새 기록에 `supersedes` 를 적는다.
 
 기존 저장소에 `docs/adr/` 나 `docs/decisions/` 가 이미 있으면 옮길지 말지부터 정한다.
-옮기면 링크가 전부 깨지고, 그것은 `check-docs.sh --only links` 가 잡아준다.
+옮기면 링크가 전부 깨지고, 그것은 rumdl 의 MD057 이 잡아준다.
 안 옮기면 `expected_type` 이 빈 값을 돌려주고 type 검사가 조용히 꺼진다. 옮기는 편이 낫다.
 
 ### `docs_graph.py` 의 id 앞머리 WARN

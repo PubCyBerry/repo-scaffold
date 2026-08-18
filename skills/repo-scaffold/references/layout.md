@@ -90,7 +90,7 @@ Definition of Done 이 돌아야 한다. prek 를 부르는 것은 `check` 계�
 | 파일 | 막는 실패 |
 | --- | --- |
 | `scripts/gen-doc-index.sh` | 인덱스를 손으로 갱신하면 반드시 낡는다. 낡은 인덱스는 없는 것보다 나쁘다. 에이전트가 그것을 사실로 믿는다 |
-| `tests/check-docs.sh` | front matter 가 서서히 빠진다. 링크가 조용히 깨진다. 규약 문서만 있고 지켜지지 않는 상태가 된다 |
+| `tests/check-docs.sh` | title 과 본문 H1 이 갈린다. 문서가 위치와 맞지 않는 `type` 을 달고 남는다. 저장소 경로를 백틱으로 써서 링크 검사가 닿지 않는다 |
 | `tests/check-docs-metadata.sh` | 규약에 없는 키가 오타로 들어가도 아무도 모른다. 문서가 서술하는 코드가 바뀌어도 문서는 그대로 남아 읽는 사람을 속인다 |
 | `schemas/docs-frontmatter.schema.json` | front matter 계약이 검사 스크립트의 정규식 안에만 있다. 기계가 읽을 계약이 없으면 다른 도구가 같은 규약을 재구현한다 |
 | `scripts/docs_freshness.py` | 문서가 시간이 지나 낡은 것과 서술 대상이 바뀌어 낡은 것을 구분하지 못한다. 둘은 조치가 다르다 |

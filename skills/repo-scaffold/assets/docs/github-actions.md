@@ -75,8 +75,13 @@ check that never arrives.
 | --- | --- | --- |
 | `quality` | quality.yml | `just check`, then `just type` |
 | `tests` | test.yml | `just test` |
-| `docs` | docs-health.yml | `just docs`, then `just links-internal` |
+| `docs` | docs-health.yml | `just docs`, then `just markdown` |
 | `security` | security.yml | `just security`, gitleaks, osv-scanner |
+
+A tool version declared in a workflow `env` block is a copy. The original lives in
+`tools.txt` or in `pyproject.toml`, and [tests/check-tool-versions.sh](../../tests/check-tool-versions.sh)
+fails when the two disagree. A version with no original, such as a release binary this
+repository never installs locally, is listed in that script with the reason.
 
 The job name and the file name do not have to match, and two of them do not. The ruleset never
 reads a file name.
