@@ -13,6 +13,7 @@ read_when:
   - A linter, type checker, or compiler emits a warning
 related:
   - standard-testing
+  - standard-python
   - standard-code-review
   - standard-shell
 ---
@@ -40,6 +41,22 @@ own standard, such as [Shell](shell.md).
 5. Google-style docstrings on non-trivial public APIs
 
 A function that exceeds a limit is split, not annotated with an exemption.
+
+### Typed interfaces
+
+Where the language has a static type system, use it.
+
+1. Every public function signature carries parameter and return types
+2. A type checker runs in the pipeline, and its output falls under the zero warnings rule
+3. Data entering the process from outside is validated at runtime before it is used
+
+The first two are checked by a tool. The third is not, and it decides whether the other two
+mean anything. A value read from a file, a request, or an environment variable has the type
+somebody wrote down, not the type it turned out to have. Parsing it into a validated
+structure at the edge is what makes every annotation behind that edge true.
+
+Which type checker and which validator a language uses is decided in that language's own
+standard, such as [Python](python.md).
 
 ### Zero warnings
 
@@ -81,6 +98,8 @@ Never write one from memory unless the version was given to you.
 - Does any function take more than 5 positional parameters?
 - Are all imports absolute?
 - Do public APIs that are not trivial carry a Google-style docstring?
+- Does every public function signature carry parameter and return types?
+- Is data from outside the process validated before use rather than assumed?
 - Is the output of every linter and type checker clean?
 - Does every inline ignore carry a justification?
 - Is there commented-out code left in the diff?
@@ -88,6 +107,7 @@ Never write one from memory unless the version was given to you.
 
 ## Related documents
 
+- [Python](python.md)
 - [Testing](testing.md)
 - [Code review](code-review.md)
 - [Shell](shell.md)

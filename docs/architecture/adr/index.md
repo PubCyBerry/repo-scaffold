@@ -47,6 +47,7 @@ when a reasonable person would ask why. Skip it otherwise.
 | [0003. Keep the skill contract workflow outside the shipped job names](0003-keep-the-skill-contract-workflow-outside-the-shipped-job-names.md) | accepted | Two extra required check names beyond the five a ruleset expects |
 | [0004. Keep the vulnerability policy at SECURITY.md](0004-keep-the-vulnerability-policy-at-security-md.md) | accepted | Which of two documents claims one reserved filename |
 | [0005. Run external link checking on a schedule only](0005-run-external-link-checking-on-a-schedule-only.md) | accepted | Why lychee stayed out of the pull request gate, against the plan |
+| [0006. Name one type checker, one validator, and one environment manager](0006-name-one-type-checker-one-validator-and-one-environment-manager.md) | accepted | Why the Python standard names mypy, Pydantic, and uv and allows no substitutes |
 
 Add one row here when a record is added.
 

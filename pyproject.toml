@@ -50,6 +50,7 @@ extend-select = [
     "ERA001",  # 주석 처리된 코드 금지
     "BLE001",  # 예외를 뭉뚱그려 잡지 않는다
     "TRY",     # 예외를 삼키거나 잘못 되던지지 않는다
+    "ANN",     # 시그니처에 타입을 붙인다. ANN401 은 Any 를 막는다
 ]
 
 # TRY003 은 "예외 메시지를 길게 쓰지 마라" 인데 code-quality.md 는 정반대로
@@ -75,12 +76,17 @@ ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
 # code-quality.md 의 docstring 규칙은 "공개 API" 에 걸린다. 테스트는 공개 API 가 아니다.
-"tests/**" = ["D"]
+#
+# ANN401 도 여기서만 뺀다. 테스트가 받는 docs_repo fixture 의 타입이 Any 인데, 그 클래스는
+# tests/unit/conftest.py 에 있고 pytest 는 그 파일을 conftest 로, mypy 는
+# tests.unit.conftest 로 읽는다. 어느 이름으로 import 해도 한쪽이 깨진다.
+# 근거는 docs/standards/python.md 의 Type hints 절에 있다. 다른 ANN 규칙은 그대로 둔다.
+"tests/**" = ["D", "ANN401"]
 
 # 이 줄은 이 저장소에만 있다. skills/repo-scaffold/assets/ 아래는 대상 저장소로 복사되는
 # 템플릿이고, 그 안의 tests/ 는 렌더되면 위 tests/** 규칙에 걸린다. 여기서는 경로가
 # 한 단계 더 깊어 안 걸리므로 같은 예외를 한 줄 더 준다. 두 벌은 내용이 같은 파일이다.
-"skills/*/assets/tests/**" = ["D"]
+"skills/*/assets/tests/**" = ["D", "ANN401"]
 
 # --- mypy ---------------------------------------------------------------------
 
