@@ -57,7 +57,7 @@ These carry no front matter. Notation rules still apply.
 | Agent working rules | [AGENTS.md](../AGENTS.md) ([CLAUDE.md](../CLAUDE.md) is a pointer) |
 | Credentials, secrets, sensitive data | [SECURITY.md](../SECURITY.md) |
 | Environment variable keys | [.env.example](../.env.example) |
-| Document verification | [tests/check-docs.sh](../tests/check-docs.sh) |
+| Document rules that join front matter to body, path, and file system | [tests/check-docs.sh](../tests/check-docs.sh) |
 | Front matter contract and lifecycle | [tests/check-docs-metadata.sh](../tests/check-docs-metadata.sh) |
 
 ## Related documents

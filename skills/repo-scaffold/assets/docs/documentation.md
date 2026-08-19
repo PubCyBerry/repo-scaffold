@@ -82,8 +82,7 @@ Right: [Contributing](../../README.md)           repository root
 The cost is that moving a document breaks the links it holds and the links pointing at it. That cost
 is paid back by the checks it buys: link targets and heading anchors are verified across files,
 including anchors in another directory, which a root-relative path cannot express to any Markdown
-tool. Fix the links in the same commit as the move, then run
-[tests/check-docs.sh](../../tests/check-docs.sh) and `just markdown`.
+tool. Fix the links in the same commit as the move, then run `just markdown`.
 
 Three exceptions use backticks instead.
 
@@ -421,25 +420,31 @@ Report the paths, the wording, and the observed behavior.
 
 ## What is checked mechanically
 
-`just markdown` runs rumdl over every tracked Markdown file. Its configuration is the machine
-form of this document: heading structure, list and fence formatting, the 100-character line
-limit, link target existence, and heading anchors both inside a file and across files.
+Every rule below has exactly one owner. A rule defined in two checkers drifts the moment one of
+them is edited, and nothing reports the disagreement.
+
+| Rule | Owner |
+| --- | --- |
+| Heading structure, list and fence formatting, the 100-character line limit | rumdl, `.rumdl.toml` |
+| Link target existence and heading anchors, inside a file and across files | rumdl, `MD057` and `MD051` |
+| Characters, wording, terminology | Vale, described in [Writing Style](writing-style.md) |
+| Required keys, `type` values, `status` per `type`, `summary` form | The schema, through [tests/check-docs-metadata.sh](../../tests/check-docs-metadata.sh) |
+| Identifiers, references, supersession, declared sources, reachability | The same script, graph phase |
+| Time and source drift | The same script, lifecycle phases |
+| External URL health | lychee, through [tests/check-links-external.sh](../../tests/check-links-external.sh) |
+| `title` against the H1, directory against `type`, backticked repository paths | [tests/check-docs.sh](../../tests/check-docs.sh) |
+
+The last row is what is left once every general-purpose tool has taken what it can. Each of those
+three rules joins two worlds that no single tool sees at once: front matter and body, front matter
+and file path, prose and file system. A schema cannot read the body or know its own path, and a
+Markdown linter reads link targets but not the text inside a code span.
 
 rumdl runs over the whole repository rather than over the changed files. Its cross-file anchor
 check builds an index from whatever it was handed and skips silently when a target file is not
 in that index, so handing it one file at a time turns anchor checking off without saying so.
 
-Character and wording rules are not rumdl's. They belong to Vale, described in
-[Writing Style](writing-style.md). No rule is defined in both tools.
-
-Front matter is checked twice, on purpose, by tools that fail differently.
-
-| Check | Tool | Catches |
-| --- | --- | --- |
-| Required keys, `type` against directory, `status`, H1 against `title` | [tests/check-docs.sh](../../tests/check-docs.sh) | The rules a person breaks while writing |
-| Key names and value formats against the schema | [tests/check-docs-metadata.sh](../../tests/check-docs-metadata.sh) | A key this page never defined, or a value of the wrong shape |
-| Identifiers, references, supersession, declared sources, reachability | The same script, graph phase | Breakage that only shows up across documents |
-| Time and source drift | The same script, lifecycle phases | Documents that stopped matching what they describe |
+Absolute link targets are rejected by `MD057` with `absolute-links` set to `warn`. The default is
+`ignore`, under which `[a](/docs/foo.md)` passes silently. A rumdl warning still exits non-zero.
 
 The schema check needs the front matter as YAML, and `check-jsonschema` has no front matter
 reader. The script extracts each block into a temporary directory outside the repository,
@@ -456,9 +461,7 @@ validates the copies, and translates the temporary paths back before reporting.
 - Is every link target relative to the document that holds it?
 - Does the H1 match `title`, and are `## Purpose` and `## Scope` present?
 - Was the new document added to its directory index?
-- Do [tests/check-docs.sh](../../tests/check-docs.sh),
-  [tests/check-docs-metadata.sh](../../tests/check-docs-metadata.sh), and
-  [tests/check-markdown.sh](../../tests/check-markdown.sh) pass?
+- Does `just docs` pass, and does `just markdown` report nothing?
 
 ## Related documents
 

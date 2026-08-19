@@ -68,9 +68,10 @@ env:
   MYPY_VERSION: 2.3.1
   # rust-just has no entry here on purpose: the four template workflows read its
   # pin out of tools.txt with awk, and a second copy would drift with nothing to
-  # detect it. The pins above are still duplicates of tools.txt entries. They
-  # agree today, and nothing checks that they keep agreeing; moving them here one
-  # at a time is a separate change.
+  # detect it. The pins above are duplicates of tools.txt and pyproject.toml
+  # entries. tests/check-tool-versions.sh compares them on every commit that
+  # touches either side, so a drifting copy fails instead of passing quietly.
+  # Moving them out one at a time is still worth doing; it is a separate change.
   TOOLS_FILE: tools.txt
 
 jobs:

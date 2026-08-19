@@ -150,7 +150,7 @@ just verify                  # Definition of Done
 prek 를 부르는 것은 `check` 계열(`just check` 와 `just check-fast`) 둘뿐이다.
 `verify` 와 훅이 갈리는지 의심되면 `just check` 로 대조한다.
 
-`just verify` 가 부르는 것은 lint, type, markdown, prose, docs, links-internal, hooks,
+`just verify` 가 부르는 것은 lint, type, markdown, prose, docs, hooks,
 workflow-check, security, test 다. 명령을 외우지 않는다. 인자 없이 `just` 를 치면 목록이 나온다.
 
 FAIL 이 나오면 그 자리에서 고친다. 스캐폴딩 직후 FAIL 은 대부분 기존 문서의 front matter

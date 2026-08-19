@@ -106,7 +106,6 @@ bash "$SCAFFOLD" --target "$REPO" --name "$name" --desc "$desc" > "$TMP_ROOT/spe
 grep -Fqx "# $name" "$REPO/README.md" || fail "특수문자 이름 치환 실패"
 grep -Fqx "$desc" "$REPO/README.md" || fail "특수문자 설명 치환 실패"
 grep -Fq "[$name Docs Index]" "$REPO/AGENTS.md" || fail "인덱스 특수문자 보존 실패"
-expect_failure "$TMP_ROOT/missing-timeout.log" bash "$REPO/tests/check-docs.sh" --timeout
 
 new_repo line-break
 for bad in $'두 줄\n설명' $'CR\r설명'; do
@@ -148,10 +147,8 @@ run_self_check() {
 
 new_repo self-check
 bash "$SCAFFOLD" --target "$REPO" --name SELFCHECK > "$TMP_ROOT/self-check.log"
-run_self_check check-docs.sh --no-net
-run_self_check check-docs.sh --only frontmatter,paths
-run_self_check check-docs.sh --only links
-run_self_check check-docs.sh --only graph
+run_self_check check-docs.sh
+run_self_check check-docs.sh --only title,placement,paths
 run_self_check check-docs-metadata.sh
 run_self_check check-markdown.sh
 run_self_check check-prose.sh
@@ -159,6 +156,7 @@ run_self_check check-shell.sh
 run_self_check check-yaml.sh
 run_self_check check-workflows.sh
 run_self_check check-hooks.sh
+run_self_check check-tool-versions.sh
 run_self_check check-env.sh
 run_self_check check-secrets.sh
 # 커밋 중이 아니면 검사할 메시지가 없다. SKIP 으로 통과해야 한다.
@@ -171,19 +169,28 @@ run_self_check run-tests.sh
 expect_failure "$TMP_ROOT/bad-phase.log" bash "$REPO/tests/check-docs.sh" --only nosuchphase
 expect_failure "$TMP_ROOT/missing-only.log" bash "$REPO/tests/check-docs.sh" --only
 
-# 링크는 문서 기준 상대 경로다. 저장소 루트 기준으로 쓴 링크는 이제 FAIL 이다.
-# 규약을 뒤집었으므로 뒤집힌 채로 남아 있는지 기계로 확인한다.
+# 링크 규약은 rumdl 이 본다. 저장소 루트 기준 링크와 절대 경로 링크는 둘 다 FAIL 이다.
+# 규약이 뒤집힌 채로 남아 있는지, 그리고 배포되는 rumdl.toml 이 MD057 을 실제로 켜는지
+# 기계로 확인한다. absolute-links 를 켜지 않으면 절대 경로가 조용히 통과한다.
 # git 으로 되돌리지 않는다. 생성 파일은 add -N 상태라 checkout 하면 빈 파일이 된다.
-cp "$REPO/docs/standards/shell.md" "$TMP_ROOT/shell.md.orig"
-printf '\n- [root relative](docs/standards/testing.md)\n' >> "$REPO/docs/standards/shell.md"
-# 저장소 안에서 돌려야 한다. 밖에서 부르면 git 이 이 스킬 저장소를 루트로 잡는다.
-if (cd "$REPO" && bash tests/check-docs.sh --only links) > "$TMP_ROOT/root-relative.log" 2>&1; then
-    fail "루트 기준 링크를 FAIL 로 잡지 못함"
+if command -v rumdl > /dev/null 2>&1; then
+    cp "$REPO/docs/standards/shell.md" "$TMP_ROOT/shell.md.orig"
+    for bad in 'docs/standards/testing.md' '/docs/standards/testing.md'; do
+        cp "$TMP_ROOT/shell.md.orig" "$REPO/docs/standards/shell.md"
+        printf '\n- [bad link](%s)\n' "$bad" >> "$REPO/docs/standards/shell.md"
+        # 저장소 안에서 돌려야 한다. 밖에서 부르면 git 이 이 스킬 저장소를 루트로 잡는다.
+        if (cd "$REPO" && bash tests/check-markdown.sh) > "$TMP_ROOT/bad-link.log" 2>&1; then
+            cat "$TMP_ROOT/bad-link.log"
+            fail "rumdl 이 '$bad' 를 FAIL 로 잡지 못함"
+        fi
+        grep -q 'MD057' "$TMP_ROOT/bad-link.log" \
+            || fail "'$bad' 를 MD057 로 지적하지 않음"
+    done
+    cp "$TMP_ROOT/shell.md.orig" "$REPO/docs/standards/shell.md"
+    run_self_check check-markdown.sh
+else
+    echo "SKIP rumdl 을 찾을 수 없어 링크 규약 검사를 건너뜀"
 fi
-grep -q '저장소 루트 기준으로 쓰였다' "$TMP_ROOT/root-relative.log" \
-    || fail "루트 기준 링크를 그 이유로 지적하지 않음"
-cp "$TMP_ROOT/shell.md.orig" "$REPO/docs/standards/shell.md"
-run_self_check check-docs.sh --only links
 
 # 커밋 메시지 표기 검사는 도구를 쓰지 않는다. node_modules 가 없어도 실제 결함을 잡아야 한다.
 printf '%s\n' 'feat(docs): 셸·YAML 설정 정리' > "$TMP_ROOT/msg.bad"
@@ -261,7 +268,7 @@ if [ -n "$JUST_BIN" ]; then
         fail "렌더된 Justfile 을 just 가 파싱하지 못함"
     fi
     summary=" $(tr '\n' ' ' < "$TMP_ROOT/just-summary.log") "
-    for recipe in bootstrap doctor fmt fix lint lint-python type markdown prose docs links-internal links-external hooks commit-range labels-check security test test-unit verify check; do
+    for recipe in bootstrap doctor fmt fix lint lint-python type markdown prose docs links-external hooks tool-versions commit-range labels-check security test test-unit verify check; do
         case "$summary" in
             *" $recipe "*) ;;
             *) fail "just --summary 에 $recipe 레시피가 없음" ;;
@@ -283,7 +290,7 @@ fi
 # 스크립트가 REPO_ROOT 로 cd 한 뒤 상대 BASH_SOURCE 를 읽으면 여기서 걸린다.
 for script in tests/check-docs.sh tests/check-docs-metadata.sh tests/check-markdown.sh \
     tests/check-prose.sh tests/check-shell.sh tests/check-yaml.sh tests/check-workflows.sh \
-    tests/check-hooks.sh tests/check-env.sh tests/check-secrets.sh \
+    tests/check-hooks.sh tests/check-env.sh tests/check-secrets.sh tests/check-tool-versions.sh \
     tests/check-commit-msg.sh tests/check-links-external.sh \
     tests/check-python.sh tests/run-tests.sh \
     scripts/gen-doc-index.sh \

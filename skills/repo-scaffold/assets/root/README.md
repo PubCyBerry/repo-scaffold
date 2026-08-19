@@ -15,7 +15,7 @@
 ├── schemas/               front matter 의 기계 계약 (JSON Schema)
 ├── styles/                Vale 산문 규칙. Project(문자), English, Korean
 ├── tests/
-│   ├── check-docs.sh      문서 규약, 링크, 경로 검증
+│   ├── check-docs.sh      title 과 H1, 위치와 type, 백틱 경로 검증
 │   ├── check-docs-metadata.sh  front matter 스키마, 문서 그래프, 수명주기
 │   ├── check-links-external.sh 외부 URL. 네트워크를 탄다
 │   ├── check-markdown.sh  마크다운 구조와 형식
@@ -24,6 +24,7 @@
 │   ├── check-yaml.sh      YAML yamllint, 워크플로와 Renovate 스키마 검사
 │   ├── check-workflows.sh 워크플로 actionlint, zizmor 검사
 │   ├── check-hooks.sh     훅 설정 규약 검증
+│   ├── check-tool-versions.sh  선언된 도구 버전 대조
 │   ├── check-commit-msg.sh 커밋 메시지 규약 검증
 │   ├── check-env.sh       .env 와 .env.example 키 동기화 검증
 │   ├── check-secrets.sh   커밋 대상 자격 증명 스캔
@@ -97,7 +98,7 @@ cat docs/index.md           # 문서 진입점
 | `just markdown` | 마크다운 구조와 형식 |
 | `just prose` | 산문, 용어, 문자 규칙 |
 | `just docs` | 문서 규약, 인덱스 최신 여부, front matter 계약과 수명주기 |
-| `just links-internal` | 저장소 안 링크와 문서 그래프 |
+| `just markdown` | 마크다운 구조와 형식, 링크 대상, 앵커 |
 | `just links-external` | 외부 URL. 네트워크를 탄다. `just verify` 에 없다 |
 | `just security` | 자격 증명 스캔과 `.env` 키 검증 |
 | `just labels-check` | `.github/labels.yml` 과 원격 라벨의 차이. 읽기만 한다 |
@@ -185,7 +186,7 @@ PyPI 밖 도구이고 네트워크나 전체 이력이 필요해서 개발자 �
 
 ```bash
 just links-external                          # lychee. 없으면 SKIP, CI 에서는 FAIL
-bash tests/check-docs.sh                     # URL 포함 전체. curl 만 쓰는 대체 수단
+bash tests/check-docs.sh                     # title, 위치, 백틱 경로
 bash tests/check-docs-metadata.sh            # front matter 계약, 그래프, 수명주기
 bash tests/check-secrets.sh --all            # 추적 파일 전체 스캔
 ```

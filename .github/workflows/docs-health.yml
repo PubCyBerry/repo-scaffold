@@ -81,10 +81,10 @@ jobs:
           set -euo pipefail
           just docs
 
-      - name: Internal links
+      - name: Markdown structure and links
         run: |
           set -euo pipefail
-          just links-internal
+          just markdown
 
   docs-scheduled:
     name: docs-scheduled

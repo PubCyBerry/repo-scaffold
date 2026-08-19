@@ -170,9 +170,6 @@ case "$NAME" in
         ;;
 esac
 
-# summary 는 개조식이다. 검사 규칙이 언어마다 달라 문서 언어를 그대로 넘긴다.
-SUMMARY_STYLE="$LANG_CODE"
-
 # --- git 저장소 확인 ----------------------------------------------------------
 
 if ! git -C "$TARGET" rev-parse --git-dir > /dev/null 2>&1; then
@@ -268,7 +265,7 @@ render() {
 
     # sed replacement 메타문자는 escape 하고 줄바꿈은 옵션 검증에서 거른다.
     local args=("REPO_NAME=$NAME" "REPO_DESC=$DESC" "PRODUCT_DIR=$PRODUCT"
-        "SUMMARY_STYLE=$SUMMARY_STYLE" "DOC_LANG=$LANG_CODE" "$@")
+        "DOC_LANG=$LANG_CODE" "$@")
     local script="" pair key value escaped
     for pair in "${args[@]}"; do
         key="${pair%%=*}"
@@ -564,6 +561,7 @@ render tests/check-shell.sh tests/check-shell.sh
 render tests/check-yaml.sh tests/check-yaml.sh
 render tests/check-workflows.sh tests/check-workflows.sh
 render tests/check-hooks.sh tests/check-hooks.sh
+render tests/check-tool-versions.sh tests/check-tool-versions.sh
 render tests/check-commit-msg.sh tests/check-commit-msg.sh
 render tests/check-env.sh tests/check-env.sh
 render tests/check-secrets.sh tests/check-secrets.sh

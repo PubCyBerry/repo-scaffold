@@ -87,7 +87,7 @@ docs:
     bash scripts/run-all.sh doc-rules doc-index docs-metadata
 
 doc-rules:
-    bash tests/check-docs.sh --only frontmatter,paths
+    bash tests/check-docs.sh --only title,placement,paths
 
 doc-index:
     bash scripts/gen-doc-index.sh --check
@@ -96,13 +96,13 @@ doc-index:
 docs-metadata:
     bash tests/check-docs-metadata.sh
 
-# 저장소 안 링크와 문서 그래프.
-links-internal:
-    bash tests/check-docs.sh --only links,graph
-
 # 외부 URL. 네트워크를 타므로 verify 에 넣지 않는다. lychee 는 CI 전용 도구다.
 links-external:
     bash tests/check-links-external.sh
+
+# 선언된 도구 버전이 파일마다 같은지.
+tool-versions:
+    bash tests/check-tool-versions.sh
 
 # 훅 설정 규약.
 hooks:
@@ -164,7 +164,7 @@ test-e2e:
 
 # Definition of Done. 이것이 통과해야 작업이 끝난 것이다.
 verify:
-    bash scripts/run-all.sh lint type markdown prose docs links-internal hooks workflow-check security test
+    bash scripts/run-all.sh lint type markdown prose docs hooks tool-versions workflow-check security test
 
 # 훅을 그대로 전부 돌린다. prek 를 부르는 것은 이 레시피와 아래 check-fast 둘뿐이다.
 check:
