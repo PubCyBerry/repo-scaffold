@@ -50,9 +50,10 @@ npx skills add pubcyberry/repo-scaffold
 │
 ├── Justfile                   # 공개 명령 인터페이스. just verify 가 DoD
 ├── AGENTS.md                  # 에이전트 진입점. 문서 인덱스가 자동 생성된다
-├── docs/                      # 문서 5계층. 규약 문서 14종
+├── docs/                      # 문서 5계층. 규약 문서 15종
 ├── tests/check-*.sh           # 검증 스크립트. 훅과 Justfile 이 직접 부른다
 ├── scripts/                   # bootstrap, doctor, tool-help, fmt, fix, 문서 검사기
+│   └── agent-hooks/           # Claude Code 와 Codex 가 함께 무는 PreToolUse/PostToolUse/Stop 훅
 ├── styles/                    # Vale 규칙. Project, English, Korean
 ├── schemas/                   # front matter JSON Schema
 └── .github/

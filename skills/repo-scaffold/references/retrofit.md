@@ -40,6 +40,8 @@ just verify     # 전체 검사. 기존 저장소의 첫 실행은 대량으로 
 | `Justfile` | 기존 레시피와 이름이 겹치는지 본다. `verify` 가 이미 있으면 어느 쪽이 Definition of Done 인지 정한다 |
 | `pyproject.toml` | `NOTE` 로 보고된다. `[tool.ruff]` 와 `[dependency-groups]` 를 손으로 옮긴다. TOML 은 자동 병합하지 않는다 |
 | `package.json` | `NOTE` 로 보고된다. `devDependencies` 에 commitlint 두 개를 넣고 `npm install` 로 잠금 파일을 다시 만든다. 우리 `package-lock.json` 을 남의 `package.json` 위에 얹으면 `npm ci` 가 죽는다 |
+| `.claude/settings.json` | 이미 있으면 `NOTE` 다. `hooks` 절을 손으로 옮긴다. 옮기지 않으면 에이전트 규칙이 하나도 안 걸린다 |
+| `.codex/hooks.json` | 이미 있으면 `NOTE` 다. Claude 쪽과 같은 이벤트에 같은 스크립트를 물린다. 갈리면 `check-hooks.sh` 가 FAIL 한다 |
 
 ### AGENTS.md 에 마커가 없을 때
 

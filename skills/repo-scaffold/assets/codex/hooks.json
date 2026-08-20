@@ -1,0 +1,43 @@
+{
+  "description": "Codex 가 이 저장소의 규칙을 지키게 하는 훅. Claude Code 쪽 짝은 .claude/settings.json 이다.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/agent-hooks/pre-tool-use.sh\"",
+            "statusMessage": "규칙 검사",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/agent-hooks/post-tool-use.sh\"",
+            "statusMessage": "고친 파일 검사",
+            "timeout": 90
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/agent-hooks/stop.sh\"",
+            "statusMessage": "완료 정의 확인",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
