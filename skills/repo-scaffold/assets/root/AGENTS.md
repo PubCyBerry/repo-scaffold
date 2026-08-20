@@ -65,6 +65,10 @@ fd --extension py --exec-batch wc -l               # 파일 목록
 
 검증 스크립트 자체는 `grep` 과 `find` 를 계속 쓴다. 훅과 CI 에서 추가 의존 없이 돌아야 한다.
 
+재귀 `grep` 과 `find -name` 은 PreToolUse 훅이 막는다. 파이프 뒤에서 출력을 거르는 `grep` 은
+대상이 아니다. 하네스가 무엇을 막고 무엇을 막지 않는지는
+[docs/standards/agent-harness.md](docs/standards/agent-harness.md) 에 있다.
+
 ## 문서 작성
 
 보고서, 커밋 메시지, 코드 주석을 포함해 이 저장소에서 쓰는 모든 산문은
@@ -109,3 +113,6 @@ just verify
 4. 생성 산출물을 동기화했다
 5. `just verify` 가 통과한다
 6. 최종 diff 를 직접 확인했다
+
+에이전트로 작업할 때는 5번을 Stop 훅이 확인한다. 파일을 고친 뒤 `just verify` 가 통과한 적이
+없으면 턴이 끝나지 않는다. 답변의 표기 규칙도 같은 훅이 본다.

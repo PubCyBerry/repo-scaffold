@@ -567,6 +567,11 @@ render tests/check-env.sh tests/check-env.sh
 render tests/check-secrets.sh tests/check-secrets.sh
 render tests/check-python.sh tests/check-python.sh
 render tests/run-tests.sh tests/run-tests.sh
+# 에이전트 하네스 훅. Claude Code 와 Codex 가 같은 스크립트를 문다.
+render scripts/agent-hooks/lib.sh scripts/agent-hooks/lib.sh
+render scripts/agent-hooks/pre-tool-use.sh scripts/agent-hooks/pre-tool-use.sh
+render scripts/agent-hooks/post-tool-use.sh scripts/agent-hooks/post-tool-use.sh
+render scripts/agent-hooks/stop.sh scripts/agent-hooks/stop.sh
 render_mergeable root/pre-commit-config.yaml .pre-commit-config.yaml
 # front matter 의 기계 계약. 사람이 읽는 원본은 docs/standards/documentation.md 다.
 render schemas/docs-frontmatter.schema.json schemas/docs-frontmatter.schema.json
@@ -580,6 +585,7 @@ render_lang python render tests/unit/conftest.py tests/unit/conftest.py
 render_lang python render tests/unit/test_docs_freshness.py tests/unit/test_docs_freshness.py
 render_lang python render tests/unit/test_docs_graph.py tests/unit/test_docs_graph.py
 render_lang python render tests/unit/test_check_pr_metadata.py tests/unit/test_check_pr_metadata.py
+render_lang python render tests/unit/test_agent_hooks.py tests/unit/test_agent_hooks.py
 render_lang python render tests/unit/fixtures/doc.md.in tests/unit/fixtures/doc.md.in
 render_lang python render tests/unit/fixtures/index.md.in tests/unit/fixtures/index.md.in
 render_lang python render tests/unit/fixtures/agents.md.in tests/unit/fixtures/agents.md.in
@@ -620,6 +626,8 @@ render root/CLAUDE.md CLAUDE.md
 render root/README.md README.md
 render root/SECURITY.md SECURITY.md
 render_mergeable claude/settings.json .claude/settings.json
+# 훅 설정 둘은 같은 스크립트를 물어야 한다. tests/check-hooks.sh 가 둘을 대조한다.
+render_mergeable codex/hooks.json .codex/hooks.json
 
 echo
 echo "      CI 워크플로"
@@ -688,6 +696,7 @@ render docs/issue-lifecycle.md docs/standards/issue-lifecycle.md
 render docs/triage-labels.md docs/standards/triage-labels.md
 render docs/pull-request-lifecycle.md docs/standards/pull-request-lifecycle.md
 render docs/github-enforcement.md docs/standards/github-enforcement.md
+render docs/agent-harness.md docs/standards/agent-harness.md
 # guides 인덱스는 카테고리 템플릿을 쓰지 않는다. 처음부터 아래 안내서를 가리켜야 하는데
 # 카테고리 템플릿은 Documents 표를 비운 채로 깔고 sed 치환은 한 줄 값만 받는다.
 render docs/guides-index.md docs/guides/index.md

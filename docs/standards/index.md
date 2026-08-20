@@ -49,6 +49,7 @@ that domain directory instead.
 | [Triage Labels](triage-labels.md) | Label axes, label meanings, the file that creates them |
 | [Pull Request Lifecycle](pull-request-lifecycle.md) | Description contract, readiness gate, merge queue |
 | [GitHub Enforcement](github-enforcement.md) | What GitHub enforces, what CI enforces, what people do |
+| [Agent Harness](agent-harness.md) | Enforcement layers for a coding agent, and what stays unenforced |
 
 ## Related documents
 

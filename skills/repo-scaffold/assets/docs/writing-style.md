@@ -160,6 +160,14 @@ Markdown. The Notation table is applied to the commit subject instead by
 same five entries. The commit body is left to review; the reason is in
 [Commit convention](commit-convention.md).
 
+An answer written in chat is inside the scope above and outside the reach of every commit-time
+checker, because it never becomes a file. The same five Notation entries are applied to the
+answers of the current turn by [scripts/agent-hooks/stop.sh](../../scripts/agent-hooks/stop.sh)
+when the turn tries to end. Code blocks and code spans are removed first, and the list is not
+extended there either. Tone and wording are not checked, for the reason the commit body is not:
+an answer carries pasted output that a regular expression cannot tell from prose. The rest of
+the layer is in [Agent Harness](agent-harness.md).
+
 Everything else in this document is a policy for people. It is not enforced by a tool and is
 still binding.
 
@@ -178,3 +186,4 @@ still binding.
 - [Documentation](documentation.md)
 - [Commit convention](commit-convention.md)
 - [Code review](code-review.md)
+- [Agent Harness](agent-harness.md)

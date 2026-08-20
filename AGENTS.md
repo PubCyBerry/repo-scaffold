@@ -22,7 +22,7 @@ pre-commit hook으로 커밋 직전에 자동 생성한다.
 <!-- DOC-INDEX:START -->
 
 ```text
-[repo-scaffold Docs Index]|root: .|IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning for any tasks.|.:{AGENTS.md,CLAUDE.md,CONTRIBUTING.md,README.md,SECURITY.md}|docs:{index.md}|docs/architecture:{index.md,overview.md}|docs/architecture/adr:{0001-record-architecture-decisions.md,0002-dogfood-the-scaffold-in-its-own-source-repository.md,0003-keep-the-skill-contract-workflow-outside-the-shipped-job-names.md,0004-keep-the-vulnerability-policy-at-security-md.md,0005-run-external-link-checking-on-a-schedule-only.md,0006-name-one-type-checker-one-validator-and-one-environment-manager.md,0007-give-each-documentation-rule-one-checker.md,index.md}|docs/generated:{index.md}|docs/guides:{github-governance-setup.md,index.md}|docs/references:{index.md}|docs/standards:{code-quality.md,code-review.md,commit-convention.md,documentation.md,github-actions.md,github-enforcement.md,index.md,issue-lifecycle.md,pull-request-lifecycle.md,python.md,review-feedback.md,shell.md,testing.md,triage-labels.md,writing-style.md}|skills/repo-scaffold:{SKILL.md,skill-card.md}|skills/repo-scaffold/assets/docs:{adr-0001.md,adr-index.md,architecture-index.md,architecture-overview.md,category-index.md,code-quality.md,code-review.md,commit-convention.md,documentation.md,github-actions.md,github-enforcement.md,github-governance-setup.md,guides-index.md,index.md,issue-lifecycle.md,product-index.md,pull-request-lifecycle.md,python.md,review-feedback.md,shell.md,standards-index.md,testing.md,triage-labels.md,writing-style.md}|skills/repo-scaffold/assets/github:{pull-request-template.md}|skills/repo-scaffold/assets/root:{AGENTS.md,CLAUDE.md,README.md,SECURITY.md}|skills/repo-scaffold/references:{layout.md,retrofit.md}
+[repo-scaffold Docs Index]|root: .|IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning for any tasks.|.:{AGENTS.md,CLAUDE.md,CONTRIBUTING.md,README.md,SECURITY.md}|docs:{index.md}|docs/architecture:{index.md,overview.md}|docs/architecture/adr:{0001-record-architecture-decisions.md,0002-dogfood-the-scaffold-in-its-own-source-repository.md,0003-keep-the-skill-contract-workflow-outside-the-shipped-job-names.md,0004-keep-the-vulnerability-policy-at-security-md.md,0005-run-external-link-checking-on-a-schedule-only.md,0006-name-one-type-checker-one-validator-and-one-environment-manager.md,0007-give-each-documentation-rule-one-checker.md,0008-enforce-agent-behaviour-rules-in-harness-hooks.md,index.md}|docs/generated:{index.md}|docs/guides:{github-governance-setup.md,index.md}|docs/references:{index.md}|docs/standards:{agent-harness.md,code-quality.md,code-review.md,commit-convention.md,documentation.md,github-actions.md,github-enforcement.md,index.md,issue-lifecycle.md,pull-request-lifecycle.md,python.md,review-feedback.md,shell.md,testing.md,triage-labels.md,writing-style.md}|skills/repo-scaffold:{SKILL.md,skill-card.md}|skills/repo-scaffold/assets/docs:{adr-0001.md,adr-index.md,agent-harness.md,architecture-index.md,architecture-overview.md,category-index.md,code-quality.md,code-review.md,commit-convention.md,documentation.md,github-actions.md,github-enforcement.md,github-governance-setup.md,guides-index.md,index.md,issue-lifecycle.md,product-index.md,pull-request-lifecycle.md,python.md,review-feedback.md,shell.md,standards-index.md,testing.md,triage-labels.md,writing-style.md}|skills/repo-scaffold/assets/github:{pull-request-template.md}|skills/repo-scaffold/assets/root:{AGENTS.md,CLAUDE.md,README.md,SECURITY.md}|skills/repo-scaffold/references:{layout.md,retrofit.md}
 ```
 
 <!-- DOC-INDEX:END -->
@@ -77,6 +77,10 @@ fd --extension py --exec-batch wc -l               # 파일 목록
 
 검증 스크립트 자체는 `grep` 과 `find` 를 계속 쓴다. 훅과 CI 에서 추가 의존 없이 돌아야 한다.
 
+재귀 `grep` 과 `find -name` 은 PreToolUse 훅이 막는다. 파이프 뒤에서 출력을 거르는 `grep` 은
+대상이 아니다. 하네스가 무엇을 막고 무엇을 막지 않는지는
+[docs/standards/agent-harness.md](docs/standards/agent-harness.md) 에 있다.
+
 ## 문서 작성
 
 보고서, 커밋 메시지, 코드 주석을 포함해 이 저장소에서 쓰는 모든 산문은
@@ -121,3 +125,6 @@ just verify
 4. 생성 산출물을 동기화했다
 5. `just verify` 가 통과한다
 6. 최종 diff 를 직접 확인했다
+
+에이전트로 작업할 때는 5번을 Stop 훅이 확인한다. 파일을 고친 뒤 `just verify` 가 통과한 적이
+없으면 턴이 끝나지 않는다. 답변의 표기 규칙도 같은 훅이 본다.

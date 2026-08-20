@@ -4,7 +4,7 @@ description: >-
   Scaffold a repository so coding agents navigate it by reading its docs
   instead of guessing: an auto-generated AGENTS.md doc index, a docs/
   hierarchy (standards/guides/references/generated/architecture) with a front
-  matter convention, 14 ready-made standards, a Justfile whose `just verify`
+  matter convention, 15 ready-made standards, a Justfile whose `just verify`
   is the one command to remember, prek hooks split across pre-commit,
   commit-msg and pre-push, and GitHub Actions plus issue and pull request
   governance. Trigger on "scaffold my repo", "set up AGENTS.md", "initialize
@@ -118,16 +118,16 @@ bash "$SKILL_DIR/assets/scaffold.sh" \
 | --- | --- |
 | 명령 레이어 | `Justfile`, `tools.txt`, `scripts/` 의 bootstrap, doctor, tool-help, fmt, fix, run-all |
 | 검증 | `tests/check-*.sh` 13종, `run-tests.sh`, `.pre-commit-config.yaml`, `schemas/` |
-| 문서 | `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/` 계층과 규약 문서 14종 |
+| 문서 | `AGENTS.md`, `CLAUDE.md`, `README.md`, `docs/` 계층과 규약 문서 15종 |
 | 도구 설정 | `.rumdl.toml`, `.vale.ini`, `styles/`, `.shellcheckrc`, `.yamllint.yaml` 등 |
 | GitHub | 워크플로 6종, Issue Form, PR 템플릿, 라벨 정의, CODEOWNERS 와 룰셋 예제 |
 
 `docs/` 계층은 다섯이다. `standards` `guides` `references` `generated` `architecture` 이고,
 디렉터리명과 front matter 의 `type` 이 1:1 이다. `architecture/adr/` 만 `type: decision` 이다.
 
-`docs/standards/` 에 규약 문서 14종이 같이 깔린다. 문서 작성, 글쓰기, 코드 품질, 테스트,
+`docs/standards/` 에 규약 문서 15종이 같이 깔린다. 문서 작성, 글쓰기, 코드 품질, 테스트,
 코드 리뷰, 리뷰 피드백, 커밋, 셸, 파이썬, GitHub Actions, 이슈 수명주기, 분류 라벨,
-PR 수명주기, GitHub 강제다.
+PR 수명주기, GitHub 강제, 에이전트 하네스다.
 **깔았으면 지켜야 하는 규칙이다.** 팀에 안 맞는 문서는 남기지 말고 지운다.
 
 언어 감지가 정하는 것은 **도구 설정 파일뿐**이다. `Justfile` 과 훅 설정과 `tests/*.sh` 는
@@ -173,7 +173,7 @@ SKIP 줄 아래에 그 도구의 문서 주소와 설치 명령이 함께 나온
 | `AGENTS.md` | `--product` 를 썼으면 폴더 성격 표에 그 디렉터리 행을 추가한다 |
 | `docs/standards/` | 팀에 안 맞는 규약 문서를 지우고, 참조하는 링크와 인덱스 행도 같이 지운다 |
 | `docs/*/index.md` | 기존 문서가 있으면 문서 목록 표에 한 줄씩 넣는다 |
-| `.claude/settings.json` | 프로젝트에서 자주 쓰는 명령을 allow 에 추가한다 |
+| `.claude/settings.json` | 프로젝트에서 자주 쓰는 명령을 allow 에 추가한다. `.codex/hooks.json` 과 훅 목록이 같아야 한다 |
 
 원격 GitHub 설정은 사람이 하는 일이다. 스크립트는 있지만 **인자 없이 부르면 dry-run** 이고
 `--apply` 를 줘야 실제로 바꾼다. 절차는 대상 저장소의
@@ -212,6 +212,24 @@ GIT_CONFIG_GLOBAL=/dev/null prek install
 
 커밋 제목은 Conventional Commits 이고 **소문자로 시작한다.** PR 제목도 같은 규격이다.
 squash 머지가 PR 제목으로 커밋을 합성하므로 `pr-policy` 워크플로가 PR 제목을 다시 검사한다.
+
+### 에이전트 훅은 스테이지가 아니라 도구 호출에 걸린다
+
+커밋 훅은 파일을 본다. 에이전트가 어떤 도구를 골랐는지, `--no-verify` 로 게이트를 껐는지,
+채팅에 뭐라고 썼는지는 파일에 안 남아서 커밋 훅이 볼 수 없다.
+
+`scripts/agent-hooks/` 아래 스크립트 세 개가 그 자리를 맡는다. Claude Code 는
+`.claude/settings.json` 으로, Codex 는 `.codex/hooks.json` 으로 **같은 스크립트**를 문다.
+두 설정이 갈리면 `tests/check-hooks.sh` 가 FAIL 한다.
+
+| 훅 | 하는 일 |
+| --- | --- |
+| PreToolUse | 재귀 `grep`, `--no-verify`, 기본 브랜치 push, `pip`, `last_reviewed` 갱신을 막는다 |
+| PostToolUse | 방금 고친 파일에 대해 `tests/*.sh` 를 바로 돌린다. 규칙은 정의하지 않는다 |
+| Stop | 답변의 표기 규칙과 `just verify` 통과 여부를 본다 |
+
+`jq` 가 없으면 훅은 통과시키고 아무것도 안 한다. 규칙과 예외는 대상 저장소의
+`docs/standards/agent-harness.md` 에 있다.
 
 ## 참고
 

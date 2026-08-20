@@ -92,7 +92,18 @@ bash tests/check-env.sh        # .env 와 .env.example 키 동기화
 3. 노출 범위를 보고한다. 저장소, 브랜치, 채널, 시점을 적는다
 4. 이력에서 제거할지는 그다음에 판단한다. 이미 push 된 이력은 강제로 다시 쓰지 않는다
 
+## 에이전트 훅
+
+`.claude/settings.json` 과 `.codex/hooks.json` 은 도구 호출 직전과 직후에 이 저장소의
+스크립트를 실행한다. 클론한 사람의 기계에서 도는 실행 코드다.
+
+두 설정과 `scripts/agent-hooks/` 아래 스크립트를 고치는 변경은 코드 변경으로 보고 리뷰한다.
+훅이 저장소 밖으로 값을 보내게 하거나, 대상 밖 경로에 쓰게 하거나, 자격 증명을 읽게 만드는
+변경은 기능 제안이 아니라 보안 이슈다. 규칙 목록은
+[에이전트 하네스](docs/standards/agent-harness.md) 에 있다.
+
 ## 관련 문서
 
 - [문서 인덱스](docs/index.md)
 - [에이전트 작업 규칙](AGENTS.md)
+- [에이전트 하네스](docs/standards/agent-harness.md)
