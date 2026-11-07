@@ -4,7 +4,6 @@
 
 name: Engineering task
 description: Track non-trivial engineering or repository work
-title: ""
 labels:
   - "kind/task"
   - "status/needs-triage"
