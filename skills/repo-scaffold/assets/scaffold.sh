@@ -1,21 +1,27 @@
 #!/usr/bin/env bash
 # 대상 저장소에 에이전트용 문서 체계를 깐다. 파일을 복사할 뿐이고 기존 파일은 덮어쓰지 않는다.
-#
-#   bash scaffold.sh [--dry-run] [--forge github|gitlab] [--init] TARGET
-#
-#   TARGET      대상 저장소 루트
-#   --dry-run   쓰지 않고 계획만 출력한다
-#   --forge     PR/MR 템플릿, 이슈 템플릿, CI 의 형식. 생략하면 origin 주소에 gitlab 이
-#               들어 있을 때 gitlab, 아니면 github 다. Gitea 와 Forgejo 는 github 형식을 읽는다
-#   --init      TARGET 이 git 저장소가 아니면 git init 한다
-#
-# 판정: ADD 만들었다 / PLAN 만들 예정이다 / SKIP 이미 있다 / NOTE 손으로 할 일이 있다 / FAIL 실패
-# 종료 코드: FAIL 이 있으면 1, 사용법이 틀렸으면 2
+# 사용법은 usage가 출력한다. 스크립트 출력이므로 영어로 쓴다.
 
 set -uo pipefail
 
+usage() {
+    cat << 'EOF'
+usage: bash scaffold.sh [--dry-run] [--forge github|gitlab] [--init] TARGET
+
+  TARGET      root of the target repository
+  --dry-run   print the plan without writing anything
+  --forge     layout of the PR template, issue templates, and CI job.
+              Defaults to gitlab when the origin URL contains "gitlab",
+              otherwise github. Gitea and Forgejo read the github layout.
+  --init      run git init when TARGET is not a git repository
+
+verdicts: ADD created, PLAN would create, SKIP already exists,
+          NOTE needs a manual step, FAIL failed
+exit status: 1 when anything failed, 2 on a usage error
+EOF
+}
+
 ASSETS="$(cd "$(dirname "$0")" && pwd)"
-USAGE="사용법: bash scaffold.sh [--dry-run] [--forge github|gitlab] [--init] TARGET"
 TARGET=""
 FORGE=""
 DRY_RUN=0
@@ -27,19 +33,19 @@ while [ $# -gt 0 ]; do
         --init) INIT=1 ;;
         --forge)
             [ $# -ge 2 ] || {
-                echo "$USAGE" >&2
+                usage >&2
                 exit 2
             }
             FORGE="$2"
             shift
             ;;
         -h | --help)
-            sed -n '2,/^$/s/^# \{0,1\}//p' "$0"
+            usage
             exit 0
             ;;
         -*)
-            echo "알 수 없는 옵션: $1" >&2
-            echo "$USAGE" >&2
+            echo "unknown option: $1" >&2
+            usage >&2
             exit 2
             ;;
         *) TARGET="$1" ;;
@@ -50,16 +56,16 @@ done
 case "$FORGE" in
     "" | github | gitlab) ;;
     *)
-        echo "--forge 는 github 또는 gitlab 이다: $FORGE" >&2
+        echo "--forge must be github or gitlab: $FORGE" >&2
         exit 2
         ;;
 esac
 [ -n "$TARGET" ] || {
-    echo "$USAGE" >&2
+    usage >&2
     exit 2
 }
 [ -d "$TARGET" ] || {
-    echo "FAIL: 디렉터리가 없다: $TARGET" >&2
+    echo "FAIL: no such directory: $TARGET" >&2
     exit 2
 }
 TARGET="$(cd "$TARGET" && pwd -P)"
@@ -80,18 +86,18 @@ report() {
 
 if prefix="$(git -C "$TARGET" rev-parse --show-prefix 2> /dev/null)"; then
     if [ -n "$prefix" ]; then
-        echo "FAIL: 저장소 루트가 아니다: $TARGET" >&2
+        echo "FAIL: not the repository root: $TARGET" >&2
         exit 2
     fi
 elif [ "$INIT" -eq 0 ]; then
-    echo "FAIL: git 저장소가 아니다: $TARGET (새로 만들려면 --init)" >&2
+    echo "FAIL: not a git repository: $TARGET (pass --init to create one)" >&2
     exit 1
 elif [ "$DRY_RUN" -eq 1 ]; then
     report PLAN "git init"
 elif git -C "$TARGET" init -q; then
     report ADD "git init"
 else
-    echo "FAIL: git init 에 실패했다: $TARGET" >&2
+    echo "FAIL: git init failed: $TARGET" >&2
     exit 1
 fi
 
@@ -101,7 +107,7 @@ if [ -z "$FORGE" ]; then
         *) FORGE=github ;;
     esac
 fi
-echo "대상: $TARGET"
+echo "target: $TARGET"
 echo "forge: $FORGE"
 
 # --- 배치 도구 ------------------------------------------------------------------
@@ -116,12 +122,12 @@ through_symlink() {
     return 1
 }
 
-# place SRC DEST [FILTER]: SRC 는 assets 기준, DEST 는 대상 저장소 기준 경로다.
-# 새로 만들었을 때만 0 을 돌려준다.
+# place SRC DEST [FILTER]: SRC는 assets 기준, DEST는 대상 저장소 기준 경로다.
+# 새로 만들었을 때만 0을 돌려준다.
 place() {
     local src="$ASSETS/$1" rel="$2" filter="${3:-cat}" dest="$TARGET/$2"
     if through_symlink "$rel"; then
-        report FAIL "$rel" "경로에 심링크가 있어 쓰지 않았다"
+        report FAIL "$rel" "refused: the path goes through a symlink"
         return 1
     fi
     if [ -e "$dest" ]; then
@@ -129,7 +135,7 @@ place() {
         return 1
     fi
     if [ ! -f "$src" ]; then
-        report FAIL "$rel" "원본이 없다: $src"
+        report FAIL "$rel" "missing source: $src"
         return 1
     fi
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -141,38 +147,38 @@ place() {
         report ADD "$rel"
         return 0
     fi
-    report FAIL "$rel" "쓰지 못했다"
+    report FAIL "$rel" "write failed"
     return 1
 }
 
-# 이미 있으면 사람이 합쳐야 하는 설정 파일. 필요한 내용이 이미 들어 있으면 SKIP 이다.
+# 이미 있으면 사람이 합쳐야 하는 설정 파일. 필요한 내용이 이미 들어 있으면 SKIP이다.
 # place_or_note SRC DEST NEEDLE
 place_or_note() {
     if [ -f "$TARGET/$2" ] && ! through_symlink "$2"; then
         if grep -qF -- "$3" "$TARGET/$2"; then
             report SKIP "$2"
         else
-            report NOTE "$2" "이미 있다. $ASSETS/$1 의 내용을 손으로 합친다"
+            report NOTE "$2" "already exists; merge $ASSETS/$1 into it by hand"
         fi
         return
     fi
     place "$1" "$2"
 }
 
-# 템플릿 디렉터리에 이 스크립트가 깔지 않은 파일이 있으면 겹치는지 사람이 본다.
+# 템플릿 디렉터리에 이 스크립트가 깔지 않은 파일이 있으면 용도가 겹치는지 사람이 확인한다.
 # note_foreign DIR OWN_NAMES_REGEX
 note_foreign() {
     local f
     for f in "$TARGET/$1"/*; do
         [ -e "$f" ] || continue
         if ! printf '%s\n' "${f##*/}" | grep -qxE "$2"; then
-            report NOTE "$1" "기존 템플릿이 있다. 같은 용도의 템플릿이 겹치지 않게 정리한다"
+            report NOTE "$1" "other templates exist; remove the ones that serve the same purpose"
             return
         fi
     done
 }
 
-# GitLab 은 이슈 템플릿의 front matter 를 읽지 않는다. 지우고 labels 를 /label 빠른 동작으로 옮긴다.
+# GitLab은 이슈 템플릿의 front matter를 읽지 않는다. 지우고 labels를 /label 빠른 동작으로 옮긴다.
 gitlab_template() {
     awk '
         NR == 1 && $0 == "---" { fm = 1; next }
@@ -194,7 +200,7 @@ gitlab_template() {
 # --- 문서와 검사 -----------------------------------------------------------------
 
 echo
-echo "[문서와 검사]"
+echo "[docs and checks]"
 first_run=1
 [ -e "$TARGET/scripts/doc-index.sh" ] && first_run=0
 had_docs="$(find "$TARGET/docs" -name '*.md' 2> /dev/null | head -n 1)"
@@ -211,9 +217,10 @@ place_or_note gitattributes .gitattributes '.githooks/* text eol=lf'
 
 if place githooks/pre-commit .githooks/pre-commit; then
     chmod +x "$TARGET/.githooks/pre-commit"
-    # Windows 는 실행 비트를 기록하지 못한다. 인덱스에 남겨야 다른 운영체제의 클론에서도 훅이 돈다.
+    # Windows는 실행 비트를 기록하지 못한다. 그대로 두면 다른 운영체제에서 hook이 실행되지 않으므로
+    # git 인덱스에 직접 기록한다.
     git -C "$TARGET" add --chmod=+x -- .githooks/pre-commit \
-        && printf '     %s\n' "실행 비트를 기록하려고 이 파일을 스테이징했다"
+        && printf '     %s\n' "staged to record the executable bit"
 fi
 
 hooks_path="$(git -C "$TARGET" config --get core.hooksPath 2> /dev/null)"
@@ -222,23 +229,23 @@ if [ "$hooks_path" = .githooks ]; then
 elif [ -n "$hooks_path" ] || [ -e "$TARGET/.pre-commit-config.yaml" ] || [ -e "$TARGET/.husky" ] \
     || [ -e "$TARGET/lefthook.yml" ] \
     || (cd "$TARGET" && [ -e "$(git rev-parse --git-path hooks/pre-commit 2> /dev/null)" ]); then
-    report NOTE "core.hooksPath" "다른 훅 설정이 있어 바꾸지 않았다. 그쪽 pre-commit 에서 bash .githooks/pre-commit 을 부른다"
+    report NOTE "core.hooksPath" "another hook setup exists, so it was left alone; call bash .githooks/pre-commit from its pre-commit hook"
 elif [ "$DRY_RUN" -eq 1 ]; then
     report PLAN "core.hooksPath=.githooks"
 elif git -C "$TARGET" config core.hooksPath .githooks; then
     report ADD "core.hooksPath=.githooks"
 else
-    report FAIL "core.hooksPath" "git config 에 실패했다"
+    report FAIL "core.hooksPath" "git config failed"
 fi
 
 if [ "$agents_without_markers" -eq 1 ]; then
-    report NOTE "AGENTS.md" "인덱스 자리가 없다. $ASSETS/AGENTS.md 의 문서 절과 규칙 절을 합치고 bash scripts/doc-index.sh 를 실행한다"
+    report NOTE "AGENTS.md" "no place for the docs index; merge the sections of $ASSETS/AGENTS.md, then run bash scripts/doc-index.sh"
 fi
 if [ -e "$TARGET/CLAUDE.md" ]; then
-    report NOTE "CLAUDE.md" "Claude Code 는 CLAUDE.md 가 없을 때만 AGENTS.md 를 읽는다. 내용을 AGENTS.md 로 옮기고 CLAUDE.md 를 지운다"
+    report NOTE "CLAUDE.md" "Claude Code reads AGENTS.md only when CLAUDE.md is absent; move its content into AGENTS.md and delete it"
 fi
 if [ -n "$had_docs" ] && [ "$first_run" -eq 1 ]; then
-    report NOTE "docs/" "기존 문서가 있다. front matter(type, title, description)를 넣고 bash scripts/doc-index.sh 를 실행한다"
+    report NOTE "docs/" "existing documents found; add front matter to them, then run bash scripts/doc-index.sh"
 fi
 
 # --- 원격 저장소 템플릿과 CI ----------------------------------------------------------
@@ -265,17 +272,17 @@ fi
 
 echo
 if [ "$DRY_RUN" -eq 1 ]; then
-    echo "결과: PLAN $adds, SKIP $skips, NOTE $notes, FAIL $fails"
-    echo "적용하려면 --dry-run 을 빼고 다시 실행한다."
+    echo "result: PLAN $adds, SKIP $skips, NOTE $notes, FAIL $fails"
+    echo "run again without --dry-run to apply"
 else
-    echo "결과: ADD $adds, SKIP $skips, NOTE $notes, FAIL $fails"
+    echo "result: ADD $adds, SKIP $skips, NOTE $notes, FAIL $fails"
     cat << 'EOF'
 
-다음 할 일:
-  1. AGENTS.md 첫 문단에 이 저장소가 무엇인지 적는다.
-  2. NOTE 항목을 처리한다.
-  3. 원격 저장소에 troubleshooting 라벨을 한 번 만든다. 명령은 docs/standards/troubleshooting.md 에 있다.
-  4. bash scripts/doc-index.sh --check 로 확인한다.
+next steps:
+  1. Describe the repository in the first paragraph of AGENTS.md.
+  2. Resolve the NOTE items.
+  3. Create the troubleshooting label on the remote once; see docs/standards/troubleshooting.md.
+  4. Run bash scripts/doc-index.sh --check.
 EOF
 fi
 [ "$fails" -eq 0 ]

@@ -1,67 +1,77 @@
 ---
 type: Standard
-title: Documentation
-description: How docs/ is kept as an Open Knowledge Format bundle, and how its indexes stay current.
+title: 문서 관리
+description: docs/를 OKF 번들로 관리하는 방법과 색인을 최신으로 유지하는 방법을 정한다.
 tags: [docs, okf]
 ---
 
-# Documentation
+# 문서 관리
 
-`docs/` is a bundle in [Open Knowledge Format (OKF) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md):
-a tree of markdown files with YAML front matter. Each file is one concept.
-The bundle root is `docs/`.
+`docs/`는 [OKF(Open Knowledge Format) v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) 번들이다.
+번들은 YAML front matter가 붙은 Markdown 파일의 트리이고, 파일 하나가 개념 하나를 다룬다. 번들 루트는 `docs/`다.
 
-## Front matter
+## front matter
 
-Every markdown file except `index.md` and `log.md` starts with front matter.
-OKF requires only `type`. This repository also requires `title` and `description`,
-because the indexes are built from them.
+`index.md`와 `log.md`를 뺀 모든 Markdown 파일은 front matter로 시작한다.
+OKF가 요구하는 키는 `type` 하나지만, 이 저장소는 `title`과 `description`도 요구한다. 색인을 이 두 키로 만들기 때문이다.
 
-| Key | Required | Value |
+| 키 | 필수 | 설명 |
 | --- | --- | --- |
-| `type` | yes | The kind of document, such as `Standard`, `Decision`, `Guide`, or `Reference`. Pick a name that explains itself |
-| `title` | yes | Display name, on one line |
-| `description` | yes | One sentence that lets a reader decide whether to open the file, on one line |
-| `status` | no | `draft`, `stable` (the default), or `deprecated`. Decision records use MADR values instead; see [Decision records](decisions.md) |
-| `tags` | no | Short strings for topics that cut across directories |
+| `type` | 예 | 문서의 종류다. `Standard`, `Decision`, `Guide`, `Reference`처럼 이름만 보고 알 수 있는 값을 쓴다 |
+| `title` | 예 | 표시 이름이다. 한 줄로 쓴다 |
+| `description` | 예 | 문서를 열지 판단하게 해 주는 한 문장이다. 한 줄로 쓴다 |
+| `status` | 아니요 | `draft`, `stable`, `deprecated` 중 하나이고 기본값은 `stable`이다. 결정 기록은 [상태](decisions.md#상태)를 따른다 |
+| `tags` | 아니요 | 디렉터리를 가로지르는 주제를 나타내는 짧은 문자열 목록이다 |
 
-Other OKF keys (`resource`, `sources`, `generated`, `verified`, `stale_after`) are optional.
-When you use them, follow the spec. Unknown keys are allowed.
+나머지 OKF 키(`resource`, `sources`, `generated`, `verified`, `stale_after`)는 선택이고, 쓸 때는 규격을 따른다.
+규격에 없는 키도 쓸 수 있다.
 
 ```markdown
 ---
 type: Guide
-title: Local setup
-description: Install the toolchain and run the service on a workstation.
+title: 로컬 개발 환경
+description: 개발 도구를 설치하고 서비스를 로컬에서 실행한다.
 ---
 ```
 
-## Directories
+## 디렉터리
 
-| Directory | Holds |
+| 디렉터리 | 설명 |
 | --- | --- |
-| `standards/` | Rules that every contributor and agent follows |
-| `decisions/` | Decision records in MADR format |
+| `standards/` | 기여자와 에이전트가 따르는 규칙 |
+| `decisions/` | MADR 형식의 결정 기록 |
 
-Add a directory when a group of documents needs one.
+묶어 둘 문서가 생기면 디렉터리를 추가한다.
 
-## Indexes are generated
+## 색인
 
-`scripts/doc-index.sh` writes an `index.md` in every directory under `docs/` and the
-document index block in `AGENTS.md`. Do not edit either by hand.
+`scripts/doc-index.sh`가 `docs/` 아래 모든 디렉터리의 `index.md`와 `AGENTS.md`의 문서 색인을 만든다.
+둘 다 손으로 고치지 않는다. 손으로 고친 내용은 다음에 색인을 만들 때 사라진다.
 
-- After adding, moving, or retitling a document, run `bash scripts/doc-index.sh`.
-- `bash scripts/doc-index.sh --check` fails when front matter is missing or an index is stale.
-  The pre-commit hook and CI run it.
-- The pre-commit hook is enabled per clone with `git config core.hooksPath .githooks`.
+- 문서를 추가하거나 옮기거나 제목을 바꾸면 `bash scripts/doc-index.sh`를 실행한다.
+- `bash scripts/doc-index.sh --check`는 front matter가 없거나 색인이 낡았으면 실패한다.
+- pre-commit hook은 클론마다 `git config core.hooksPath .githooks`를 한 번 실행해서 켠다.
 
-## Links
+## 링크
 
-Link between documents with relative paths, such as `../decisions/0001-use-postgresql.md`.
-OKF also allows paths that start with `/` from the bundle root, but forges resolve those
-from the repository root, so they break when rendered.
+문서 사이의 링크는 [글쓰기 규칙](writing-style.md#링크)을 따른다.
 
-## What does not belong here
+## docs/에 두지 않는 것
 
-Troubleshooting records are issues in the remote repository, not documents.
-See [Troubleshooting](troubleshooting.md).
+트러블슈팅 기록은 문서가 아니라 원격 저장소의 이슈다. [트러블슈팅](troubleshooting.md)을 따른다.
+
+## 함께 고칠 곳
+
+| 파일 | 설명 |
+| --- | --- |
+| `scripts/doc-index.sh` | 필수 키를 검사하고 색인을 만든다. 필수 키가 바뀌면 함께 고친다 |
+| `AGENTS.md` | 문서 색인이 들어갈 자리를 표시하는 주석이 있다 |
+
+## 검사
+
+`bash scripts/doc-index.sh --check`가 front matter와 색인을 검사한다. pre-commit hook과 CI가 이 명령을 실행한다.
+
+## 같이 보기
+
+- [Open Knowledge Format v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+- [글쓰기 규칙](writing-style.md)

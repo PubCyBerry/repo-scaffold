@@ -31,7 +31,7 @@ GitHub, Gitea, Forgejo 저장소는 `.github/` 를, GitLab 저장소는 `.gitlab
 | 되돌리기 어려운 결정은 MADR 4.0 형식으로 `docs/decisions/` 에 남긴다 | `decisions.md` |
 | 트러블슈팅은 원격 저장소의 이슈로 남긴다 | `troubleshooting.md` |
 | 이슈와 PR(MR) 이 담아야 하는 것 | `issues-and-pull-requests.md` |
-| 문서, 산출물, 주석, 프롬프트의 작성 규칙 (작성 중) | `writing-style.md` |
+| 글의 언어(문서는 한국어, 스크립트 출력은 영어), 구성, 문장, 표기와 낡지 않게 쓰는 방법 | `writing-style.md` |
 
 원본은 [skills/repo-scaffold/assets/docs/standards/](skills/repo-scaffold/assets/docs/standards/) 에 있다.
 

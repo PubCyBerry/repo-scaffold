@@ -117,11 +117,13 @@ bash scripts/doc-index.sh --check    # 통과해야 끝난 것이다
 
 | 문서 | 내용 |
 | --- | --- |
-| `docs/standards/documentation.md` | `docs/` 는 OKF v0.2 번들이다. front matter, 생성되는 인덱스, 링크 규칙 |
-| `docs/standards/decisions.md` | 되돌리기 어려운 결정은 MADR 4.0 형식으로 `docs/decisions/` 에 남긴다. 템플릿 포함 |
+| `docs/standards/documentation.md` | `docs/` 는 OKF v0.2 번들이다. front matter 와 생성되는 색인 |
+| `docs/standards/decisions.md` | 되돌리기 어려운 결정은 MADR 4.0 형식으로 `docs/decisions/` 에 남긴다. 한국어 템플릿 포함 |
 | `docs/standards/troubleshooting.md` | 트러블슈팅은 원격 저장소의 이슈로 남긴다. 검색, 기록, 종료 방법 |
 | `docs/standards/issues-and-pull-requests.md` | 이슈와 PR(MR) 이 담아야 하는 것과 템플릿 선택 |
-| `docs/standards/writing-style.md` | 문서, 산출물, 주석, 프롬프트의 작성 규칙. 아직 비어 있는 초안이다 |
+| `docs/standards/writing-style.md` | 글의 언어, 구성, 문장, 표기, 링크, 낡지 않게 쓰는 방법 |
+
+깔리는 문서와 템플릿은 한국어로 쓰여 있고, 스크립트 출력은 영어다. 근거는 `writing-style.md` 의 언어 절에 있다.
 
 규약을 바꾸려면 `assets/docs/` 의 문서를 고치고 `bash assets/scripts/doc-index.sh` 로
 템플릿의 인덱스를 다시 만든다.

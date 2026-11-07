@@ -1,17 +1,17 @@
 ---
-name: Feature request
-about: Propose a new capability or a change in behavior.
+name: 기능 요청
+about: 새 기능이나 동작 변경을 제안한다.
 labels: ["enhancement"]
 ---
 
-## Problem
+## 문제
 
-<!-- What is hard or impossible today, and for whom. -->
+<!-- 지금 무엇이 어렵거나 불가능한지, 누가 그 문제를 겪는지 쓴다. -->
 
-## Proposal
+## 제안
 
-## Alternatives considered
+## 검토한 대안
 
-## Done when
+## 완료 조건
 
-<!-- Observable criteria that tell us the work is complete. -->
+<!-- 작업이 끝났는지 확인할 수 있는 기준을 쓴다. -->

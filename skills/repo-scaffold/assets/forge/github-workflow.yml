@@ -1,5 +1,5 @@
-# 문서 front matter 와 인덱스가 최신인지 확인한다. 로컬 훅 없이 들어온 커밋도 여기서 걸린다.
-# Gitea 와 Forgejo 도 .github/workflows 를 읽는다.
+# 문서의 front matter와 색인이 최신인지 확인한다. 로컬 hook을 거치지 않은 커밋도 여기서 걸린다.
+# Gitea와 Forgejo도 .github/workflows를 읽는다.
 
 name: docs
 

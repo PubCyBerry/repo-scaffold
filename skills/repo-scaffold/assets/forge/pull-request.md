@@ -1,21 +1,21 @@
-## Why
+## 배경
 
-<!-- The problem or goal behind this change. Link the issue with a closing keyword: Closes #123 -->
+<!-- 이 변경이 필요한 문제나 목표를 쓴다. 이슈는 닫는 키워드로 연결한다: Closes #123 -->
 
-## What changed
+## 변경 내용
 
-<!-- The changes a reviewer needs to know about. -->
+<!-- 리뷰어가 알아야 하는 변경을 쓴다. -->
 
-## How it was verified
+## 확인 방법
 
-<!-- Commands you ran, tests you added, and what you checked by hand. -->
+<!-- 실행한 명령, 추가한 테스트, 직접 확인한 내용을 쓴다. -->
 
-## What could break
+## 위험
 
-<!-- Risks, how to roll back, and what is left for later. Write "Nothing known" if that is true. -->
+<!-- 문제가 생길 수 있는 곳, 되돌리는 방법, 남은 일을 쓴다. 없으면 "알려진 위험 없음"이라고 쓴다. -->
 
-## Checklist
+## 체크리스트
 
-- [ ] The issue is linked with a closing keyword, or this change has no issue.
-- [ ] A decision that is hard to reverse is recorded in `docs/decisions/`.
-- [ ] Documentation is updated, and `bash scripts/doc-index.sh --check` passes.
+- [ ] 이슈를 닫는 키워드로 연결했거나, 연결할 이슈가 없다.
+- [ ] 되돌리기 어려운 결정을 `docs/decisions/`에 기록했다.
+- [ ] 문서를 함께 고쳤고 `bash scripts/doc-index.sh --check`가 통과한다.

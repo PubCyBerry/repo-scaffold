@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# 커밋 전에 문서 front matter 와 인덱스를 검사한다. 인덱스만 낡았으면 고쳐 놓고 커밋을 멈춘다.
-# 켜는 법: git config core.hooksPath .githooks (클론마다 한 번)
+# 커밋 전에 문서의 front matter와 색인을 검사한다. 색인만 낡았으면 고쳐 놓고 커밋을 멈춘다.
+# 켜는 방법: git config core.hooksPath .githooks (클론마다 한 번)
 
 bash scripts/doc-index.sh --check > /dev/null 2>&1 && exit 0
 bash scripts/doc-index.sh || exit 1
-echo "pre-commit: 문서 인덱스를 다시 만들었다. 바뀐 파일을 git add 하고 다시 커밋한다." >&2
+echo "pre-commit: regenerated the docs index. Review the changes, git add them, and commit again." >&2
 exit 1

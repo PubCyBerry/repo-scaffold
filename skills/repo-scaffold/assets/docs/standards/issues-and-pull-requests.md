@@ -1,38 +1,52 @@
 ---
 type: Standard
-title: Issues and pull requests
-description: What every issue and pull (merge) request must contain, and which template to use.
+title: 이슈와 PR
+description: 이슈와 PR이 담아야 하는 내용과 고를 템플릿을 정한다.
 tags: [issues, pull-requests]
 ---
 
-# Issues and pull requests
+# 이슈와 PR
 
-The templates live in the forge directory: `.github/` for GitHub, Gitea, and Forgejo, and
-`.gitlab/` for GitLab. This document is the policy they implement. Command-line tools do not
-apply templates, so an agent that opens an issue or a pull request from the command line writes
-the same sections itself.
+이슈와 PR은 템플릿으로 쓰고, 이 문서는 템플릿이 따르는 규칙을 정한다. GitLab의 merge request(MR)도 이 문서에서는 PR이라고 부른다.
+명령줄 도구는 템플릿을 적용하지 않는다. 그래서 에이전트가 명령줄로 이슈나 PR을 만들 때는 템플릿 파일을 읽고 같은 절을 직접 쓴다.
 
-## Issues
+## 템플릿 위치
 
-| Template | Use it for | Label |
+| 서비스 | 이슈 템플릿 | PR 템플릿 |
 | --- | --- | --- |
-| Bug | The product does not behave as documented or expected | `bug` |
-| Feature | A new capability or a change in behavior | `enhancement` |
-| Troubleshooting | A setup, environment, CI, or tooling problem and its resolution | `troubleshooting` |
+| GitHub, Gitea, Forgejo | `.github/ISSUE_TEMPLATE/` | `.github/pull_request_template.md` |
+| GitLab | `.gitlab/issue_templates/` | `.gitlab/merge_request_templates/Default.md` |
 
-- One problem per issue.
-- Paste errors and logs as text, not screenshots, so they can be searched.
-- Remove secrets and personal data before posting.
-- Report security vulnerabilities privately, never in a public issue.
+## 이슈
 
-## Pull requests
+| 템플릿 | 라벨 | 설명 |
+| --- | --- | --- |
+| 버그 | `bug` | 제품이 문서나 기대와 다르게 동작한다 |
+| 기능 요청 | `enhancement` | 새 기능이나 동작 변경을 제안한다 |
+| 트러블슈팅 | `troubleshooting` | 설치, 환경, CI, 도구 문제와 해결 방법을 기록한다. [트러블슈팅](troubleshooting.md)을 따른다 |
 
-GitLab calls them merge requests. The rules are the same.
+- 이슈 하나에는 문제 하나만 쓴다. 문제가 섞이면 하나만 해결된 이슈를 닫을 수 없다.
+- 오류와 로그는 스크린샷이 아니라 텍스트로 붙인다. 텍스트여야 검색된다.
+- 비밀값과 개인 정보를 지우고 올린다.
+- 보안 취약점은 공개 이슈로 올리지 않고 비공개 경로로 알린다.
 
-- One purpose per pull request. Keep refactoring apart from behavior changes.
-- The description answers four questions: why, what changed, how it was verified, and what could break.
-- Link the issue with a closing keyword, such as `Closes #123`. GitHub, GitLab, and Gitea close
-  the issue when the pull request merges.
-- A decision that is hard to reverse comes with a record in `docs/decisions/`.
-  See [Decision records](decisions.md).
-- Documentation changes ship in the same pull request as the code they describe.
+## PR
+
+- PR 하나에는 목적 하나만 담는다. 리팩터링과 동작 변경을 나눠야 리뷰어가 동작 변경을 놓치지 않는다.
+- 본문은 PR 템플릿의 절을 모두 채운다.
+- 이슈는 닫는 키워드(`Closes #123`)로 연결한다. GitHub, GitLab, Gitea는 PR이 병합되면 연결된 이슈를 닫는다.
+- 되돌리기 어려운 결정을 담은 PR은 [결정 기록](decisions.md)을 함께 올린다.
+- 코드가 바뀌면 그 코드를 설명하는 문서도 같은 PR에서 고친다. 따로 고치면 그사이에 문서가 틀린 정보가 된다.
+
+## 함께 고칠 곳
+
+이 문서를 바꾸면 저장소에 있는 템플릿 파일을 함께 고친다. 파일 위치는 [템플릿 위치](#템플릿-위치)에 있다.
+
+## 검사
+
+자동 검사는 없다. 리뷰에서 확인한다.
+
+## 같이 보기
+
+- [트러블슈팅](troubleshooting.md)
+- [결정 기록](decisions.md)

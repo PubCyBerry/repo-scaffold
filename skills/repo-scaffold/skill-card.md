@@ -4,7 +4,7 @@
 
 에이전트가 사전학습 기억이 아니라 저장소 안의 문서를 근거로 일하게 만드는 최소 구조를 깐다.
 자동 생성 문서 인덱스가 든 `AGENTS.md`, OKF 형식의 `docs/`, MADR 결정 기록 자리,
-원격 저장소 이슈로 관리하는 트러블슈팅, GitHub·GitLab·Gitea 에서 쓰는 PR(MR) 과 이슈 템플릿,
+원격 저장소 이슈로 관리하는 트러블슈팅, GitHub, GitLab, Gitea 에서 쓰는 PR(MR) 과 이슈 템플릿,
 인덱스가 낡지 않게 막는 pre-commit 훅과 CI 잡 하나다.
 
 This skill is ready for commercial and non-commercial use under the MIT license.

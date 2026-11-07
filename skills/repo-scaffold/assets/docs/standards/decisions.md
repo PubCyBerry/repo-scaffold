@@ -1,127 +1,129 @@
 ---
 type: Standard
-title: Decision records
-description: When to record a decision, and how to write it in docs/decisions/ with the MADR 4.0 template.
+title: 결정 기록
+description: 결정을 기록할 때와 docs/decisions/에 MADR 4.0 형식으로 쓰는 방법을 정한다.
 tags: [decisions, adr, madr]
 ---
 
-# Decision records
+# 결정 기록
 
-Decisions are recorded as Architectural Decision Records in [MADR 4.0](https://adr.github.io/madr/)
-format, one file per decision, under `docs/decisions/`.
+결정은 [MADR 4.0](https://adr.github.io/madr/) 형식의 결정 기록(ADR, Architectural Decision Record)으로 남긴다.
+결정 하나를 `docs/decisions/`의 파일 하나에 쓴다.
 
-## When to write one
+## 기록할 때
 
-Write a record when a decision:
+다음 중 하나에 해당하면 기록한다.
 
-- is expensive to reverse, such as a dependency, a data format, a public interface, or a layout, or
-- will make someone ask "why is it like this?" later.
+- 되돌리는 데 드는 비용이 크다. 의존성, 데이터 형식, 공개 인터페이스, 디렉터리 구성이 그렇다.
+- 나중에 누군가 "왜 이렇게 되어 있지?"라고 물을 결정이다.
 
-Choices that are cheap to reverse do not need one. When in doubt, write a short one.
+되돌리기 쉬운 선택은 기록하지 않는다. 기록할지 판단이 서지 않으면 짧게라도 기록한다.
 
-## Files
+## 파일
 
-- Name the file `NNNN-title-with-dashes.md`. Take the next free number, starting at `0001`.
-- The title states the solved problem and the chosen solution, for example "Use PostgreSQL for job state".
-- Never reuse a number. Never delete a record.
+- 파일 이름은 `NNNN-title-with-dashes.md`다. 비어 있는 다음 번호를 쓰고, 번호는 `0001`부터 시작한다.
+- 파일 이름은 영어 소문자와 `-`로 쓴다. 한글 파일 이름은 운영체제마다 유니코드 정규화 방식이 달라서 같은 이름이 다른 파일로 보일 수 있다.
+- 제목에는 해결한 문제와 고른 해법을 쓴다. 예: `작업 상태 저장소로 PostgreSQL 채택`.
+- 번호를 다시 쓰지 않는다. 기록을 지우지 않는다. 지운 기록은 그 결정이 왜 바뀌었는지 설명하지 못한다.
 
-## Status
+## 상태
 
-`status` takes MADR values. OKF readers map them to OKF lifecycle values as follows.
+`status`에는 MADR 값을 쓴다. MADR 값이 결정의 결과까지 나타내기 때문이다. OKF로 읽는 도구를 위해 OKF 값과 다음처럼 대응시킨다.
 
-| MADR `status` | Meaning | OKF lifecycle |
+| `status` | OKF 값 | 설명 |
 | --- | --- | --- |
-| `proposed` | Under discussion | `draft` |
-| `accepted` | In effect | `stable` |
-| `rejected` | Considered and declined | `stable` |
-| `deprecated` | No longer in effect, not replaced | `deprecated` |
-| `superseded by ADR-NNNN` | Replaced by another record | `deprecated` |
+| `proposed` | `draft` | 논의 중이다 |
+| `accepted` | `stable` | 효력이 있다 |
+| `rejected` | `stable` | 검토했지만 채택하지 않았다 |
+| `deprecated` | `deprecated` | 효력이 없고, 대체한 기록도 없다 |
+| `superseded by ADR-NNNN` | `deprecated` | 다른 기록으로 대체했다 |
 
-Do not rewrite an accepted record. To change a decision, write a new record, set the old
-record's `status` to `superseded by ADR-NNNN`, and link the two records to each other.
+채택한 기록은 고쳐 쓰지 않는다. 결정을 바꿀 때는 새 기록을 쓰고, 이전 기록의 `status`를 `superseded by ADR-NNNN`으로 바꾼 뒤 두 기록을 서로 링크한다.
 
-## Template
+## 템플릿
 
-Copy the block below into the new file. Sections marked optional may be deleted.
-The template is MADR 4.0.0 with the front matter keys from [Documentation](documentation.md) added.
+새 파일에 아래 블록을 복사한다. 선택 항목은 지워도 된다.
+이 템플릿은 MADR 4.0.0 템플릿의 구성을 한국어로 옮긴 것이고, front matter에는 [문서 관리](documentation.md#front-matter)가 요구하는 키가 더 있다.
 
 ````markdown
 ---
-# type, title, and description are required by docs/standards/documentation.md.
-# The other keys are optional MADR metadata.
+# type, title, description은 문서 관리 규칙이 요구한다. 나머지는 MADR의 선택 메타데이터다.
 type: Decision
-title: {short title, representative of solved problem and found solution}
-description: {one sentence stating what was decided}
+title: {해결한 문제와 고른 해법을 드러내는 짧은 제목}
+description: {무엇을 결정했는지 한 문장}
 status: "{proposed | rejected | accepted | deprecated | … | superseded by ADR-0123}"
-date: {YYYY-MM-DD when the decision was last updated}
-decision-makers: {list everyone involved in the decision}
-consulted: {list everyone whose opinions are sought (typically subject-matter experts); and with whom there is a two-way communication}
-informed: {list everyone who is kept up-to-date on progress; and with whom there is a one-way communication}
+date: {결정을 마지막으로 고친 날짜. YYYY-MM-DD}
+decision-makers: {결정에 참여한 사람 모두}
+consulted: {의견을 구한 사람. 주로 해당 분야 전문가이고, 양방향으로 소통한다}
+informed: {진행 상황을 알린 사람. 단방향으로 소통한다}
 ---
 
-# {short title, representative of solved problem and found solution}
+# {해결한 문제와 고른 해법을 드러내는 짧은 제목}
 
-## Context and Problem Statement
+## 맥락과 문제
 
-{Describe the context and problem statement, e.g., in free form using two to three sentences or in the form of an illustrative story. You may want to articulate the problem in form of a question and add links to collaboration boards or issue management systems.}
+{맥락과 문제를 두세 문장이나 짧은 이야기로 쓴다. 문제를 질문으로 정리해도 되고, 관련 이슈나 논의의 링크를 붙여도 된다.}
 
-<!-- This is an optional element. Feel free to remove. -->
-## Decision Drivers
+<!-- 선택 항목이다. 필요 없으면 지운다. -->
+## 결정 요인
 
-* {decision driver 1, e.g., a force, facing concern, …}
-* {decision driver 2, e.g., a force, facing concern, …}
-* … <!-- numbers of drivers can vary -->
+- {결정 요인 1. 예: 작용하는 힘이나 우려}
+- {결정 요인 2}
 
-## Considered Options
+## 검토한 선택지
 
-* {title of option 1}
-* {title of option 2}
-* {title of option 3}
-* … <!-- numbers of options can vary -->
+- {선택지 1의 제목}
+- {선택지 2의 제목}
+- {선택지 3의 제목}
 
-## Decision Outcome
+## 결정
 
-Chosen option: "{title of option 1}", because {justification. e.g., only option, which meets k.o. criterion decision driver | which resolves force {force} | … | comes out best (see below)}.
+고른 선택지: "{선택지 1의 제목}". 이유: {근거. 예: 필수 조건을 만족하는 유일한 선택지다, {결정 요인}을 해결한다, 아래 비교에서 가장 낫다}.
 
-<!-- This is an optional element. Feel free to remove. -->
-### Consequences
+<!-- 선택 항목이다. 필요 없으면 지운다. -->
+### 결과
 
-* Good, because {positive consequence, e.g., improvement of one or more desired qualities, …}
-* Bad, because {negative consequence, e.g., compromising one or more desired qualities, …}
-* … <!-- numbers of consequences can vary -->
+- 좋은 점: {긍정적인 결과. 예: 바라는 품질 하나 이상이 나아진다}
+- 나쁜 점: {부정적인 결과. 예: 바라는 품질 하나 이상을 양보한다}
 
-<!-- This is an optional element. Feel free to remove. -->
-### Confirmation
+<!-- 선택 항목이다. 필요 없으면 지운다. -->
+### 확인 방법
 
-{Describe how the implementation of/compliance with the ADR can/will be confirmed. Are the design that was decided for and its implementation in line with the decision made? E.g., a design/code review or a test with a library such as ArchUnit can help validate this. Note that although we classify this element as optional, it is included in many ADRs.}
+{결정대로 구현했는지 확인하는 방법을 쓴다. 예: 설계 리뷰, 코드 리뷰, ArchUnit 같은 라이브러리를 쓰는 테스트. 선택 항목이지만 많은 결정 기록에 들어간다.}
 
-<!-- This is an optional element. Feel free to remove. -->
-## Pros and Cons of the Options
+<!-- 선택 항목이다. 필요 없으면 지운다. -->
+## 선택지별 장단점
 
-### {title of option 1}
+### {선택지 1의 제목}
 
-<!-- This is an optional element. Feel free to remove. -->
-{example | description | pointer to more information | …}
+<!-- 선택 항목이다. 필요 없으면 지운다. -->
+{예시, 설명, 더 읽을 자료의 링크}
 
-* Good, because {argument a}
-* Good, because {argument b}
-<!-- use "neutral" if the given argument weights neither for good nor bad -->
-* Neutral, because {argument c}
-* Bad, because {argument d}
-* … <!-- numbers of pros and cons can vary -->
+- 좋은 점: {논거 a}
+- 좋은 점: {논거 b}
+<!-- 좋지도 나쁘지도 않은 논거에는 "중립"을 쓴다 -->
+- 중립: {논거 c}
+- 나쁜 점: {논거 d}
 
-### {title of other option}
+### {다른 선택지의 제목}
 
-{example | description | pointer to more information | …}
+{예시, 설명, 더 읽을 자료의 링크}
 
-* Good, because {argument a}
-* Good, because {argument b}
-* Neutral, because {argument c}
-* Bad, because {argument d}
-* …
+- 좋은 점: {논거 a}
+- 중립: {논거 b}
+- 나쁜 점: {논거 c}
 
-<!-- This is an optional element. Feel free to remove. -->
-## More Information
+<!-- 선택 항목이다. 필요 없으면 지운다. -->
+## 추가 정보
 
-{You might want to provide additional evidence/confidence for the decision outcome here and/or document the team agreement on the decision and/or define when/how this decision the decision should be realized and if/when it should be re-visited. Links to other decisions and resources might appear here as well.}
+{결정을 뒷받침하는 근거, 팀의 합의, 결정을 언제 어떻게 실행하고 언제 다시 검토할지 쓴다. 관련 결정과 자료의 링크를 붙인다.}
 ````
+
+## 검사
+
+front matter는 [문서 관리](documentation.md#검사)의 검사가 확인한다. 나머지는 리뷰에서 확인한다.
+
+## 같이 보기
+
+- [MADR](https://adr.github.io/madr/)
+- [MADR 4.0.0 템플릿 원문](https://github.com/adr/madr/blob/4.0.0/template/adr-template.md)

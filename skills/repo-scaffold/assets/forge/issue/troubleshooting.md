@@ -1,32 +1,32 @@
 ---
-name: Troubleshooting record
-about: Record a setup, environment, CI, or tooling problem so the next person finds the answer.
+name: 트러블슈팅
+about: 설치, 환경, CI, 도구 문제와 해결 방법을 기록해 다음 사람이 찾을 수 있게 한다.
 labels: ["troubleshooting"]
 ---
 
-<!-- Search open and closed issues for the error message before filing. Remove secrets from logs. -->
+<!-- 올리기 전에 오류 메시지로 열린 이슈와 닫힌 이슈를 검색한다. 로그에서 비밀값을 지운다. -->
 
-## Symptom
+## 증상
 
-<!-- The exact error message or behavior, pasted as text. Searchers match on it. -->
+<!-- 정확한 오류 메시지나 동작을 텍스트로 붙인다. 다음 사람은 이 텍스트로 검색한다. -->
 
-## Environment
+## 환경
 
-<!-- Operating system, versions, and anything else that could matter. -->
+<!-- 운영체제, 버전처럼 결과에 영향을 줄 수 있는 것을 쓴다. -->
 
-## Steps to reproduce
+## 재현 절차
 
 1.
 2.
 
-## What was tried
+## 시도한 방법
 
-<!-- Dead ends included, so nobody repeats them. -->
+<!-- 실패한 방법도 쓴다. 그래야 다른 사람이 같은 시도를 되풀이하지 않는다. -->
 
-## Cause
+## 원인
 
-<!-- Fill in when known. -->
+<!-- 원인을 알게 되면 채운다. -->
 
-## Resolution
+## 해결
 
-<!-- The fix or workaround. Close the issue once this is written. -->
+<!-- 해결 방법이나 우회 방법을 쓴다. 이 절을 채운 뒤 이슈를 닫는다. -->
