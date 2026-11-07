@@ -1,0 +1,6 @@
+# 문서 front matter 와 인덱스가 최신인지 확인한다. 로컬 훅 없이 들어온 커밋도 여기서 걸린다.
+docs:
+  image: alpine:3.22
+  script:
+    - apk add --no-cache bash
+    - bash scripts/doc-index.sh --check
