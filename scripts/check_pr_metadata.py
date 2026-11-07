@@ -9,7 +9,8 @@
 
 단계는 셋이고 --only 로 고른다.
 
-  title     제목이 Conventional Commits 헤더인가. 제목에 금지 문자가 있는가
+  title     제목이 Conventional Commits 헤더인가. 제목에 금지 문자가 있는가.
+            한국어 제목이 명사형 어미로 끝나는가
   sections  필수 9개 절이 있고, 템플릿 주석을 걷어낸 뒤에도 내용이 남는가
   issue     닫는 키워드로 이슈를 걸었는가. 아니면 policy/skip-issue 라벨이 있는가
 
@@ -113,6 +114,12 @@ NOTATION = (
     ("double hyphen", " -- "),
     ("ditto mark", "〃"),
 )
+
+# 한국어 제목은 명사형 어미로 끝낸다. 원본은 writing-style.md 의 Tone 절이다.
+# 마지막 한글 음절의 종성이 ㅁ(16) 이나 ㄻ(10) 이면 명사형이다. 고침, 만듦.
+HANGUL_FIRST = 0xAC00
+HANGUL_LAST = 0xD7A3
+NOMINAL_FINALS = (10, 16)
 
 SKIP_ISSUE_LABEL = "policy/skip-issue"
 
@@ -231,6 +238,14 @@ def split_sections(body: str) -> list[tuple[str, str]]:
     return [(heading, "\n".join(lines)) for heading, lines in sections]
 
 
+def lacks_nominal_ending(subject: str) -> bool:
+    """한글로 끝나는 제목이 명사형 어미가 아닌지 본다. 한글이 아니면 보지 않는다."""
+    code = ord(subject[-1])
+    if not HANGUL_FIRST <= code <= HANGUL_LAST:
+        return False
+    return (code - HANGUL_FIRST) % 28 not in NOMINAL_FINALS
+
+
 def subject_problems(subject: str) -> list[str]:
     """제목 본문의 문제를 모은다."""
     if not subject:
@@ -240,6 +255,8 @@ def subject_problems(subject: str) -> list[str]:
         problems.append("마침표로 끝내지 않는다")
     if subject[0].isascii() and subject[0].isupper():
         problems.append("소문자로 시작한다. commitlint 의 subject-case 다")
+    if lacks_nominal_ending(subject):
+        problems.append("한국어 제목은 명사형 어미로 끝낸다. 예: 추가함, 고침, 만듦")
     return problems
 
 

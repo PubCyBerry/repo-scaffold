@@ -69,6 +69,12 @@ critical, crucial, essential, significant, comprehensive, robust, elegant, seaml
 
 Headings, table headers, list labels, status names, and options are short noun phrases, not sentences.
 
+Issue titles and pull request titles are noun phrases too. A title written in Korean ends with
+the nominal ending `-음` or `-ㅁ`, as in `추가함`, `고침`, `삭제됨`, or `만듦`, and not with a
+sentence ending such as `-다`. A title that ends in an identifier, a number, or English is
+outside this rule. The pull request policy check enforces it on pull request titles. Issue
+titles are checked at triage.
+
 ## Stateless prose
 
 Every document, comment, and instruction describes the repository as it is now. It never
@@ -167,6 +173,7 @@ still binding.
 
 - Is every document under [docs/](../index.md) written in English?
 - Are headings and labels noun phrases rather than sentences?
+- Does a Korean issue or pull request title end with a nominal ending such as `추가함`?
 - Does any sentence contain an em dash, an en dash, a double hyphen, or an interpunct?
 - Are there marketing adjectives or superlatives that carry no information?
 - Are all dates absolute?

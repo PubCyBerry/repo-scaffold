@@ -100,9 +100,22 @@ def test_capitalized_type() -> None:
 
 
 def test_korean_subject_passes() -> None:
-    result = run(title="feat(policy): 빈 절을 막는다")
+    result = run(title="feat(policy): 빈 절을 막음")
 
     assert result.returncode == 0, result.stdout
+
+
+def test_korean_subject_ending_in_rieul_mieum_passes() -> None:
+    result = run(title="docs(policy): 규칙 문서를 만듦")
+
+    assert result.returncode == 0, result.stdout
+
+
+def test_korean_sentence_ending_fails() -> None:
+    result = run(title="feat(policy): 빈 절을 막는다")
+
+    assert result.returncode == 1
+    assert "명사형 어미로 끝낸다" in result.stdout
 
 
 def test_title_not_conventional() -> None:

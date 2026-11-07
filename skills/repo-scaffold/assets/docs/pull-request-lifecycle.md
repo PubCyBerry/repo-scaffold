@@ -107,11 +107,13 @@ The title is therefore the message that lands on the default branch, and the loc
 hook never sees it.
 
 The title follows [Commit Convention](commit-convention.md) in full: a Conventional Commits
-header, at most 100 characters, with a subject that starts lowercase.
+header, at most 100 characters, with a subject that starts lowercase. A Korean subject ends with
+a nominal ending, as [Writing Style](writing-style.md#tone) requires.
 
 ```text
 feat(auth): add refresh token rotation
 fix: reject empty workspace paths
+fix(auth): 빈 작업 공간 경로를 거부함
 ```
 
 The pull request policy check validates the title, which is the only place that rule can be
@@ -193,6 +195,7 @@ reason and link whatever replaced it.
 - Does the pull request carry one logical change?
 - Are all nine description sections filled with something real?
 - Is the title a Conventional Commits header with a lowercase subject?
+- Does a Korean title subject end with a nominal ending?
 - Does the description link an issue with a closing keyword, or carry `policy/skip-issue`?
 - Did `just verify` pass before the pull request was marked ready?
 - Does every required workflow trigger on `merge_group` as well as `pull_request`?
