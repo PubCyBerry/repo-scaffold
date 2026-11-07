@@ -4,7 +4,6 @@
 
 name: Feature request
 description: Propose a new capability or an externally meaningful enhancement
-title: ""
 labels:
   - "kind/feature"
   - "status/needs-triage"
