@@ -46,6 +46,15 @@ bash tests/check-env.sh        # .env 와 .env.example 키 동기화
 에 있다. 두 문서가 같은 파일명을 두고 부딪힌 이유와 결정은
 [ADR 0004](docs/architecture/adr/0004-keep-the-vulnerability-policy-at-security-md.md) 에 있다.
 
+## 에이전트 훅
+
+`.claude/settings.json` 과 `.codex/hooks.json` 은 도구 호출 직전과 직후에 이 저장소의
+스크립트를 실행한다. 클론한 사람의 기계에서 도는 실행 코드다.
+
+두 설정과 `scripts/agent-hooks/` 아래 스크립트를 고치는 변경은 코드 변경으로 보고 리뷰한다.
+훅이 저장소 밖으로 값을 보내게 하거나, 대상 밖 경로에 쓰게 하거나, 자격 증명을 읽게 만드는
+변경은 기능 제안이 아니라 보안 이슈다.
+
 ## 지원 범위
 
 `main` 브랜치의 최신 커밋만 지원한다.

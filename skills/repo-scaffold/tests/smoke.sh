@@ -165,6 +165,34 @@ run_self_check check-commit-msg.sh
 run_self_check check-python.sh
 run_self_check run-tests.sh
 
+# 에이전트 하네스가 통째로 깔렸는지, 그리고 깔린 훅이 실제로 막는지 본다.
+# 설정만 있고 스크립트가 없으면 훅은 매 호출 실패하고, 스크립트만 있고 설정이 없으면
+# 아무것도 막지 않는다. 둘 다 조용한 실패라 파일 존재부터 확인한다.
+for path in .codex/hooks.json scripts/agent-hooks/lib.sh scripts/agent-hooks/pre-tool-use.sh \
+    scripts/agent-hooks/post-tool-use.sh scripts/agent-hooks/stop.sh \
+    docs/standards/agent-harness.md; do
+    [ -f "$REPO/$path" ] || fail "스캐폴딩이 $path 를 만들지 않음"
+done
+
+if command -v jq > /dev/null 2>&1; then
+    hook_payload() {
+        # $1: 도구 이름, $2: 명령
+        jq -nc --arg tool "$1" --arg cmd "$2" \
+            '{hook_event_name: "PreToolUse", tool_name: $tool, tool_input: {command: $cmd}}'
+    }
+    if (cd "$REPO" && hook_payload Bash 'grep -rn foo .' \
+        | bash scripts/agent-hooks/pre-tool-use.sh) > "$TMP_ROOT/hook-deny.log" 2>&1; then
+        cat "$TMP_ROOT/hook-deny.log"
+        fail "PreToolUse 훅이 재귀 grep 을 막지 못함"
+    fi
+    if ! (cd "$REPO" && hook_payload Bash 'rg -n foo' \
+        | bash scripts/agent-hooks/pre-tool-use.sh) > "$TMP_ROOT/hook-allow.log" 2>&1; then
+        cat "$TMP_ROOT/hook-allow.log"
+        fail "PreToolUse 훅이 rg 를 막음. 오탐은 하네스를 통째로 끄게 만든다"
+    fi
+else
+    echo "SKIP jq 를 찾을 수 없어 훅 동작 검사를 건너뜀"
+fi
 # 모르는 검사 단계는 돌기 전에 거절한다.
 expect_failure "$TMP_ROOT/bad-phase.log" bash "$REPO/tests/check-docs.sh" --only nosuchphase
 expect_failure "$TMP_ROOT/missing-only.log" bash "$REPO/tests/check-docs.sh" --only

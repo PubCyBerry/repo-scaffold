@@ -73,6 +73,11 @@ select_phases() {
     PHASES="${selected# }"
 }
 
+# 인자로 받은 파일만 검사한다. 인자가 없으면 지금까지처럼 추적 중인 파일 전부를 본다.
+# PostToolUse 훅이 방금 고친 파일 하나만 넘긴다. 편집 한 번마다 저장소 전체를 도는
+# 비용을 없애려는 것이고, 훅 없이 부르는 쪽의 동작은 그대로다.
+ARGV_FILES=()
+
 while [ $# -gt 0 ]; do
     case "$1" in
         --only)
@@ -87,9 +92,13 @@ while [ $# -gt 0 ]; do
             sed -n '2,/^$/p' "$SELF"
             exit 0
             ;;
-        *)
+        -*)
             echo "알 수 없는 옵션: $1" >&2
             exit 2
+            ;;
+        *)
+            ARGV_FILES[${#ARGV_FILES[@]}]="$1"
+            shift
             ;;
     esac
 done
@@ -149,6 +158,24 @@ DOC_FILES=()
 while IFS= read -r doc; do
     DOC_FILES[${#DOC_FILES[@]}]="$doc"
 done < <(find "$DOCS_ROOT" -type f \( -name '*.md' -o -name '*.mdx' \) | sort)
+
+# 인자로 받은 파일이 있으면 그것만 본다. docs/ 밖과 없는 파일은 뺀다.
+if [ "${#ARGV_FILES[@]}" -gt 0 ]; then
+    DOC_FILES=()
+    for f in "${ARGV_FILES[@]}"; do
+        case "$f" in
+            /*) abs="$f" ;;
+            *) abs="$REPO_ROOT/$f" ;;
+        esac
+        case "$abs" in
+            "$DOCS_ROOT"/*.md | "$DOCS_ROOT"/*.mdx) [ -f "$abs" ] && DOC_FILES[${#DOC_FILES[@]}]="$abs" ;;
+        esac
+    done
+    if [ "${#DOC_FILES[@]}" -eq 0 ]; then
+        echo "SKIP 인자에 docs/ 아래 문서가 없다"
+        exit 0
+    fi
+fi
 
 if [ "${#DOC_FILES[@]}" -eq 0 ]; then
     echo "FAIL: $DOCS_ROOT 에 문서가 없다" >&2

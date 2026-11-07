@@ -6,6 +6,7 @@
 #   2. 스테이지     쓰인 stage 가 default_install_hook_types 안에 있다
 #   3. entry 대상   bash 로 부르는 스크립트가 실재한다
 #   4. 훅 저장소    repo 가 전부 local 이다
+#   5. 에이전트 훅  .claude/settings.json 과 .codex/hooks.json 이 같은 스크립트를 문다
 #
 # 1번이 이 저장소 구조의 핵심 제약이다. Justfile 은 훅 스크립트를 부르고 훅은
 # 스크립트를 직접 부른다. 훅 entry 에 just 를 넣으면 prek -> just -> prek 가 되어
@@ -118,7 +119,7 @@ yaml_list() {
 
 # ---------------------------------------------------------------- 순환 방지
 
-echo "[1/4] 순환 방지"
+echo "[1/5] 순환 방지"
 # 주석 처리된 훅까지 본다. 나중에 주석만 벗겼을 때 순환이 살아나면 안 된다.
 # 줄 첫머리의 entry 키만 본다. 산문 안의 just 는 대상이 아니다.
 if grep -nE '^[[:space:]]*#?[[:space:]]*entry:.*\bjust\b' "$CONFIG" > "$TMP_DIR/just.out" 2>&1; then
@@ -131,7 +132,7 @@ fi
 # ---------------------------------------------------------------- 스테이지
 
 echo
-echo "[2/4] 스테이지"
+echo "[2/5] 스테이지"
 yaml_list default_install_hook_types "$TMP_DIR/live" | sort -u > "$TMP_DIR/declared"
 
 if [ ! -s "$TMP_DIR/declared" ]; then
@@ -162,7 +163,7 @@ fi
 # ---------------------------------------------------------------- entry 대상
 
 echo
-echo "[3/4] entry 대상"
+echo "[3/5] entry 대상"
 sed -n 's/^[[:space:]]*entry:[[:space:]]*//p' "$TMP_DIR/live" \
     | sed 's/[[:space:]]*$//' \
     | sort -u > "$TMP_DIR/entries"
@@ -195,7 +196,7 @@ fi
 # ---------------------------------------------------------------- 훅 저장소
 
 echo
-echo "[4/4] 훅 저장소"
+echo "[4/5] 훅 저장소"
 sed -n 's/^[[:space:]]*-\{0,1\}[[:space:]]*repo:[[:space:]]*//p' "$TMP_DIR/live" \
     | sed 's/[[:space:]]*$//' \
     | sort -u > "$TMP_DIR/repos"
@@ -211,6 +212,76 @@ else
             report FAIL "repo: $repo" "외부 저장소를 받는다. 커밋마다 clone 이 필요하고 도는 코드가 저장소 밖에 있다"
         fi
     done < "$TMP_DIR/repos"
+fi
+
+# ---------------------------------------------------------------- 에이전트 훅
+
+echo
+echo "[5/5] 에이전트 훅"
+
+CLAUDE_SETTINGS=".claude/settings.json"
+CODEX_HOOKS=".codex/hooks.json"
+
+# 두 설정에서 (이벤트, 스크립트 이름) 짝을 뽑는다. 도구 이름은 에이전트마다 달라서 보지 않는다.
+hook_pairs() {
+    # $1: 설정 파일
+    jq -r '
+        .hooks // {}
+        | to_entries[]
+        | .key as $event
+        | .value[]?
+        | .hooks[]?
+        | (.command // "")
+        | [$event, ([scan("[A-Za-z0-9._-]+[.]sh")] | last // "")]
+        | @tsv
+    ' "$1" | sort -u
+}
+
+if [ ! -e "$CLAUDE_SETTINGS" ] && [ ! -e "$CODEX_HOOKS" ]; then
+    report SKIP "에이전트 훅" "$CLAUDE_SETTINGS 도 $CODEX_HOOKS 도 없다"
+elif ! command -v jq > /dev/null 2>&1; then
+    if [ "${CI:-}" = "true" ]; then
+        report FAIL jq "미설치. CI 에서는 필수다"
+    else
+        report SKIP jq "미설치. 두 설정의 대조를 건너뛴다"
+    fi
+elif [ ! -e "$CLAUDE_SETTINGS" ] || [ ! -e "$CODEX_HOOKS" ]; then
+    report FAIL "에이전트 훅" "한쪽 설정만 있다. 두 에이전트가 다른 규칙으로 돈다"
+else
+    hook_pairs "$CLAUDE_SETTINGS" > "$TMP_DIR/claude-hooks"
+    hook_pairs "$CODEX_HOOKS" > "$TMP_DIR/codex-hooks"
+
+    # 뽑힌 짝이 없으면 대조가 아무것도 안 본 것이다. 조용한 통과가 가장 나쁜 결과다.
+    if [ ! -s "$TMP_DIR/claude-hooks" ] || [ ! -s "$TMP_DIR/codex-hooks" ]; then
+        report FAIL "에이전트 훅" "설정에서 훅을 하나도 못 읽었다. 대조가 아무것도 검사하지 않는다"
+    elif diff -u "$TMP_DIR/claude-hooks" "$TMP_DIR/codex-hooks" > "$TMP_DIR/hook-diff" 2>&1; then
+        report PASS "에이전트 훅" "$CLAUDE_SETTINGS 와 $CODEX_HOOKS 가 같은 이벤트에 같은 스크립트를 문다"
+    else
+        cat "$TMP_DIR/hook-diff"
+        report FAIL "에이전트 훅" "두 설정이 갈렸다. 한쪽만 고치면 에이전트마다 규칙이 달라진다"
+    fi
+
+    # 훅이 부르는 스크립트가 실재하는가.
+    grep -ho 'scripts/agent-hooks/[A-Za-z0-9._-]*\.sh' "$CLAUDE_SETTINGS" "$CODEX_HOOKS" \
+        | sort -u > "$TMP_DIR/hook-scripts"
+    while IFS= read -r script; do
+        [ -n "$script" ] || continue
+        if [ -f "$script" ]; then
+            report PASS "$script" "실재한다"
+        else
+            report FAIL "$script" "훅이 부르는 스크립트가 없다"
+        fi
+    done < "$TMP_DIR/hook-scripts"
+
+    # PostToolUse 훅은 규칙을 정의하지 않는다. tests/ 아래 검사기를 부르기만 한다.
+    POST_HOOK="scripts/agent-hooks/post-tool-use.sh"
+    if [ ! -f "$POST_HOOK" ]; then
+        report SKIP "$POST_HOOK" "없다"
+    elif grep -n 'run_check ' "$POST_HOOK" | grep -v 'run_check()' | grep -qv 'bash tests/'; then
+        report FAIL "$POST_HOOK" "tests/ 밖의 검사를 부른다. 규칙 하나에 검사기 하나가 깨진다"
+    else
+        report PASS "$POST_HOOK" "tests/ 아래 검사기만 부른다"
+    fi
 fi
 
 echo

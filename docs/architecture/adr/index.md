@@ -49,6 +49,7 @@ when a reasonable person would ask why. Skip it otherwise.
 | [0005. Run external link checking on a schedule only](0005-run-external-link-checking-on-a-schedule-only.md) | accepted | Why lychee stayed out of the pull request gate, against the plan |
 | [0006. Name one type checker, one validator, and one environment manager](0006-name-one-type-checker-one-validator-and-one-environment-manager.md) | accepted | Why the Python standard names mypy, Pydantic, and uv and allows no substitutes |
 | [0007. Give each documentation rule one checker](0007-give-each-documentation-rule-one-checker.md) | accepted | Why the shell document checker holds only rules that join two worlds |
+| [0008. Enforce agent behaviour rules in harness hooks](0008-enforce-agent-behaviour-rules-in-harness-hooks.md) | accepted | Why rules that leave no trace in a diff moved into the agent hooks |
 
 Add one row here when a record is added.
 

@@ -25,17 +25,26 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELF="$SCRIPT_DIR/$(basename "${BASH_SOURCE[0]}")"
 
-case "${1:-}" in
-    -h | --help)
-        sed -n '2,/^$/p' "$SELF"
-        exit 0
-        ;;
-    "") ;;
-    *)
-        echo "알 수 없는 옵션: $1" >&2
-        exit 2
-        ;;
-esac
+# 인자로 받은 파일만 검사한다. 인자가 없으면 지금까지처럼 추적 중인 파일 전부를 본다.
+# PostToolUse 훅이 방금 고친 파일 하나만 넘긴다. 편집 한 번마다 저장소 전체를 도는
+# 비용을 없애려는 것이고, 훅 없이 부르는 쪽의 동작은 그대로다.
+ARGV_FILES=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h | --help)
+            sed -n '2,/^$/p' "$SELF"
+            exit 0
+            ;;
+        -*)
+            echo "알 수 없는 옵션: $1" >&2
+            exit 2
+            ;;
+        *)
+            ARGV_FILES[${#ARGV_FILES[@]}]="$1"
+            shift
+            ;;
+    esac
+done
 
 # 스크립트 위치가 아니라 git 이 루트를 정한다. tests/ 를 옮겨도 따라온다.
 REPO_ROOT="$(git rev-parse --show-toplevel 2> /dev/null)" || {
@@ -75,6 +84,20 @@ FILES=()
 while IFS= read -r f; do
     FILES[${#FILES[@]}]="$f"
 done < <(git ls-files -- '*.sh' '*.bash' | sort)
+
+# 인자로 받은 파일이 있으면 그것만 본다. 대상 밖 확장자와 없는 파일은 뺀다.
+if [ "${#ARGV_FILES[@]}" -gt 0 ]; then
+    FILES=()
+    for f in "${ARGV_FILES[@]}"; do
+        case "$f" in
+            *.sh | *.bash) [ -f "$f" ] && FILES[${#FILES[@]}]="$f" ;;
+        esac
+    done
+    if [ "${#FILES[@]}" -eq 0 ]; then
+        echo "SKIP 인자에 셸 스크립트가 없다"
+        exit 0
+    fi
+fi
 
 if [ "${#FILES[@]}" -eq 0 ]; then
     echo "SKIP 추적 중인 셸 스크립트가 없다"
