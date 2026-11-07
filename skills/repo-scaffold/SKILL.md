@@ -74,10 +74,12 @@ metadata:
 
 ## 2. dry-run 으로 계획을 본다
 
-전역 설치된 스킬 위치를 잡는다.
+스킬 위치를 잡는다. 이 `SKILL.md` 가 있는 디렉터리다.
+설치 방식마다 경로가 다르므로 추측하지 말고 실제 경로를 넣는다.
+흔한 위치는 `~/.claude/skills/`, `.claude/skills/`, `.agents/skills/`, 플러그인 아래 `skills/` 다.
 
 ```bash
-SKILL_DIR="$HOME/.claude/skills/repo-scaffold"
+SKILL_DIR="/path/to/repo-scaffold"    # 이 SKILL.md 가 있는 디렉터리
 ```
 
 ```bash

@@ -10,7 +10,7 @@
 ## 진단
 
 ```bash
-SKILL_DIR="$HOME/.claude/skills/repo-scaffold"
+SKILL_DIR="/path/to/repo-scaffold"    # SKILL.md 가 있는 디렉터리. SKILL.md 2단계 참고
 bash "$SKILL_DIR/assets/scaffold.sh" --target /path/to/repo --dry-run
 ```
 
