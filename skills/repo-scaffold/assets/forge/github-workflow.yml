@@ -1,0 +1,21 @@
+# 문서의 front matter와 색인이 최신인지 확인한다. 로컬 hook을 거치지 않은 커밋도 여기서 걸린다.
+# Gitea와 Forgejo도 .github/workflows를 읽는다.
+
+name: docs
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: bash scripts/doc-index.sh --check

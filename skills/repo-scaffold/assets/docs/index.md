@@ -1,67 +1,13 @@
 ---
-id: index-docs
-title: Document Index
-type: index
-status: active
-summary: Entry point for the {{REPO_NAME}} documentation
-scope:
-  - docs/**
-read_when:
-  - Deciding which document to read
-  - Deciding where a new document belongs
-related:
-  - standard-documentation
+okf_version: "0.2"
 ---
 
-# Document Index
+<!-- scripts/doc-index.sh가 만든다. 손으로 고치지 않는다. -->
 
-## Purpose
+# docs/standards
 
-The entry point for every document in this repository. Pick a target here instead of opening
-documents to find out what they contain.
-
-## Scope
-
-Everything under [docs/](index.md).
-
-Every document under [docs/](index.md) is written in English. The rule is in [Writing Style](standards/writing-style.md).
-
-## Reading order
-
-1. Pick one directory from the categories below.
-2. Pick one document from that directory's index.
-3. Open more only when the work turns out to need them. Do not load everything up front.
-4. After creating or reading through a document, add one row to that directory's index.
-
-## Documents
-
-| Directory | Nature | When to open |
-| --- | --- | --- |
-| [standards/](standards/index.md) | Rules that must be followed | Before writing code or documents |
-| [guides/](guides/index.md) | How a task is carried out | When following a procedure |
-| [references/](references/index.md) | External and supporting facts | When looking a fact up |
-| [generated/](generated/index.md) | Produced from code or a schema | When checking the current implementation state |
-| [architecture/](architecture/index.md) | System shape, and the decisions behind it | Before moving a boundary between components |
-
-Material tied to one product or framework goes into its own domain directory under `docs`.
-The first four categories apply inside it. Architecture stays at the top level, because a
-boundary between two products belongs to neither of them.
-
-### Repository root files
-
-These carry no front matter. Notation rules still apply.
-
-| Subject | File |
-| --- | --- |
-| Repository overview, getting started | [README.md](../README.md) |
-| Agent working rules | [AGENTS.md](../AGENTS.md) ([CLAUDE.md](../CLAUDE.md) is a pointer) |
-| Credentials, secrets, sensitive data | [SECURITY.md](../SECURITY.md) |
-| Environment variable keys | [.env.example](../.env.example) |
-| Document rules that join front matter to body, path, and file system | [tests/check-docs.sh](../tests/check-docs.sh) |
-| Front matter contract and lifecycle | [tests/check-docs-metadata.sh](../tests/check-docs-metadata.sh) |
-
-## Related documents
-
-- [Documentation](standards/documentation.md)
-- [Writing Style](standards/writing-style.md)
-- [Security](../SECURITY.md)
+* [결정 기록](standards/decisions.md) - 결정을 기록할 때와 docs/decisions/에 MADR 4.0 형식으로 쓰는 방법을 정한다.
+* [문서 관리](standards/documentation.md) - docs/를 OKF 번들로 관리하는 방법과 색인을 최신으로 유지하는 방법을 정한다.
+* [이슈와 PR](standards/issues-and-pull-requests.md) - 이슈와 PR이 담아야 하는 내용과 고를 템플릿을 정한다.
+* [트러블슈팅](standards/troubleshooting.md) - 트러블슈팅 기록을 원격 저장소의 이슈로 남기고, 검색하고, 닫는 방법을 정한다.
+* [글쓰기 규칙](standards/writing-style.md) - 문서, 주석, 커밋 메시지, 이슈와 PR에 쓰는 언어와 문체, 표기, 커밋 메시지 형식, 그리고 글이 낡지 않게 쓰는 방법을 정한다.
