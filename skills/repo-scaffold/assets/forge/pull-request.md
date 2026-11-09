@@ -16,6 +16,6 @@
 
 ## 체크리스트
 
-- [ ] 이슈를 닫는 키워드로 연결했거나, 연결할 이슈가 없다.
-- [ ] 되돌리기 어려운 결정을 `docs/decisions/`에 기록했다.
-- [ ] 문서를 함께 고쳤고 `bash scripts/doc-index.sh --check`가 통과한다.
+- [ ] 이슈를 닫는 키워드로 연결했거나, 연결할 이슈가 없습니다.
+- [ ] 되돌리기 어려운 결정을 `docs/decisions/`에 기록했습니다.
+- [ ] 문서를 함께 고쳤고 `bash scripts/doc-index.sh --check`가 통과합니다.
