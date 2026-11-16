@@ -60,6 +60,9 @@ for f in AGENTS.md docs/index.md docs/decisions/index.md docs/standards/index.md
     [ -f "$gh/$f" ] || fail "github layout: $f is missing"
 done
 [ ! -e "$gh/CLAUDE.md" ] || fail "created CLAUDE.md"
+# .gitattributes의 개별 규칙이 맨 위의 LF 규칙보다 우선하는지 확인한다.
+[ "$(git -C "$gh" check-attr eol -- run.ps1)" = "run.ps1: eol: crlf" ] || fail ".gitattributes does not keep CRLF for PowerShell scripts"
+[ "$(git -C "$gh" check-attr text -- logo.png)" = "logo.png: text: unset" ] || fail ".gitattributes does not mark images as binary"
 [ ! -e "$gh/.gitlab" ] && [ ! -e "$gh/.gitlab-ci.yml" ] || fail "created GitLab files in a github repository"
 [ "$(git -C "$gh" config core.hooksPath)" = .githooks ] || fail "core.hooksPath was not set"
 [ "$(git -C "$gh" ls-files -s .githooks/pre-commit | cut -c1-6)" = 100755 ] \
