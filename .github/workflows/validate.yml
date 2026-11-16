@@ -1,49 +1,17 @@
 # SPDX-License-Identifier: MIT
 #
-# Gate every PR on the skill contract: frontmatter shape, required
-# artifacts (skill-card.md, eval task set with a negative case), and the
-# skill's own smoke tests. A skill that fails here would be dropped by
-# the catalog sync anyway — this catches it one repo earlier, where the
-# author can still see why.
+# Gate every PR on the skill contract and on the scaffold's smoke test.
+# The contract check is the catalog's own validator: a skill that fails it would
+# be dropped by the catalog sync anyway. yq, jq, and shellcheck ship with the
+# ubuntu runner image, so nothing is installed.
 #
-# The lint and audit steps run the same tools the skill installs into a
-# scaffolded repository: shellcheck, shfmt, actionlint, zizmor. Versions
-# are pinned so a new upstream release cannot turn a green PR red. The
-# tools are installed before the smoke tests because a scaffolded
-# repository's own check-shell.sh treats a missing tool as a failure
-# whenever CI is set.
-#
-# rumdl and vale are installed for the same reason: the smoke tests run a
-# scaffolded repository's check-markdown.sh and check-prose.sh, and both
-# treat a missing tool as a failure under CI. vale ships as a wrapper that
-# downloads its real binary on first run, so this step needs network.
-#
-# check-jsonschema is installed for check-docs-metadata.sh, which validates
-# front matter against the schema the skill ships. Its Python checkers run
-# through uv run --script and pull no dependencies, so uv alone covers them.
-#
-# ruff and mypy are installed because those checkers are Python files that
-# land in every scaffolded repository, so check-python.sh no longer skips.
-# A scaffolded repository without pyproject.toml gives ruff its default
-# line length of 88, so the shipped Python is written to format identically
-# at 88 and at the repository standard of 100.
-#
-# rust-just is installed so the smoke tests stop skipping their Justfile
-# assertions. Without it they never prove that a rendered Justfile parses.
-#
-# The Windows leg runs the smoke tests only. The skill targets Git Bash on
-# Windows, and until this job existed nothing outside a contributor's laptop
-# ever ran the scaffolding there. The lint tools do not need a second platform;
-# the scaffolding does.
-#
-# merge_group is required because a branch ruleset with a merge queue stalls on
-# any required check that never reports inside the queue.
+# The smoke test runs on three platforms because the scaffold promises bash and
+# git only: GNU tools on ubuntu, BSD tools on macOS, and Git Bash on Windows.
 
 name: Validate
 
 on:
   pull_request:
-  merge_group:
   push:
     branches: [main]
   workflow_dispatch:
@@ -55,161 +23,37 @@ concurrency:
   group: validate-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  YQ_VERSION: v4.53.3
-  SHELLCHECK_VERSION: 0.11.0.1
-  SHFMT_VERSION: 4.0.0
-  ACTIONLINT_VERSION: 1.7.12.24
-  ZIZMOR_VERSION: 1.29.0
-  RUMDL_VERSION: 0.2.55
-  VALE_VERSION: 3.13.0.0
-  CHECK_JSONSCHEMA_VERSION: 0.38.0
-  RUFF_VERSION: 0.16.3
-  MYPY_VERSION: 2.3.1
-  # rust-just has no entry here on purpose: the four template workflows read its
-  # pin out of tools.txt with awk, and a second copy would drift with nothing to
-  # detect it. The pins above are duplicates of tools.txt and pyproject.toml
-  # entries. tests/check-tool-versions.sh compares them on every commit that
-  # touches either side, so a drifting copy fails instead of passing quietly.
-  # Moving them out one at a time is still worth doing; it is a separate change.
-  TOOLS_FILE: tools.txt
-
 jobs:
-  validate:
+  contract:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d  # v10.0.1
-
-      - name: Install yq
-        run: |
-          set -euo pipefail
-          sudo curl -fsSL -o /usr/local/bin/yq \
-            "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
-          sudo chmod +x /usr/local/bin/yq
-          yq --version
-          jq --version
-
-      - name: Install lint tools
-        run: |
-          set -euo pipefail
-          uv tool install "shellcheck-py==${SHELLCHECK_VERSION}"
-          uv tool install "shfmt-py==${SHFMT_VERSION}"
-          uv tool install "actionlint-py==${ACTIONLINT_VERSION}"
-          uv tool install "zizmor==${ZIZMOR_VERSION}"
-          uv tool install "rumdl==${RUMDL_VERSION}"
-          uv tool install "vale==${VALE_VERSION}"
-          uv tool install "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}"
-          uv tool install "ruff==${RUFF_VERSION}"
-          uv tool install "mypy==${MYPY_VERSION}"
-          # The rust-just pin lives in tools.txt, the source the template
-          # workflows read. A second copy here would drift undetected.
-          spec="$(awk '$1 ~ /^rust-just==/ { print $1; exit }' "$TOOLS_FILE")"
-          if [ -z "$spec" ]; then
-            echo "FAIL: no rust-just entry in $TOOLS_FILE" >&2
-            exit 1
-          fi
-          uv tool install "$spec"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: shellcheck
-        run: |
-          set -euo pipefail
-          mapfile -t files < <(git ls-files '*.sh')
-          shellcheck --format=gcc "${files[@]}"
-
-      - name: shfmt
-        run: |
-          set -euo pipefail
-          # 형식 플래그를 주지 않는다. 주면 shfmt 가 .editorconfig 를 무시한다.
-          mapfile -t files < <(git ls-files '*.sh')
-          shfmt -d "${files[@]}"
-
-      - name: actionlint
-        run: |
-          set -euo pipefail
-          mapfile -t files < <(git ls-files '.github/workflows/*.yml' '.github/workflows/*.yaml')
-          actionlint -no-color "${files[@]}"
-
-      - name: zizmor
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          mapfile -t files < <(git ls-files '.github/workflows/*.yml' '.github/workflows/*.yaml')
-          zizmor --no-progress --persona=regular "${files[@]}"
-
-      - name: Validate skill contract
+      - name: Skill contract
         run: bash .github/scripts/validate-skills.sh
-
-      - name: Run skill smoke tests
+      - name: Shellcheck
         run: |
-          set -euo pipefail
-          shopt -s nullglob
-          found=0
-          for script in skills/*/tests/*.sh; do
-            found=1
-            echo "── $script"
-            bash "$script"
-          done
-          if [ "$found" -eq 0 ]; then
-            echo "No smoke tests found — skipping."
-          fi
+          shellcheck \
+            skills/repo-scaffold/assets/scaffold.sh \
+            skills/repo-scaffold/assets/scripts/doc-index.sh \
+            skills/repo-scaffold/assets/githooks/pre-commit \
+            skills/repo-scaffold/tests/smoke.sh
+      - name: Template indexes are current
+        run: bash skills/repo-scaffold/assets/scripts/doc-index.sh --check
 
-  smoke-windows:
-    name: smoke (windows)
-    runs-on: windows-latest
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d  # v10.0.1
-
-      - name: Install lint tools
-        run: |
-          set -euo pipefail
-          uv tool install "shellcheck-py==${SHELLCHECK_VERSION}"
-          uv tool install "shfmt-py==${SHFMT_VERSION}"
-          uv tool install "actionlint-py==${ACTIONLINT_VERSION}"
-          uv tool install "zizmor==${ZIZMOR_VERSION}"
-          uv tool install "rumdl==${RUMDL_VERSION}"
-          uv tool install "vale==${VALE_VERSION}"
-          uv tool install "check-jsonschema==${CHECK_JSONSCHEMA_VERSION}"
-          uv tool install "ruff==${RUFF_VERSION}"
-          uv tool install "mypy==${MYPY_VERSION}"
-          # The rust-just pin lives in tools.txt, the source the template
-          # workflows read. A second copy here would drift undetected.
-          spec="$(awk '$1 ~ /^rust-just==/ { print $1; exit }' "$TOOLS_FILE")"
-          if [ -z "$spec" ]; then
-            echo "FAIL: no rust-just entry in $TOOLS_FILE" >&2
-            exit 1
-          fi
-          uv tool install "$spec"
-          # $HOME/.local/bin is an MSYS path here, and the runner resolves
-          # GITHUB_PATH entries natively. Ask uv for the path it actually used.
-          uv tool dir --bin >> "$GITHUB_PATH"
-
-      - name: Run skill smoke tests
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          found=0
-          for script in skills/*/tests/*.sh; do
-            found=1
-            echo "── $script"
-            bash "$script"
-          done
-          if [ "$found" -eq 0 ]; then
-            echo "No smoke tests found — skipping."
-          fi
+      - name: Smoke test
+        run: bash skills/repo-scaffold/tests/smoke.sh

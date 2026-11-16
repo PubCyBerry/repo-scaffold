@@ -1,0 +1,14 @@
+# 운영체제와 편집기가 만드는 파일
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# 비밀값. 예시 파일은 커밋한다.
+.env
+.env.*
+!.env.example
+
+# 에이전트의 로컬 설정
+.claude/settings.local.json

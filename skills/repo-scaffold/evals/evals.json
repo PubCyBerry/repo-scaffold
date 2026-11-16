@@ -2,16 +2,15 @@
   "skill_name": "repo-scaffold",
   "evals": [
     {
-      "id": "repo-scaffold.explicit-positive.v1",
+      "id": "repo-scaffold.explicit-positive.v2",
       "prompt": "Use the repo-scaffold skill on /work/my-api. It is an existing git repository with a few markdown files already in docs/.",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent loads the skill, fixes --target/--name/--desc first, runs assets/scaffold.sh with --dry-run to show the PLAN/SKIP/OMIT/NOTE split, applies it, then bootstraps the toolchain and runs just verify.",
+      "expected_output": "The agent loads the skill, locates the skill directory, runs assets/scaffold.sh with --dry-run first, applies it, adds front matter to the existing docs, regenerates the index, and finishes with bash scripts/doc-index.sh --check.",
       "assertions": [
         "The repo-scaffold skill is selected and its SKILL.md drives the answer.",
-        "A --dry-run is proposed before the applying run.",
-        "The verification step is `just verify`, not a list of individual check scripts.",
-        "`just bootstrap` is named as the step that installs the tools and the git hooks.",
-        "NOTE results are explained as configuration files a human has to merge by hand.",
+        "A --dry-run is run before the applying run.",
+        "Existing docs get type, title, and description front matter before the index is regenerated.",
+        "The final verification is `bash scripts/doc-index.sh --check`.",
         "Every flag named exists in assets/scaffold.sh (no invented flags)."
       ]
     },
@@ -19,67 +18,64 @@
       "id": "repo-scaffold.implicit-positive.ko.v1",
       "prompt": "새 레포 만들었는데 뭐부터 해야 할까? 에이전트가 이 저장소 구조를 잘 파악했으면 좋겠어.",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent recognizes this as a scaffolding request without the skill being named, loads repo-scaffold, and walks through the parameter → dry-run → apply → bootstrap → verify sequence.",
+      "expected_output": "The agent recognizes a scaffolding request without the skill being named, loads repo-scaffold, and walks through dry-run, apply, filling the AGENTS.md description, and the index check.",
       "assertions": [
-        "The skill is triggered from the implicit Korean phrasing without the user naming it.",
-        "The answer covers hook installation, not only file generation.",
-        "The answer names `just verify` as the single command to remember."
+        "The skill is selected even though neither 'scaffold' nor '스캐폴딩' appears in the prompt.",
+        "The answer applies the skill instead of describing a generic setup from memory.",
+        "The answer asks for or fills in the one-line repository description in AGENTS.md."
       ]
     },
     {
       "id": "repo-scaffold.implicit-positive.ko.v2",
       "prompt": "AGENTS.md 랑 문서 인덱스 자동으로 갱신되게 만들어줘.",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent identifies the doc-index + pre-commit hook combination this skill ships and applies it rather than hand-writing an AGENTS.md.",
+      "expected_output": "The agent selects repo-scaffold, explains that scripts/doc-index.sh regenerates docs/**/index.md and the AGENTS.md block, and that the pre-commit hook and CI run the check.",
       "assertions": [
-        "The skill is triggered from the implicit Korean phrasing.",
-        "The answer routes through assets/scripts/gen-doc-index.sh and the doc-index hook rather than a one-off hand-written index.",
-        "The answer explains that the first commit fails once because the hook restages AGENTS.md."
+        "The skill is selected.",
+        "The answer names scripts/doc-index.sh as the generator and --check as the gate.",
+        "The answer does not propose a hand-maintained index."
       ]
     },
     {
       "id": "repo-scaffold.implicit-positive.en.v1",
-      "prompt": "This repo is a mess for agents to work in — nothing tells them where anything lives. Can you make it agent-readable?",
+      "prompt": "This repo is a mess for agents to work in. Nothing tells them where anything lives. Can you make it agent-readable?",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent recognizes the English implicit phrasing, loads repo-scaffold, and proposes the doc index + front matter convention + hook and CI verification set.",
+      "expected_output": "The agent selects repo-scaffold and sets up AGENTS.md with the generated docs index and the OKF docs/ tree.",
       "assertions": [
-        "The skill is triggered from English phrasing that never says 'scaffold'.",
-        "The answer explains why verification matters (a stale index is worse than none).",
-        "The docs/ hierarchy named includes architecture/ alongside standards, guides, references and generated."
+        "The skill is selected from an English prompt that does not name it.",
+        "AGENTS.md and the generated docs index are part of the answer."
       ]
     },
     {
       "id": "repo-scaffold.implicit-positive.ko.v3",
-      "prompt": "우리 저장소 검증 명령이 스크립트 다섯 개라 아무도 안 외워. 하나로 줄이고 커밋할 때 자동으로 돌게 하고 싶은데.",
+      "prompt": "우리 팀은 GitLab 을 써. 결정 사항은 ADR 로 남기고, 이슈랑 MR 템플릿도 붙이고 싶어.",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent recognizes this as the command-layer half of the skill, loads repo-scaffold, and proposes the Justfile plus the three-stage prek hook matrix instead of hand-writing a wrapper script.",
+      "expected_output": "The agent selects repo-scaffold, runs the scaffold with --forge gitlab or relies on the origin URL, and points to docs/standards/decisions.md for the MADR template.",
       "assertions": [
-        "The skill is triggered even though no document or AGENTS.md is mentioned.",
-        "The answer proposes the shipped Justfile with `just verify` as the Definition of Done.",
-        "The answer describes hooks split across pre-commit, commit-msg and pre-push rather than one pre-commit stage.",
-        "The answer does not put `just` inside a hook entry, because that would make prek call just call prek."
+        "The skill is selected.",
+        "The GitLab layout is used: .gitlab/merge_request_templates and .gitlab/issue_templates.",
+        "Decision records are placed in docs/decisions/ in MADR format."
       ]
     },
     {
       "id": "repo-scaffold.implicit-positive.en.v2",
-      "prompt": "We scaffolded this repo with an older version of your convention and now every internal link is written from the repository root. What do we do?",
+      "prompt": "We keep hitting the same CI setup errors and nobody remembers the fixes. Set the repo up so solved problems are recorded where the next person will search.",
       "expected_skill": "repo-scaffold",
-      "expected_output": "The agent loads repo-scaffold, reads references/retrofit.md, and runs the link conversion procedure rather than rewriting links by hand.",
+      "expected_output": "The agent selects repo-scaffold and explains that troubleshooting records are issues with the troubleshooting label, searched with closed issues included before debugging.",
       "assertions": [
-        "The skill is triggered on a retrofit question about an already-scaffolded repository.",
-        "The answer routes to references/retrofit.md for the migration procedure.",
-        "The answer explains that links are now resolved relative to the document, and why: cross-file anchor checking is silently skipped otherwise.",
-        "The link conversion is proposed as its own commit, separate from any other change."
+        "The skill is selected.",
+        "Troubleshooting is recorded as remote issues, not as files in docs/.",
+        "The answer includes creating the troubleshooting label once."
       ]
     },
     {
       "id": "repo-scaffold.negative.single-doc.v1",
       "prompt": "Write me a docs/guides/deployment.md explaining how we deploy to staging.",
       "expected_skill": null,
-      "expected_output": "The agent writes the single document and does NOT scaffold the repository or run scaffold.sh.",
+      "expected_output": "The agent writes the single document directly. If the repository already follows the OKF convention, it adds front matter, but it does not scaffold the repository.",
       "assertions": [
-        "repo-scaffold is not activated.",
-        "No scaffolding files (AGENTS.md, .editorconfig, Justfile, pre-commit config) are created."
+        "repo-scaffold is not triggered for a single-document request.",
+        "No scaffold.sh run is proposed."
       ]
     },
     {
@@ -90,6 +86,16 @@
       "assertions": [
         "repo-scaffold is not forced onto a language-generator request.",
         "If the skill is mentioned at all, it is explicitly scoped out rather than applied."
+      ]
+    },
+    {
+      "id": "repo-scaffold.negative.linters.ko.v1",
+      "prompt": "pre-commit 에 ruff 랑 eslint 훅 붙여줘.",
+      "expected_skill": null,
+      "expected_output": "The agent configures the linters directly. repo-scaffold installs no linters, so it is not used.",
+      "assertions": [
+        "repo-scaffold is not triggered for a linter setup request.",
+        "The answer does not run scaffold.sh."
       ]
     }
   ]
