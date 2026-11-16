@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 에이전트가 사전학습 기억이 아니라 저장소 안의 문서를 근거로 판단하게 만드는 것이 목적이다.
-대상 저장소에 파일 열일곱 개를 깔고, 요구하는 도구는 `bash`와 `git`뿐이다.
+깔리는 파일은 [깔리는 것](#깔리는-것)에 있고, 요구하는 도구는 `bash`와 `git`뿐이다.
 
 이 저장소는 **`repo-scaffold` 스킬의 소스 저장소**다. 설치용 카탈로그는
 [pubcyberry/skills](https://github.com/pubcyberry/skills)이고, `skills/repo-scaffold/`가
@@ -19,6 +19,7 @@
 | 진입점 | `AGENTS.md`. 문서 인덱스가 자동으로 들어간다 |
 | 문서 | `docs/`의 [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) 번들. 규약 다섯 개, 결정 기록 자리, 디렉터리마다 생성되는 `index.md` |
 | 검사 | `scripts/doc-index.sh`, `.githooks/pre-commit`, CI 잡 하나 |
+| git 설정 | `.gitignore`, `.gitattributes` |
 | 원격 저장소 | PR(MR) 템플릿과 이슈 템플릿 셋(버그, 기능 요청, 트러블슈팅) |
 
 GitHub, Gitea, Forgejo 저장소는 `.github/`를, GitLab 저장소는 `.gitlab/`과 `.gitlab-ci.yml`을 받는다.

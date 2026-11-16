@@ -53,7 +53,7 @@ scaffold "$gh" || fail "could not scaffold an empty repository: $(cat "$WORK/log
 for f in AGENTS.md docs/index.md docs/decisions/index.md docs/standards/index.md \
     docs/standards/decisions.md docs/standards/documentation.md \
     docs/standards/issues-and-pull-requests.md docs/standards/troubleshooting.md \
-    docs/standards/writing-style.md scripts/doc-index.sh .githooks/pre-commit .gitattributes \
+    docs/standards/writing-style.md scripts/doc-index.sh .githooks/pre-commit .gitattributes .gitignore \
     .github/pull_request_template.md .github/ISSUE_TEMPLATE/bug.md \
     .github/ISSUE_TEMPLATE/feature.md .github/ISSUE_TEMPLATE/troubleshooting.md \
     .github/workflows/docs.yml; do
@@ -146,11 +146,17 @@ printf 'old\n' > "$old/CLAUDE.md"
 mkdir -p "$old/.github/ISSUE_TEMPLATE"
 printf 'name: Bug\n' > "$old/.github/ISSUE_TEMPLATE/bug_report.yml"
 touch "$old/.pre-commit-config.yaml"
+printf 'build/\n' > "$old/.gitignore"
+printf 'one\r\ntwo\r\n' > "$old/windows.txt"
+printf 'one\ntwo\n' > "$old/unix.txt"
+git -C "$old" add windows.txt unix.txt
 scaffold "$old" || fail "failed on a repository with existing files: $(cat "$WORK/log")"
 [ "$(cat "$old/AGENTS.md")" = mine ] || fail "overwrote AGENTS.md"
-for target in AGENTS.md CLAUDE.md .github/ISSUE_TEMPLATE core.hooksPath; do
+[ "$(cat "$old/.gitignore")" = build/ ] || fail "overwrote .gitignore"
+for target in AGENTS.md CLAUDE.md .github/ISSUE_TEMPLATE core.hooksPath .gitattributes; do
     grep -qE "^NOTE +$target" "$WORK/log" || fail "no NOTE for $target"
 done
+grep -qF '1 tracked file(s) use CRLF' "$WORK/log" || fail "miscounted the files stored with CRLF: $(cat "$WORK/log")"
 [ -z "$(git -C "$old" config core.hooksPath || true)" ] || fail "changed core.hooksPath despite another hook setup"
 if check_docs "$old"; then fail "accepted an AGENTS.md without a place for the index"; fi
 ok "keeps existing files and reports what needs a manual step"

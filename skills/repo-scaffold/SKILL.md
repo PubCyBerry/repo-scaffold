@@ -84,13 +84,15 @@ bash "$SKILL_DIR/assets/scaffold.sh" /path/to/repo
 | --- | --- |
 | 진입점 | `AGENTS.md` |
 | 문서 | `docs/` OKF 번들. `standards/`의 규약 다섯 개와 빈 `decisions/`, 디렉터리마다 `index.md` |
-| 검사 | `scripts/doc-index.sh`, `.githooks/pre-commit`, `.gitattributes` |
+| 검사 | `scripts/doc-index.sh`, `.githooks/pre-commit` |
+| git 설정 | `.gitignore`, `.gitattributes` |
 | github 형식 | `.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/` 셋, `.github/workflows/docs.yml` |
 | gitlab 형식 | `.gitlab/merge_request_templates/Default.md`, `.gitlab/issue_templates/` 셋, `.gitlab-ci.yml` |
 
 `core.hooksPath`를 `.githooks`로 설정한다. 다른 hook 설정(`core.hooksPath`, `.pre-commit-config.yaml`,
 `.husky`, `lefthook.yml`, 기존 `.git/hooks/pre-commit`)이 있으면 바꾸지 않고 `NOTE`로 알린다.
 hook 파일은 실행 비트를 git에 기록하려고 그 파일만 스테이징한다.
+`.gitattributes`를 새로 깔 때 CRLF로 커밋된 파일이 있으면, `git add --renormalize .`로 줄바꿈을 맞추라고 `NOTE`로 알린다.
 
 ## 4. 마무리한다
 

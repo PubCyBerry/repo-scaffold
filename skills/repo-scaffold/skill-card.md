@@ -5,7 +5,7 @@
 에이전트가 사전학습 기억이 아니라 저장소 안의 문서를 근거로 일하게 만드는 최소 구조를 깐다.
 자동 생성 문서 인덱스가 든 `AGENTS.md`, OKF 형식의 `docs/`, MADR 결정 기록 자리,
 원격 저장소 이슈로 관리하는 트러블슈팅, GitHub, GitLab, Gitea에서 쓰는 PR(MR)과 이슈 템플릿,
-인덱스가 낡지 않게 막는 pre-commit hook과 CI 잡 하나다.
+인덱스가 낡지 않게 막는 pre-commit hook과 CI 잡 하나, 기본 `.gitignore`와 `.gitattributes`다.
 
 This skill is ready for commercial and non-commercial use under the MIT license.
 
@@ -45,6 +45,7 @@ Global.
 | 심링크를 따라 대상 밖에 쓸 수 있다 | 경로 중간이나 끝이 심링크면 쓰지 않고 `FAIL`로 보고한다 |
 | 기존 hook 관리자를 끌 수 있다 | `core.hooksPath`나 다른 hook 설정이 있으면 바꾸지 않고 `NOTE`로 알린다 |
 | 기존 `CLAUDE.md` 때문에 Claude Code가 `AGENTS.md`를 읽지 않는다 | `CLAUDE.md`가 있으면 `NOTE`로 알린다 |
+| 기존 저장소에서 줄바꿈만 바뀐 diff가 생긴다 | `.gitattributes`를 새로 깔 때 CRLF로 커밋된 파일이 있으면 `NOTE`로 알리고 `git add --renormalize .`를 안내한다 |
 | hook을 켜지 않은 클론에서 인덱스가 낡는다 | CI 잡이 같은 검사를 돌린다 |
 | 템플릿의 라벨이 원격에 없으면 버려진다 | 규약 문서가 라벨 생성 명령을 forge 별로 적는다 |
 

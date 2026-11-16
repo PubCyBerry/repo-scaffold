@@ -208,12 +208,15 @@ agents_without_markers=0
 if [ -f "$TARGET/AGENTS.md" ] && ! grep -qF '<!-- DOC-INDEX:START -->' "$TARGET/AGENTS.md"; then
     agents_without_markers=1
 fi
+had_gitattributes=0
+[ -e "$TARGET/.gitattributes" ] && had_gitattributes=1
 
 place AGENTS.md AGENTS.md
 while IFS= read -r f; do
     place "$f" "$f"
 done < <(cd "$ASSETS" && find docs scripts -type f | LC_ALL=C sort)
 place_or_note gitattributes .gitattributes '.githooks/* text eol=lf'
+place gitignore .gitignore
 
 if place githooks/pre-commit .githooks/pre-commit; then
     chmod +x "$TARGET/.githooks/pre-commit"
@@ -246,6 +249,13 @@ if [ -e "$TARGET/CLAUDE.md" ]; then
 fi
 if [ -n "$had_docs" ] && [ "$first_run" -eq 1 ]; then
     report NOTE "docs/" "existing documents found; add front matter to them, then run bash scripts/doc-index.sh"
+fi
+# 새 .gitattributes는 CRLF로 커밋된 파일을 다음에 건드릴 때 줄바꿈만 바뀐 diff로 보이게 한다.
+if [ "$had_gitattributes" -eq 0 ]; then
+    crlf="$(git -C "$TARGET" ls-files --eol 2> /dev/null | grep -cE '^i/(crlf|mixed)')"
+    if [ "$crlf" -gt 0 ]; then
+        report NOTE ".gitattributes" "$crlf tracked file(s) use CRLF; run git add --renormalize . and commit the result on its own"
+    fi
 fi
 
 # --- 원격 저장소 템플릿과 CI ----------------------------------------------------------
