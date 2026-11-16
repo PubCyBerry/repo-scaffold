@@ -1,7 +1,7 @@
 ---
 type: Standard
 title: 결정 기록
-description: 결정을 기록할 때와 docs/decisions/에 MADR 4.0 형식으로 쓰는 방법을 정한다.
+description: 결정을 기록하는 기준과 docs/decisions/에 MADR 4.0 형식으로 쓰는 방법
 tags: [decisions, adr, madr]
 ---
 
@@ -10,7 +10,7 @@ tags: [decisions, adr, madr]
 결정은 [MADR 4.0](https://adr.github.io/madr/) 형식의 결정 기록(ADR, Architectural Decision Record)으로 남긴다.
 결정 하나를 `docs/decisions/`의 파일 하나에 쓴다.
 
-## 기록할 때
+## 기록 기준
 
 다음 중 하나에 해당하면 기록한다.
 
@@ -28,15 +28,15 @@ tags: [decisions, adr, madr]
 
 ## 상태
 
-`status`에는 MADR 값을 쓴다. MADR 값이 결정의 결과까지 나타내기 때문이다. OKF로 읽는 도구를 위해 OKF 값과 다음처럼 대응시킨다.
+`status`에는 결정의 결과까지 나타내는 MADR 값을 쓰고, OKF로 읽는 도구를 위해 OKF 값과 다음처럼 대응시킨다.
 
 | `status` | OKF 값 | 설명 |
 | --- | --- | --- |
-| `proposed` | `draft` | 논의 중이다 |
-| `accepted` | `stable` | 효력이 있다 |
-| `rejected` | `stable` | 검토했지만 채택하지 않았다 |
-| `deprecated` | `deprecated` | 효력이 없고, 대체한 기록도 없다 |
-| `superseded by ADR-NNNN` | `deprecated` | 다른 기록으로 대체했다 |
+| `proposed` | `draft` | 논의 중 |
+| `accepted` | `stable` | 유효 |
+| `rejected` | `stable` | 검토했으나 채택하지 않음 |
+| `deprecated` | `deprecated` | 효력 없음. 대체한 기록 없음 |
+| `superseded by ADR-NNNN` | `deprecated` | 다른 기록으로 대체됨 |
 
 채택한 기록은 고쳐 쓰지 않는다. 결정을 바꿀 때는 새 기록을 쓰고, 이전 기록의 `status`를 `superseded by ADR-NNNN`으로 바꾼 뒤 두 기록을 서로 링크한다.
 
@@ -50,7 +50,7 @@ tags: [decisions, adr, madr]
 # type, title, description은 문서 관리 규칙이 요구한다. 나머지는 MADR의 선택 메타데이터다.
 type: Decision
 title: {해결한 문제와 고른 해법을 드러내는 짧은 제목}
-description: {무엇을 결정했는지 한 문장}
+description: {무엇을 결정했는지 한 줄 요약}
 status: "{proposed | rejected | accepted | deprecated | … | superseded by ADR-0123}"
 date: {결정을 마지막으로 고친 날짜. YYYY-MM-DD}
 decision-makers: {결정에 참여한 사람 모두}

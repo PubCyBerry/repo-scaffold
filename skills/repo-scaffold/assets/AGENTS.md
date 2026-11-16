@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- 이 저장소가 무엇이고 누가 쓰는지 한두 문장으로 적는다. -->
+<!-- 저장소의 용도와 사용자를 한두 문장으로 적는다. -->
 
 ## 문서
 
@@ -21,7 +21,7 @@
 - 문서를 추가하거나 옮기거나 제목을 바꾸면 `bash scripts/doc-index.sh`로 색인을 다시 만든다.
   문서 형식은 [문서 관리](docs/standards/documentation.md)를 따른다.
 - 되돌리기 어려운 결정은 [결정 기록](docs/standards/decisions.md)을 따라 `docs/decisions/`에 남긴다.
-- 오류를 만나면 원격 저장소의 이슈부터 검색하고, 해결한 문제는 이슈로 남긴다. 방법은 [트러블슈팅](docs/standards/troubleshooting.md)에 있다.
+- 오류가 나면 원격 저장소의 이슈부터 검색하고, 해결한 문제는 이슈로 남긴다. 방법은 [트러블슈팅](docs/standards/troubleshooting.md)에 있다.
 - 이슈와 PR은 [이슈와 PR](docs/standards/issues-and-pull-requests.md)을 따른다.
 - 글은 [글쓰기 규칙](docs/standards/writing-style.md)을 따른다.
 

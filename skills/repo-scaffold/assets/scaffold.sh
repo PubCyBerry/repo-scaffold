@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 대상 저장소에 에이전트용 문서 체계를 깐다. 파일을 복사할 뿐이고 기존 파일은 덮어쓰지 않는다.
+# 대상 저장소에 에이전트용 문서 체계를 추가한다. 파일을 복사할 뿐이고 기존 파일은 덮어쓰지 않는다.
 # 사용법은 usage가 출력한다. 스크립트 출력이므로 영어로 쓴다.
 
 set -uo pipefail
@@ -123,7 +123,7 @@ through_symlink() {
 }
 
 # place SRC DEST [FILTER]: SRC는 assets 기준, DEST는 대상 저장소 기준 경로다.
-# 새로 만들었을 때만 0을 돌려준다.
+# 새로 만들었을 때만 0을 반환한다.
 place() {
     local src="$ASSETS/$1" rel="$2" filter="${3:-cat}" dest="$TARGET/$2"
     if through_symlink "$rel"; then
@@ -165,7 +165,7 @@ place_or_note() {
     place "$1" "$2"
 }
 
-# 템플릿 디렉터리에 이 스크립트가 깔지 않은 파일이 있으면 용도가 겹치는지 사람이 확인한다.
+# 템플릿 디렉터리에 이 스크립트가 추가하지 않은 파일이 있으면 용도가 겹치는지 사람이 확인한다.
 # note_foreign DIR OWN_NAMES_REGEX
 note_foreign() {
     local f

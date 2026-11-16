@@ -1,7 +1,7 @@
 ---
 type: Standard
 title: 문서 관리
-description: docs/를 OKF 번들로 관리하는 방법과 색인을 최신으로 유지하는 방법을 정한다.
+description: docs/를 OKF 번들로 관리하고 색인을 최신으로 유지하는 방법
 tags: [docs, okf]
 ---
 
@@ -17,11 +17,11 @@ OKF가 요구하는 키는 `type` 하나지만, 이 저장소는 `title`과 `des
 
 | 키 | 필수 | 설명 |
 | --- | --- | --- |
-| `type` | 예 | 문서의 종류다. `Standard`, `Decision`, `Guide`, `Reference`처럼 이름만 보고 알 수 있는 값을 쓴다 |
-| `title` | 예 | 표시 이름이다. 한 줄로 쓴다 |
-| `description` | 예 | 문서를 열지 판단하게 해 주는 한 문장이다. 한 줄로 쓴다 |
-| `status` | 아니요 | `draft`, `stable`, `deprecated` 중 하나이고 기본값은 `stable`이다. 결정 기록은 [상태](decisions.md#상태)를 따른다 |
-| `tags` | 아니요 | 디렉터리를 가로지르는 주제를 나타내는 짧은 문자열 목록이다 |
+| `type` | 예 | 문서의 종류. `Standard`, `Decision`, `Guide`, `Reference`처럼 이름만 보고 알 수 있는 값 |
+| `title` | 예 | 한 줄로 쓴 표시 이름 |
+| `description` | 예 | 문서를 열지 판단하게 해 주는 한 줄 요약. 개조식 |
+| `status` | 아니요 | `draft`, `stable`, `deprecated` 중 하나. 기본값 `stable`. 결정 기록은 [상태](decisions.md#상태)를 따름 |
+| `tags` | 아니요 | 여러 디렉터리에 걸친 주제를 나타내는 짧은 문자열 목록 |
 
 나머지 OKF 키(`resource`, `sources`, `generated`, `verified`, `stale_after`)는 선택이고, 쓸 때는 규격을 따른다.
 규격에 없는 키도 쓸 수 있다.
@@ -30,7 +30,7 @@ OKF가 요구하는 키는 `type` 하나지만, 이 저장소는 `title`과 `des
 ---
 type: Guide
 title: 로컬 개발 환경
-description: 개발 도구를 설치하고 서비스를 로컬에서 실행한다.
+description: 개발 도구 설치와 서비스의 로컬 실행 방법
 ---
 ```
 
@@ -64,8 +64,8 @@ description: 개발 도구를 설치하고 서비스를 로컬에서 실행한�
 
 | 파일 | 설명 |
 | --- | --- |
-| `scripts/doc-index.sh` | 필수 키를 검사하고 색인을 만든다. 필수 키가 바뀌면 함께 고친다 |
-| `AGENTS.md` | 문서 색인이 들어갈 자리를 표시하는 주석이 있다 |
+| `scripts/doc-index.sh` | 필수 키 검사와 색인 생성. 필수 키가 바뀌면 함께 수정 |
+| `AGENTS.md` | 문서 색인이 들어갈 자리를 표시하는 주석 |
 
 ## 검사
 
